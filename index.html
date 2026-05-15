@@ -381,10 +381,12 @@ tr:hover td{background:#F8FAFC;}
   <div class="nav-item" data-page="kanban">&#9776; 任务看板<span class="badge" id="badgeTasks">7</span></div>
   <div class="nav-item" data-page="pipeline-view">&#9733; 阶段流水线<span class="badge warn" id="badgeGates">2</span></div>
   <div class="nav-section">质量</div>
-  <div class="nav-item" data-page="gates">&#9745; 门禁管理</div>
+  <div class="nav-item" data-page="gates">&#9745; 研发追溯</div>
   <div class="nav-item" data-page="reviews">&#9737; 评审中心<span class="badge" id="badgeReviews">3</span></div>
-  <div class="nav-section">系统</div>
-  <div class="nav-item" data-page="rules-config">&#9881; 规则配置</div>
+  <div class="nav-section">规则配置</div>
+  <div class="nav-item" data-page="rules-config">&#9881; 门禁配置</div>
+  <div class="nav-item" data-page="agents">&#129302; 智能体</div>
+  <div class="nav-item" data-page="summary">&#9776; 研制总结</div>
   <div class="nav-item" data-page="skills">&#9730; 技能市场</div>
 </aside>
 
@@ -444,10 +446,10 @@ const state = {
   activeProjectId: 'p1',
   activeTaskId: 't1',
   projects: [
-    { id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8, rulesSet:'标准 Java 后端规则集' },
-    { id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8, rulesSet:'标准 Java 后端规则集' },
-    { id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6, rulesSet:'标准 Java 后端规则集' },
-    { id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7, rulesSet:'Go 微服务规则集' },
+    { id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8 },
+    { id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8 },
+    { id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6 },
+    { id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7 },
   ],
   tasks: [
     { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], aiCreated:false },
@@ -770,6 +772,8 @@ function renderPage(page, data) {
     case 'gates': renderGates(container); break;
     case 'reviews': renderReviews(container); break;
     case 'rules-config': renderRulesConfig(container); break;
+    case 'agents': renderAgents(container); break;
+    case 'summary': renderSummary(container); break;
     case 'skills': renderSkills(container); break;
   }
 }
@@ -802,6 +806,20 @@ function renderDashboard(container) {
         <div class="stat-icon blue">&#8635;</div><div><div class="stat-value">${execCount}</div><div class="stat-label">进行中任务</div></div>
       </div>
     </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">&#9745;</div><div><div class="stat-value">91.7%</div><div class="stat-label">门禁通过率</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">&#9203;</div><div><div class="stat-value">8.5 天</div><div class="stat-label">需求交付周期</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon indigo">&#129302;</div><div><div class="stat-value">596</div><div class="stat-label">AI 代码提交数</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">&#9888;</div><div><div class="stat-value">3.2%</div><div class="stat-label">缺陷逃逸率</div></div>
+      </div>
+    </div>
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div><div class="card-title">最近项目</div><div class="card-subtitle">点击项目查看详情</div></div><button class="btn btn-outline btn-sm" onclick="navigate('projects')">查看全部</button></div>
@@ -816,6 +834,31 @@ function renderDashboard(container) {
       <div class="card">
         <div class="card-header"><div><div class="card-title">实时动态</div><div class="card-subtitle">平台事件时间线</div></div></div>
         <div class="timeline">${state.timeline.map(t => `<div class="timeline-item"><div class="time">${t.time}</div><div class="desc">${t.text}</div></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">门禁健康度</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${['需求分析','方案设计','代码生成','代码审查','单元测试','质量检查'].map(s => {
+            const pct = Math.floor(Math.random()*20+80);
+            return `<div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:70px;font-size:12px;color:var(--text-secondary);text-align:right;">${s}</div>
+              <div class="progress-bar" style="flex:1;"><div class="fill ${pct>=90?'green':pct>=80?'indigo':'red'}" style="width:${pct}%;"></div></div>
+              <div style="width:40px;font-size:12px;font-weight:600;text-align:right;">${pct}%</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">本周趋势</div>
+        <table>
+          <tr><td>新增任务</td><td style="font-weight:600;">+12</td><td><span class="tag tag-green">+20%</span></td></tr>
+          <tr><td>完成任务</td><td style="font-weight:600;">8</td><td><span class="tag tag-green">+15%</span></td></tr>
+          <tr><td>门禁阻断</td><td style="font-weight:600;">3</td><td><span class="tag tag-red">+50%</span></td></tr>
+          <tr><td>代码提交</td><td style="font-weight:600;">156</td><td><span class="tag tag-green">+8%</span></td></tr>
+          <tr><td>AI 代码提交</td><td style="font-weight:600;">72</td><td><span class="tag tag-green">+25%</span></td></tr>
+        </table>
       </div>
     </div>
     <div class="card">
@@ -868,9 +911,6 @@ function renderProjectCards() {
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">关联仓库: ${p.repo}</div>
       <div class="progress-bar" style="margin-bottom:8px;"><div class="fill ${p.status==='blocked'?'red':p.status==='done'?'green':'indigo'}" style="width:${Math.round(p.stagesDone/p.stagesTotal*100)}%;"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);"><span>${p.stagesDone}/${p.stagesTotal} 阶段完成</span><span>成员 ${p.members}人</span></div>
-      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
-        <span class="tag tag-blue">${p.rulesSet}</span>
-      </div>
     </div>`).join('') + `
     <div class="card" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:200px;border:2px dashed var(--border);" onclick="showNewProjectModal()">
       <div style="text-align:center;color:var(--text-muted);"><div style="font-size:32px;">+</div><div>新建项目空间</div></div>
@@ -889,7 +929,6 @@ function showNewProjectModal() {
       <div class="form-group"><label>项目名称</label><input type="text" id="npName" placeholder="输入项目名称"></div>
       <div class="form-group"><label>项目描述</label><textarea id="npDesc" rows="2" placeholder="简要描述项目目标与范围"></textarea></div>
       <div class="form-group"><label>关联代码仓库</label><input type="text" id="npRepo" placeholder="https://github.com/org/repo.git"></div>
-      <div class="form-group"><label>Harness 规则配置集</label><select id="npRules"><option>标准 Java 后端规则集</option><option>前端 Vue/React 规则集</option><option>Python 数据科学规则集</option><option>Go 微服务规则集</option></select></div>
       <div class="form-group"><label>添加成员</label><input type="text" id="npMembers" placeholder="搜索用户或输入邮箱（逗号分隔）..."></div>
       <div class="form-actions">
         <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
@@ -903,10 +942,9 @@ function showNewProjectModal() {
     if (!name) { toast('请输入项目名称', true); return; }
     const desc = document.getElementById('npDesc').value.trim() || '未填写描述';
     const repo = document.getElementById('npRepo').value.trim() || '未关联仓库';
-    const rules = document.getElementById('npRules').value;
     const members = document.getElementById('npMembers').value.trim() ? 3 : 1;
     const id = 'p' + (state.projects.length + 1);
-    state.projects.push({ id, name, desc, repo, members, status:'running', stagesDone:0, stagesTotal:8, rulesSet:rules });
+    state.projects.push({ id, name, desc, repo, members, status:'running', stagesDone:0, stagesTotal:8 });
     toast(`项目 "${name}" 创建成功`);
     overlay.remove();
     if (state.activePage === 'projects') { renderProjectCards(); } else { navigate('projects'); }
@@ -2300,38 +2338,77 @@ function requestReview() {
 }
 
 // ============================================================
-// GATES PAGE
+// GATES PAGE (研发追溯 — 时间线证据链)
 // ============================================================
 function renderGates(container) {
   const project = getProject(state.activeProjectId);
   const tasks = getProjectTasks(state.activeProjectId).filter(t => t.stageNames.length > 0);
-  let rows = '';
-  tasks.forEach(task => {
-    task.stageNames.forEach((name, i) => {
+
+  function renderTaskTimeline(task) {
+    const stages = task.stageNames.map((name, i) => {
       const gates = task.stageGates[i] || [];
       const defs = state.gateDefs[name] || [];
-      defs.forEach((g, j) => {
-        const status = gates[j] === 1 ? 'pass' : (gates[j] === 0 && task.stageCurrent === i ? 'fail' : 'pending');
-        if (status === 'pending' && i > task.stageCurrent) return; // future stages not shown
-        rows += `<tr>
-          <td>${task.title}</td><td>${name}</td><td>${g.name}</td>
-          <td><span class="tag ${status==='pass'?'tag-green':status==='fail'?'tag-red':'tag-slate'}">${status==='pass'?'通过':status==='fail'?'阻断':'待执行'}</span></td>
-          <td style="color:var(--text-muted);font-size:12px;">${status==='pending'?'—':Math.floor(Math.random()*10+1)+'分钟前'}</td>
-          <td>${status==='fail'?g.detail||'检测未通过':'—'}</td>
-        </tr>`;
-      });
-    });
-  });
-  container.innerHTML = `
-    <div style="font-size:22px;font-weight:700;">门禁管理</div>
-    <div class="card">
-      <div class="card-header"><div><div class="card-title">${project.name} · 全阶段门禁概览</div><div class="card-subtitle">${tasks.length} 个任务 · 最后检查: 3 分钟前</div></div><button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button></div>
-      <table><thead><tr><th>任务</th><th>阶段</th><th>规则名称</th><th>状态</th><th>检测时间</th><th>详情</th></tr></thead><tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:30px;">暂无门禁数据</td></tr>'}</tbody></table>
+      const isCompleted = i < task.stageCurrent;
+      const isActive = i === task.stageCurrent;
+      const isPending = i > task.stageCurrent;
+
+      const evidenceItems = defs.map((g, j) => {
+        const val = gates[j];
+        const passed = val === 1;
+        const failed = val === 0 && isActive;
+        const pending = val === 0 && !isActive;
+        if (pending && isPending) return '';
+        const statusIcon = passed ? '&#10003;' : failed ? '&#10007;' : '&#9679;';
+        const statusColor = passed ? 'var(--success)' : failed ? 'var(--danger)' : 'var(--text-muted)';
+        const detail = failed ? (g.detail || '检测未通过') : '';
+        const screenshot = failed ? '<div style="margin-top:4px;padding:6px 10px;background:var(--bg-secondary);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);border:1px dashed var(--border);">[截图: ' + g.name + ' 检测报告]</div>' : '';
+        return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span style="color:${statusColor};font-size:14px;line-height:1;">${statusIcon}</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:500;">${g.name} <span style="color:${statusColor};font-size:11px;">${passed?'通过':failed?'未通过':'待执行'}</span></div>
+            ${detail ? `<div style="font-size:11px;color:var(--danger);margin-top:2px;">${detail}</div>` : ''}
+            ${screenshot}
+          </div>
+        </div>`;
+      }).filter(Boolean).join('');
+
+      const nodeColor = isCompleted ? 'var(--success)' : isActive ? 'var(--primary)' : 'var(--text-muted)';
+      const nodeBg = isCompleted ? '#ecfdf5' : isActive ? '#eff6ff' : '#f8fafc';
+      const nodeIcon = isCompleted ? '&#10003;' : isActive ? '&#9654;' : '&#9679;';
+      const timeLabel = isPending ? '—' : Math.floor(Math.random()*24+1) + '小时前';
+
+      return `<div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:${nodeBg};border:2px solid ${nodeColor};display:flex;align-items:center;justify-content:center;font-size:12px;color:${nodeColor};flex-shrink:0;">${nodeIcon}</div>
+          <div style="flex:1;border-top:2px solid ${isPending ? 'var(--border)' : nodeColor};"></div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:${nodeColor};margin-bottom:4px;">${name}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">${timeLabel}</div>
+        ${evidenceItems ? `<div style="background:var(--bg-secondary);border-radius:var(--radius-sm);padding:8px 10px;border:1px solid var(--border);">${evidenceItems}</div>` : '<div style="font-size:11px;color:var(--text-muted);">暂无检查项</div>'}
+      </div>`;
+    }).join('');
+
+    return `<div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div><div class="card-title">${task.title}</div>
+        <div class="card-subtitle">${task.type} · ${task.priority} · 预估 ${task.estimate}</div></div>
+        <span class="tag ${task.status==='done'?'tag-green':task.status==='executing'?'tag-blue':'tag-slate'}">${task.status==='done'?'已完成':task.status==='executing'?'执行中':task.status==='backlog'?'待办':task.status}</span>
+      </div>
+      <div style="display:flex;gap:4px;padding:16px 0;overflow-x:auto;">${stages}</div>
     </div>`;
+  }
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div style="font-size:22px;font-weight:700;">研发追溯</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${project.name} · ${tasks.length} 个任务的全生命周期证据链</div></div>
+      <button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button>
+    </div>
+    ${tasks.length === 0 ? '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>' : tasks.map(t => renderTaskTimeline(t)).join('')}`;
 }
 
 function refreshAllGates() {
-  toast('正在重新执行全部门禁规则...');
+  toast('正在重新执行全部追溯检查...');
   setTimeout(() => {
     getProjectTasks(state.activeProjectId).forEach(task => {
       task.stageGates.forEach((gates, i) => {
@@ -2342,7 +2419,7 @@ function refreshAllGates() {
         }
       });
     });
-    toast('门禁检查完成');
+    toast('追溯检查完成');
     if (state.activePage === 'gates') renderGates(document.getElementById('mainContent'));
     updateBadges();
   }, 1200);
@@ -2354,26 +2431,39 @@ function refreshAllGates() {
 function renderReviews(container) {
   const pending = state.reviews.filter(r => r.status === 'pending');
   const done = state.reviews.filter(r => r.status !== 'pending');
+
+  function renderReviewCard(r, showActions) {
+    const task = getTask(r.tid);
+    const project = task ? getProject(task.pid) : null;
+    const projectName = project ? project.name : '未知项目';
+    const taskTitle = task ? task.title : '未知任务';
+    const statusTag = r.status === 'pending'
+      ? '<span class="tag tag-amber">待评审</span>'
+      : `<span class="tag ${r.status==='approved'?'tag-green':r.status==='changes_requested'?'tag-amber':'tag-red'}">${r.status==='approved'?'已通过':r.status==='changes_requested'?'需修改':'已驳回'}</span>`;
+
+    const actionBtns = showActions && task ? `
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-primary btn-xs" onclick="selectProject('${task.pid}');navigate('pipeline-view',{tid:'${r.tid}'});">查看详情</button>
+        <button class="btn btn-success btn-xs" onclick="submitReview('${r.id}','approved')">&#10003; 快速通过</button>
+      </div>` : showActions && !task ? `<div style="margin-top:10px;"><button class="btn btn-outline btn-xs" disabled>任务不存在</button></div>` : '';
+
+    return `
+      <div class="review-card">
+        <div class="review-header"><div class="reviewer"><span class="status-dot ${r.status==='pending'?'amber':'green'}"></span> ${taskTitle} · ${r.stageName}</div>${statusTag}</div>
+        <div style="font-size:12px;color:var(--text-muted);">项目: ${projectName} | 评审人: ${r.reviewer}</div>
+        ${r.desc ? `<div style="font-size:12px;margin-top:6px;">${r.desc}</div>` : ''}
+        ${actionBtns}
+      </div>`;
+  }
+
   container.innerHTML = `
     <div style="font-size:22px;font-weight:700;">评审中心</div>
     <div class="grid-2">
       <div class="card"><div class="card-title" style="margin-bottom:14px;">待我评审 (${pending.length})</div>
-        ${pending.length === 0 ? '<div class="empty-state"><div>暂无待评审项</div></div>' : pending.map(r => `
-          <div class="review-card">
-            <div class="review-header"><div class="reviewer"><span class="status-dot amber"></span> ${getTask(r.tid)?.title||'未知任务'} · ${r.stageName}</div><span class="tag tag-amber">待评审</span></div>
-            <div style="font-size:12px;color:var(--text-muted);">评审人: ${r.reviewer}</div><div style="font-size:12px;margin-top:6px;">${r.desc}</div>
-            <div style="margin-top:10px;display:flex;gap:8px;">
-              <button class="btn btn-primary btn-xs" onclick="selectProject('${getTask(r.tid)?.pid}');navigate('pipeline-view',{tid:'${r.tid}'});">查看详情</button>
-              <button class="btn btn-success btn-xs" onclick="submitReview('${r.id}','approved')">&#10003; 快速通过</button>
-            </div>
-          </div>`).join('')}
+        ${pending.length === 0 ? '<div class="empty-state"><div>暂无待评审项</div></div>' : pending.map(r => renderReviewCard(r, true)).join('')}
       </div>
       <div class="card"><div class="card-title" style="margin-bottom:14px;">已完成评审 (${done.length})</div>
-        ${done.length === 0 ? '<div class="empty-state"><div>暂无完成记录</div></div>' : done.map(r => `
-          <div class="review-card">
-            <div class="review-header"><div class="reviewer"><span class="status-dot green"></span> ${getTask(r.tid)?.title||'未知'} · ${r.stageName}</div><span class="tag ${r.status==='approved'?'tag-green':r.status==='changes_requested'?'tag-amber':'tag-red'}">${r.status==='approved'?'已通过':r.status==='changes_requested'?'需修改':'已驳回'}</span></div>
-            <div style="font-size:12px;color:var(--text-muted);">评审人: ${r.reviewer}</div>
-          </div>`).join('')}
+        ${done.length === 0 ? '<div class="empty-state"><div>暂无完成记录</div></div>' : done.map(r => renderReviewCard(r, false)).join('')}
       </div>
     </div>`;
 }
@@ -2383,17 +2473,17 @@ function renderReviews(container) {
 // ============================================================
 function renderRulesConfig(container) {
   const project = getProject(state.activeProjectId);
-  const categories = [
-    { title:'需求阶段规则', keys:['需求完整性检查','语义冲突检测','可追溯性检查'] },
-    { title:'设计阶段规则', keys:['架构合规检查','技术选型评估'] },
-    { title:'代码阶段规则', keys:['编码规范检查','安全漏洞扫描','代码复杂度检查','最佳实践检测'] },
-    { title:'测试阶段规则', keys:['覆盖率门禁','测试通过率','技术债务检查'] },
-    { title:'验收阶段规则', keys:['DoD检查清单','合规审计检查'] },
-  ];
+  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  const categories = stageNames
+    .filter(s => state.gateDefs[s] && state.gateDefs[s].length > 0)
+    .map(s => ({ title: s + '规则', keys: state.gateDefs[s].map(g => g.name) }));
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">Harness 规则配置</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">项目: ${project.name} · 规则集: ${project.rulesSet}</div></div>
-      <button class="btn btn-outline btn-sm" onclick="resetRules()">&#9881; 恢复默认</button>
+      <div><div style="font-size:22px;font-weight:700;">门禁配置</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">项目: ${project.name}</div></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="showAddRuleModal()">+ 添加规则</button>
+        <button class="btn btn-outline btn-sm" onclick="resetRules()">&#9881; 恢复默认</button>
+      </div>
     </div>
     <div class="grid-2" id="rulesGrid"></div>`;
   renderRulesGrid(categories);
@@ -2459,13 +2549,148 @@ function resetRules() {
   Object.keys(state.rulesConfig).forEach(k => state.rulesConfig[k] = true);
   state.rulesConfig['合规审计检查'] = false;
   toast('规则配置已恢复默认');
-  renderRulesGrid([
-    { title:'需求阶段规则', keys:['需求完整性检查','语义冲突检测','可追溯性检查'] },
-    { title:'设计阶段规则', keys:['架构合规检查','技术选型评估'] },
-    { title:'代码阶段规则', keys:['编码规范检查','安全漏洞扫描','代码复杂度检查','最佳实践检测'] },
-    { title:'测试阶段规则', keys:['覆盖率门禁','测试通过率','技术债务检查'] },
-    { title:'验收阶段规则', keys:['DoD检查清单','合规审计检查'] },
-  ]);
+  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  const categories = stageNames
+    .filter(s => state.gateDefs[s] && state.gateDefs[s].length > 0)
+    .map(s => ({ title: s + '规则', keys: state.gateDefs[s].map(g => g.name) }));
+  renderRulesGrid(categories);
+}
+
+function showAddRuleModal() {
+  const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>添加门禁规则</h3>
+      <div class="form-group"><label>规则名称</label><input type="text" id="arName" placeholder="输入规则名称"></div>
+      <div class="form-group"><label>所属阶段</label>
+        <select id="arStage">${stages.map(s => `<option>${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>规则描述</label><textarea id="arDesc" rows="2" placeholder="描述规则检查内容"></textarea></div>
+      <div class="form-group"><label>门禁类型</label>
+        <select id="arType"><option value="pass">阻断（不通过则阻塞）</option><option value="warn">警告（不通过仅提醒）</option></select></div>
+      <div class="form-group"><label>检查方式</label>
+        <select id="arMethod"><option value="auto">自动</option><option value="manual">手动</option></select></div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-primary" onclick="addNewRule()">添加</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function addNewRule() {
+  const name = document.getElementById('arName').value.trim();
+  const stage = document.getElementById('arStage').value;
+  const desc = document.getElementById('arDesc').value.trim() || '自定义规则';
+  const type = document.getElementById('arType').value;
+  if (!name) { toast('请输入规则名称', true); return; }
+  state.rulesConfig[name] = true;
+  if (!state.gateDefs[stage]) state.gateDefs[stage] = [];
+  state.gateDefs[stage].push({ name, desc, type });
+  toast(`规则 "${name}" 已添加到「${stage}」阶段`);
+  document.querySelector('.modal-overlay')?.remove();
+  renderRulesConfig(document.getElementById('mainContent'));
+}
+
+// ============================================================
+// AGENTS PAGE
+// ============================================================
+function renderAgents(container) {
+  const agents = Object.entries(stageAgents).filter(([k]) => k !== '测试').map(([stage, a]) => ({ stage, ...a }));
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div style="font-size:22px;font-weight:700;">智能体管理</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">平台内置研发智能体一览</div></div>
+      <span class="tag tag-blue">${agents.length} 个智能体</span>
+    </div>
+    <div class="grid-3">${agents.map(a => `
+      <div class="card card-hover">
+        <div class="card-header">
+          <div><div class="card-title">${a.avatar} ${a.name}</div>
+          <div class="card-subtitle">阶段: ${a.stage}</div></div>
+          <span class="tag tag-green">运行中</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
+      </div>`).join('')}
+    </div>`;
+}
+
+// ============================================================
+// SUMMARY PAGE
+// ============================================================
+const summaryStats = {
+  totalCommits: 1284, totalRequirements: 356, totalTasks: 89, completedTasks: 67,
+  codeLines: '128.6K', testCoverage: '82.3%', gatePassRate: '91.7%', avgCycleDays: 8.5,
+  aiCodeRatio: '46%', agentExecutions: 3892, reviewsCompleted: 124, defectsFound: 37,
+  weeklyTrend: [
+    { label: '新增任务', value: '+12', delta: '+20%', positive: true },
+    { label: '完成任务', value: '8', delta: '+15%', positive: true },
+    { label: '门禁阻断', value: '3', delta: '+50%', positive: false },
+    { label: '代码提交', value: '156', delta: '+8%', positive: true },
+  ],
+  stageDistribution: [
+    { stage: '需求分析', count: 12 }, { stage: '需求拆解', count: 8 },
+    { stage: '方案设计', count: 15 }, { stage: '代码生成', count: 22 },
+    { stage: '代码审查', count: 18 }, { stage: '单元测试', count: 10 },
+    { stage: '质量检查', count: 6 }, { stage: '验收确认', count: 4 },
+  ],
+};
+
+function renderSummary(container) {
+  const s = summaryStats;
+  const maxCount = Math.max(...s.stageDistribution.map(d => d.count));
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div style="font-size:22px;font-weight:700;">研制总结</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">平台研发效能统计 · 静态模拟数据</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon blue">&#9776;</div><div><div class="stat-value">${s.totalTasks}</div><div class="stat-label">总任务数</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">&#10003;</div><div><div class="stat-value">${s.completedTasks}</div><div class="stat-label">已完成任务</div></div></div>
+      <div class="stat-card"><div class="stat-icon indigo">&#8635;</div><div><div class="stat-value">${s.totalCommits}</div><div class="stat-label">代码提交数</div></div></div>
+      <div class="stat-card"><div class="stat-icon amber">&#9733;</div><div><div class="stat-value">${s.totalRequirements}</div><div class="stat-label">需求数量</div></div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon green">&#9632;</div><div><div class="stat-value">${s.testCoverage}</div><div class="stat-label">测试覆盖率</div></div></div>
+      <div class="stat-card"><div class="stat-icon blue">&#9745;</div><div><div class="stat-value">${s.gatePassRate}</div><div class="stat-label">门禁通过率</div></div></div>
+      <div class="stat-card"><div class="stat-icon indigo">&#129302;</div><div><div class="stat-value">${s.aiCodeRatio}</div><div class="stat-label">AI 代码比例</div></div></div>
+      <div class="stat-card"><div class="stat-icon amber">&#9203;</div><div><div class="stat-value">${s.avgCycleDays} 天</div><div class="stat-label">平均交付周期</div></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">研发效能指标</div>
+        <table>
+          <tr><td>代码总行数</td><td style="font-weight:600;">${s.codeLines}</td></tr>
+          <tr><td>Agent 执行次数</td><td style="font-weight:600;">${s.agentExecutions.toLocaleString()}</td></tr>
+          <tr><td>评审完成数</td><td style="font-weight:600;">${s.reviewsCompleted}</td></tr>
+          <tr><td>发现缺陷数</td><td style="font-weight:600;">${s.defectsFound}</td></tr>
+          <tr><td>需求交付周期</td><td style="font-weight:600;">${s.avgCycleDays} 天</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">本周趋势</div>
+        <table>
+          ${s.weeklyTrend.map(t => `
+          <tr>
+            <td>${t.label}</td>
+            <td style="font-weight:600;">${t.value}</td>
+            <td><span class="tag ${t.positive ? 'tag-green' : 'tag-red'}">${t.delta}</span></td>
+          </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">任务阶段分布</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${s.stageDistribution.map(d => `
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:80px;font-size:12px;color:var(--text-secondary);text-align:right;">${d.stage}</div>
+          <div class="progress-bar" style="flex:1;"><div class="fill indigo" style="width:${Math.round(d.count/maxCount*100)}%;"></div></div>
+          <div style="width:30px;font-size:12px;font-weight:600;">${d.count}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
 }
 
 // ============================================================
