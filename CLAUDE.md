@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 目标
 
-围绕这一产品思想，修改原型文件的展现，让核心开发成员和产品经理共同提出建议来定义产品的业务逻辑。修改需求记录在 `req.md` 中。
+围绕这一产品思想，修改原型文件的展现，让核心开发成员和产品经理共同提出建议来定义产品的业务逻辑。修改需求记录在 `docs/req1.0.md`（已完成）和 `docs/req2.0.md`（待规划）中。
 
 ## Architecture
 
