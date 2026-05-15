@@ -361,3 +361,10 @@ tr:hover td{background:#F8FAFC;}
 .smart-panel-input input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(30,64,175,.1);}
 .smart-send-btn{width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
 .smart-send-btn:hover{background:var(--primary-hover);}
+
+/* Scheduled Tasks */
+.scheduled-section-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);transition:var(--transition);margin-bottom:8px;}
+.scheduled-section-header:hover{background:#E2E8F0;}
+.scheduled-section-body{padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:12px;}
+.scheduled-section-body table td{padding:6px 0;border-bottom:1px solid transparent;}
+.toggle-icon{font-size:10px;color:var(--text-muted);}

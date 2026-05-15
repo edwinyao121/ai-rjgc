@@ -185,3 +185,78 @@ function updateBadges() {
   document.getElementById('badgeGates').textContent = blockedGates.length;
   document.getElementById('badgeReviews').textContent = pendingReviews.length;
 }
+
+// ============================================================
+// SCHEDULED TASKS DATA
+// ============================================================
+const scheduledTasks = [
+  {
+    id: 'st1',
+    name: '代码行数检测任务',
+    icon: '&#128203;',
+    status: 'success',
+    lastRun: '2026-05-12 09:00',
+    nextRun: '2026-05-19 09:00',
+    summary: '扫描 128 个文件，总计 18,432 行代码',
+    config: {
+      scanPath: { label: '扫描路径', value: '/src', type: 'text' },
+      fileTypes: { label: '文件类型', value: '.js, .ts, .py, .java, .go', type: 'text' },
+      excludeDirs: { label: '排除目录', value: 'node_modules, dist, .git', type: 'text' },
+      lineThreshold: { label: '告警阈值', value: '500 行', type: 'text' },
+      schedule: { label: '执行周期', value: '每周一 09:00', type: 'text' },
+    },
+    history: [
+      { time: '2026-05-12 09:00', result: '扫描 128 文件，18,432 行', status: 'success' },
+      { time: '2026-05-05 09:00', result: '扫描 125 文件，17,890 行', status: 'success' },
+      { time: '2026-04-28 09:00', result: '扫描 120 文件，16,540 行', status: 'success' },
+      { time: '2026-04-21 09:00', result: '3 个文件超过 500 行阈值', status: 'warning' },
+      { time: '2026-04-14 09:00', result: '扫描 115 文件，15,230 行', status: 'success' },
+    ],
+  },
+  {
+    id: 'st2',
+    name: 'AI 代码比例检测任务',
+    icon: '&#129302;',
+    status: 'success',
+    lastRun: '2026-05-15 08:00',
+    nextRun: '2026-05-16 08:00',
+    summary: 'AI 代码占比 46.2%，低于 60% 告警阈值',
+    config: {
+      scanPath: { label: '扫描路径', value: '/src', type: 'text' },
+      aiTagRule: { label: 'AI 标识规则', value: 'git commit 含 "AI" / "copilot" 标签', type: 'text' },
+      ratioThreshold: { label: '告警阈值', value: '60%', type: 'text' },
+      dimension: { label: '统计维度', value: '按模块', type: 'select', options: ['按文件', '按人', '按模块'] },
+      schedule: { label: '执行周期', value: '每日 08:00', type: 'text' },
+    },
+    history: [
+      { time: '2026-05-15 08:00', result: 'AI 代码占比 46.2%', status: 'success' },
+      { time: '2026-05-14 08:00', result: 'AI 代码占比 45.8%', status: 'success' },
+      { time: '2026-05-13 08:00', result: 'AI 代码占比 47.1%', status: 'success' },
+      { time: '2026-05-12 08:00', result: 'AI 代码占比 44.5%', status: 'success' },
+      { time: '2026-05-11 08:00', result: 'AI 代码占比 62.3%，超过阈值', status: 'warning' },
+    ],
+  },
+  {
+    id: 'st3',
+    name: '文档规范检查任务',
+    icon: '&#128196;',
+    status: 'warning',
+    lastRun: '2026-05-10 17:00',
+    nextRun: '2026-05-17 17:00',
+    summary: '发现 3 处文档格式问题，2 处链接失效',
+    config: {
+      docPath: { label: '文档目录', value: '/docs', type: 'text' },
+      docFormat: { label: '文档格式', value: '.md, .docx', type: 'text' },
+      checkRules: { label: '检查规则', value: '标题层级、必填章节、链接有效性', type: 'text' },
+      severity: { label: '严重级别', value: 'warning', type: 'select', options: ['error', 'warning', 'info'] },
+      schedule: { label: '执行周期', value: '每周五 17:00', type: 'text' },
+    },
+    history: [
+      { time: '2026-05-10 17:00', result: '3 处格式问题，2 处链接失效', status: 'warning' },
+      { time: '2026-05-03 17:00', result: '全部文档通过检查', status: 'success' },
+      { time: '2026-04-26 17:00', result: '1 处必填章节缺失', status: 'warning' },
+      { time: '2026-04-19 17:00', result: '全部文档通过检查', status: 'success' },
+      { time: '2026-04-12 17:00', result: '5 处格式问题', status: 'warning' },
+    ],
+  },
+];

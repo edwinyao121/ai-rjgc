@@ -20,80 +20,102 @@ function renderAgents(container) {
 }
 
 // ============================================================
-// SUMMARY PAGE
+// SUMMARY PAGE - 定时任务管理
 // ============================================================
-const summaryStats = {
-  totalCommits: 1284, totalRequirements: 356, totalTasks: 89, completedTasks: 67,
-  codeLines: '128.6K', testCoverage: '82.3%', gatePassRate: '91.7%', avgCycleDays: 8.5,
-  aiCodeRatio: '46%', agentExecutions: 3892, reviewsCompleted: 124, defectsFound: 37,
-  weeklyTrend: [
-    { label: '新增任务', value: '+12', delta: '+20%', positive: true },
-    { label: '完成任务', value: '8', delta: '+15%', positive: true },
-    { label: '门禁阻断', value: '3', delta: '+50%', positive: false },
-    { label: '代码提交', value: '156', delta: '+8%', positive: true },
-  ],
-  stageDistribution: [
-    { stage: '需求分析', count: 12 }, { stage: '需求拆解', count: 8 },
-    { stage: '方案设计', count: 15 }, { stage: '代码生成', count: 22 },
-    { stage: '代码审查', count: 18 }, { stage: '单元测试', count: 10 },
-    { stage: '质量检查', count: 6 }, { stage: '验收确认', count: 4 },
-  ],
-};
-
 function renderSummary(container) {
-  const s = summaryStats;
-  const maxCount = Math.max(...s.stageDistribution.map(d => d.count));
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div><div style="font-size:22px;font-weight:700;">研制总结</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">平台研发效能统计 · 静态模拟数据</div></div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">定时任务管理 · 内置检测任务</div></div>
     </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon blue">&#9776;</div><div><div class="stat-value">${s.totalTasks}</div><div class="stat-label">总任务数</div></div></div>
-      <div class="stat-card"><div class="stat-icon green">&#10003;</div><div><div class="stat-value">${s.completedTasks}</div><div class="stat-label">已完成任务</div></div></div>
-      <div class="stat-card"><div class="stat-icon indigo">&#8635;</div><div><div class="stat-value">${s.totalCommits}</div><div class="stat-label">代码提交数</div></div></div>
-      <div class="stat-card"><div class="stat-icon amber">&#9733;</div><div><div class="stat-value">${s.totalRequirements}</div><div class="stat-label">需求数量</div></div></div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon green">&#9632;</div><div><div class="stat-value">${s.testCoverage}</div><div class="stat-label">测试覆盖率</div></div></div>
-      <div class="stat-card"><div class="stat-icon blue">&#9745;</div><div><div class="stat-value">${s.gatePassRate}</div><div class="stat-label">门禁通过率</div></div></div>
-      <div class="stat-card"><div class="stat-icon indigo">&#129302;</div><div><div class="stat-value">${s.aiCodeRatio}</div><div class="stat-label">AI 代码比例</div></div></div>
-      <div class="stat-card"><div class="stat-icon amber">&#9203;</div><div><div class="stat-value">${s.avgCycleDays} 天</div><div class="stat-label">平均交付周期</div></div></div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title" style="margin-bottom:14px;">研发效能指标</div>
-        <table>
-          <tr><td>代码总行数</td><td style="font-weight:600;">${s.codeLines}</td></tr>
-          <tr><td>Agent 执行次数</td><td style="font-weight:600;">${s.agentExecutions.toLocaleString()}</td></tr>
-          <tr><td>评审完成数</td><td style="font-weight:600;">${s.reviewsCompleted}</td></tr>
-          <tr><td>发现缺陷数</td><td style="font-weight:600;">${s.defectsFound}</td></tr>
-          <tr><td>需求交付周期</td><td style="font-weight:600;">${s.avgCycleDays} 天</td></tr>
-        </table>
-      </div>
-      <div class="card">
-        <div class="card-title" style="margin-bottom:14px;">本周趋势</div>
-        <table>
-          ${s.weeklyTrend.map(t => `
-          <tr>
-            <td>${t.label}</td>
-            <td style="font-weight:600;">${t.value}</td>
-            <td><span class="tag ${t.positive ? 'tag-green' : 'tag-red'}">${t.delta}</span></td>
-          </tr>`).join('')}
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title" style="margin-bottom:14px;">任务阶段分布</div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${s.stageDistribution.map(d => `
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:80px;font-size:12px;color:var(--text-secondary);text-align:right;">${d.stage}</div>
-          <div class="progress-bar" style="flex:1;"><div class="fill indigo" style="width:${Math.round(d.count/maxCount*100)}%;"></div></div>
-          <div style="width:30px;font-size:12px;font-weight:600;">${d.count}</div>
-        </div>`).join('')}
-      </div>
-    </div>`;
+    ${scheduledTasks.map(task => `
+      <div class="card" style="margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;border-radius:10px;background:${task.status==='success'?'#ECFDF5':'#FFFBEB'};display:flex;align-items:center;justify-content:center;font-size:20px;">${task.icon}</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;">${task.name}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">上次执行: ${task.lastRun} · 下次执行: ${task.nextRun}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="tag ${task.status==='success'?'tag-green':'tag-amber'}">${task.status==='success'?'正常':'告警'}</span>
+            <button class="btn btn-primary btn-sm" onclick="executeScheduledTask('${task.id}')">&#9654; 手动执行</button>
+          </div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:12px 16px;margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--text-secondary);">执行结果</div>
+          <div style="font-size:14px;font-weight:500;margin-top:4px;">${task.summary}</div>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div style="flex:1;">
+            <div class="scheduled-section-header" onclick="toggleScheduledSection(this)">
+              <span>&#9881; 配置项</span><span class="toggle-icon">&#9660;</span>
+            </div>
+            <div class="scheduled-section-body">
+              <table style="width:100%;">
+                ${Object.values(task.config).map(c => `
+                  <tr>
+                    <td style="width:120px;color:var(--text-secondary);font-size:12px;">${c.label}</td>
+                    <td style="font-size:13px;font-weight:500;">${c.value}</td>
+                  </tr>`).join('')}
+              </table>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div class="scheduled-section-header" onclick="toggleScheduledSection(this)">
+              <span>&#128203; 历史记录</span><span class="toggle-icon">&#9660;</span>
+            </div>
+            <div class="scheduled-section-body">
+              <table style="width:100%;">
+                <thead><tr><th style="font-size:12px;color:var(--text-muted);text-align:left;padding-bottom:8px;">时间</th><th style="font-size:12px;color:var(--text-muted);text-align:left;padding-bottom:8px;">结果</th></tr></thead>
+                <tbody>
+                  ${task.history.map(h => `
+                    <tr>
+                      <td style="font-size:12px;color:var(--text-secondary);padding:4px 0;">${h.time}</td>
+                      <td style="font-size:12px;padding:4px 0;">
+                        <span class="status-dot ${h.status==='success'?'green':'amber'}"></span>${h.result}
+                      </td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`).join('')}`;
+}
+
+function toggleScheduledSection(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    icon.innerHTML = '&#9650;';
+  } else {
+    body.style.display = 'none';
+    icon.innerHTML = '&#9660;';
+  }
+}
+
+function executeScheduledTask(taskId) {
+  const task = scheduledTasks.find(t => t.id === taskId);
+  if (!task) return;
+  toast(`正在执行: ${task.name}...`);
+  setTimeout(() => {
+    const results = {
+      st1: '扫描 128 文件，18,432 行',
+      st2: 'AI 代码占比 46.2%',
+      st3: '3 处格式问题，2 处链接失效',
+    };
+    task.lastRun = new Date().toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    task.summary = results[taskId] || '执行完成';
+    task.history.unshift({ time: task.lastRun, result: task.summary, status: 'success' });
+    if (task.history.length > 5) task.history.pop();
+    toast(`${task.name} 执行完成`);
+    if (state.activePage === 'summary') {
+      renderSummary(document.getElementById('mainContent'));
+    }
+  }, 1500);
 }
 
 // ============================================================

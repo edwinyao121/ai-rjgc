@@ -78,6 +78,36 @@ function renderDashboard(container) {
         </table>
       </div>
     </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">研发效能指标</div>
+        <table>
+          <tr><td>代码总行数</td><td style="font-weight:600;">128.6K</td></tr>
+          <tr><td>Agent 执行次数</td><td style="font-weight:600;">3,892</td></tr>
+          <tr><td>评审完成数</td><td style="font-weight:600;">124</td></tr>
+          <tr><td>发现缺陷数</td><td style="font-weight:600;">37</td></tr>
+          <tr><td>需求交付周期</td><td style="font-weight:600;">8.5 天</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">任务阶段分布</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${[
+            { stage: '需求分析', count: 12 }, { stage: '需求拆解', count: 8 },
+            { stage: '方案设计', count: 15 }, { stage: '代码生成', count: 22 },
+            { stage: '代码审查', count: 18 }, { stage: '单元测试', count: 10 },
+            { stage: '质量检查', count: 6 }, { stage: '验收确认', count: 4 },
+          ].map(d => {
+            const maxCount = 22;
+            return `<div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:80px;font-size:12px;color:var(--text-secondary);text-align:right;">${d.stage}</div>
+              <div class="progress-bar" style="flex:1;"><div class="fill indigo" style="width:${Math.round(d.count/maxCount*100)}%;"></div></div>
+              <div style="width:30px;font-size:12px;font-weight:600;">${d.count}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-header"><div><div class="card-title">需要关注</div><div class="card-subtitle">当前阻塞的门禁项</div></div></div>
       <table>
