@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-这是一个「智能软件工厂」OA 办公系统的单文件 HTML 原型，用于演示 AI 驱动的软件研发全流程管理。整个应用包含在一个 `index.html` 文件中（约 1970 行），无需构建步骤，直接用浏览器打开即可运行。
+这是一个「智能软件工厂」OA 办公系统的单文件 HTML 原型，用于演示在Harness框架下的 AI 驱动的软件研发全流程管理，并且展示出产品的可观测性、可验证性、可控性。整个应用包含在一个 `index.html` 文件中，无需构建步骤，直接用浏览器打开即可运行。
+
+## 目标
+围绕这一产品思想，需要修改`index.html` 原型文件的展现，来让核心开发成员和产品经理共同提出建议来定义好该产品的业务逻辑。
 
 ## Architecture
 

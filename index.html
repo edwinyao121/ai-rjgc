@@ -2499,9 +2499,12 @@ function renderGates(container) {
     const traceChain = traceNodes.join(' <span style="color:var(--text-muted);margin:0 2px;">&#8594;</span> ') + (blockedAtEnd ? ' <span style="color:var(--danger);font-weight:700;font-size:11px;">[阻断]</span>' : '');
 
     return `<div class="card" style="margin-bottom:24px;border:1px solid var(--border);overflow:hidden;">
-      <div style="padding:18px 22px;background:linear-gradient(135deg,#F8FAFC,#EFF6FF);border-bottom:1px solid var(--border);">
-        <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px;">审计报告: ${task.title}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px 20px;font-size:12px;color:var(--text-secondary);line-height:1.8;">
+      <div style="padding:18px 22px;background:linear-gradient(135deg,#F8FAFC,#EFF6FF);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;" onclick="toggleAuditCard(this)">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:17px;font-weight:700;color:var(--text);">审计报告: ${task.title}</div>
+          <span class="audit-toggle" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">&#9660;</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 20px;font-size:12px;color:var(--text-secondary);line-height:1.8;margin-top:6px;">
           <span>任务编号: <strong>${task.id}</strong></span>
           <span>类型: <strong>${task.type}</strong></span>
           <span>优先级: <strong>${task.priority}</strong></span>
@@ -2514,17 +2517,20 @@ function renderGates(container) {
         <div style="display:flex;flex-wrap:wrap;gap:6px 20px;font-size:12px;color:var(--text-muted);line-height:1.8;margin-top:2px;">
           <span>最后检查: <strong>${checkTime}</strong></span>
           <span>审计员: <strong>系统自动</strong></span>
+          <span style="margin-left:auto;"><span class="tag ${taskBlockedCount>0?'tag-red':'tag-green'}">${taskBlockedCount>0?taskBlockedCount+' 项阻断':'全部通过'}</span> <span class="tag tag-slate">${taskRate}%</span></span>
         </div>
       </div>
-      <div style="padding:6px 22px;">
-        ${stageSections || '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">该任务尚未开始执行，暂无审计数据</div>'}
-      </div>
-      <div style="padding:14px 22px;background:var(--bg);border-top:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">
-          审计结论: ${taskStagesDone}/${task.stageNames.length} 阶段完成, ${taskBlockedCount} 项阻断, 总门禁通过率 ${taskRate}%
+      <div class="audit-body" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
+        <div style="padding:6px 22px;">
+          ${stageSections || '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">该任务尚未开始执行，暂无审计数据</div>'}
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
-          追溯链路: ${traceChain || '<span style="color:var(--text-muted);">尚未开始</span>'}
+        <div style="padding:14px 22px;background:var(--bg);border-top:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">
+            审计结论: ${taskStagesDone}/${task.stageNames.length} 阶段完成, ${taskBlockedCount} 项阻断, 总门禁通过率 ${taskRate}%
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
+            追溯链路: ${traceChain || '<span style="color:var(--text-muted);">尚未开始</span>'}
+          </div>
         </div>
       </div>
     </div>`;
@@ -2551,6 +2557,18 @@ function renderGates(container) {
       </div>
     </div>
     ${tasks.length === 0 ? '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>' : tasks.map(t => renderAuditCard(t)).join('')}`;
+}
+
+function toggleAuditCard(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.audit-toggle');
+  if (body.style.maxHeight && body.style.maxHeight !== '0px') {
+    body.style.maxHeight = '0px';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    arrow.style.transform = 'rotate(180deg)';
+  }
 }
 
 function refreshAllGates() {
