@@ -58,9 +58,6 @@ function renderPipeline(container, data) {
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;" id="sidePanel"></div>
     </div>
-    <div class="card" id="chatCard">
-      <div class="card-header"><div><div class="card-title">&#9742; 多轮对话完善</div><div class="card-subtitle">与 Agent 对话，逐文件精细修改产出物</div></div></div>
-      <div class="chat-container" id="chatContainer"><div class="chat-messages" id="chatMessages"></div><div class="chat-input-area"><input type="text" id="chatInput" placeholder="输入修改意见，支持全局对话或针对具体文件/行..." onkeydown="if(event.key==='Enter')sendMessage()"><button class="btn btn-primary btn-sm" onclick="sendMessage()">发送</button></div></div>
     </div>`;
 
   // Render pipeline SVG
@@ -77,7 +74,6 @@ function renderPipeline(container, data) {
 
   renderTabContent(task, 'gates');
   renderSidePanel(task);
-  renderChat(task);
 
   // Next stage button
   document.getElementById('btnNextStage').addEventListener('click', () => advanceStage(task));
@@ -382,13 +378,31 @@ function renderTabContent(task, tab) {
     const artifacts = getArtifacts(stageName);
     container.innerHTML = `
       <div style="margin-bottom:12px;font-size:13px;font-weight:600;">阶段产出物 — ${stageName}</div>
-      ${artifacts.map(a => `
-        <div class="artifact-file" onclick="previewArtifact('${a.name}')">
-          <div class="file-icon">${a.icon}</div>
-          <div style="flex:1;"><div class="file-name">${a.name}</div><div class="file-meta">${a.meta}</div></div>
-          <button class="btn btn-ghost btn-xs">&#9654; 预览</button>
-        </div>`).join('')}
-      <div id="artifactPreview"></div>`;
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="flex:1;min-width:0;">
+          ${artifacts.map(a => `
+            <div class="artifact-file" onclick="previewArtifact('${a.name}')">
+              <div class="file-icon">${a.icon}</div>
+              <div style="flex:1;"><div class="file-name">${a.name}</div><div class="file-meta">${a.meta}</div></div>
+              <button class="btn btn-ghost btn-xs">&#9654; 预览</button>
+            </div>`).join('')}
+          <div id="artifactPreview"></div>
+        </div>
+        <div style="width:340px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:550px;">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
+            <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;">&#9742; 对话修改产出物</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">基于当前阶段的上下文，指导 Agent 完善产出</div>
+          </div>
+          <div class="chat-container" id="chatContainer" style="flex:1;border:none;border-radius:0;box-shadow:none;">
+            <div class="chat-messages" id="chatMessages" style="height:100%;"></div>
+            <div class="chat-input-area" style="background:var(--bg);">
+              <input type="text" id="chatInput" placeholder="输入修改意见..." onkeydown="if(event.key==='Enter')sendMessage()">
+              <button class="btn btn-primary btn-sm" onclick="sendMessage()">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    setTimeout(() => renderChat(task), 50);
   }
 }
 
