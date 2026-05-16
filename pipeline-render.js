@@ -343,7 +343,7 @@ function renderTabContent(task, tab) {
         <div style="margin-top:16px;padding:16px;background:var(--danger-light);border-radius:var(--radius);font-size:13px;">
           <strong>&#9888; 门禁阻断分析：</strong>
           <ul style="margin:8px 0 0 18px;line-height:1.6;" id="aiSuggestions"></ul>
-          <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="toggleAgentPanel()">&#9742; 唤起 Agent 对话协助解决</button>
+          <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="openSidebar({title:'门禁修复助手', subtitle:'智能分析并解决阻断问题', showInput:true})">&#9742; 唤起 Agent 对话协助解决</button>
         </div>` : ''}
     `;
     // AI suggestions
@@ -391,31 +391,20 @@ function renderTabContent(task, tab) {
     const artifacts = getArtifacts(stageName);
     container.innerHTML = `
       <div style="margin-bottom:12px;font-size:13px;font-weight:600;">阶段产出物 — ${stageName}</div>
-      <div style="display:flex;gap:16px;align-items:flex-start;">
-        <div style="flex:1;min-width:0;">
-          ${artifacts.map(a => `
-            <div class="artifact-file" onclick="previewArtifact('${a.name}')">
-              <div class="file-icon">${a.icon}</div>
-              <div style="flex:1;"><div class="file-name">${a.name}</div><div class="file-meta">${a.meta}</div></div>
-              <button class="btn btn-ghost btn-xs">&#9654; 预览</button>
-            </div>`).join('')}
-          <div id="artifactPreview"></div>
-        </div>
-        <div style="width:340px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;height:550px;">
-          <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg);">
-            <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;">&#9742; 对话修改产出物</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">基于当前阶段的上下文，指导 Agent 完善产出</div>
-          </div>
-          <div class="chat-container" id="chatContainer" style="flex:1;border:none;border-radius:0;box-shadow:none;">
-            <div class="chat-messages" id="chatMessages" style="height:100%;"></div>
-            <div class="chat-input-area" style="background:var(--bg);">
-              <input type="text" id="chatInput" placeholder="输入修改意见..." onkeydown="if(event.key==='Enter')sendMessage()">
-              <button class="btn btn-primary btn-sm" onclick="sendMessage()">发送</button>
-            </div>
-          </div>
-        </div>
+      <div style="flex:1;min-width:0;">
+        ${artifacts.map(a => `
+          <div class="artifact-file" onclick="previewArtifact('${a.name}')">
+            <div class="file-icon">${a.icon}</div>
+            <div style="flex:1;"><div class="file-name">${a.name}</div><div class="file-meta">${a.meta}</div></div>
+            <button class="btn btn-ghost btn-xs">&#9654; 预览</button>
+          </div>`).join('')}
+        <div id="artifactPreview"></div>
       </div>`;
-    setTimeout(() => renderChat(task), 50);
+    openSidebar({
+      title: '产出物优化助手',
+      subtitle: `当前聚焦: ${stageName}`,
+      showInput: true
+    });
   }
 }
 
@@ -670,7 +659,7 @@ function drawSideMindMap(stageName) {
 }
 
 function renderChat(task) {
-  const msgs = document.getElementById('chatMessages');
+  const msgs = document.getElementById('smartMessages');
   if (!msgs) return;
   const stageIdx = task.stageCurrent;
   const key = task.id + '-' + stageIdx;
@@ -685,37 +674,8 @@ function renderChat(task) {
 }
 
 window.showNodeDetails = function(stageName, nodeName, color) {
-  const container = document.getElementById('mindmapSvg');
-  if (!container) return;
-  let drawer = document.getElementById('nodeDetailsDrawer');
-  if (!drawer) {
-    drawer = document.createElement('div');
-    drawer.id = 'nodeDetailsDrawer';
-    drawer.style.position = 'absolute';
-    drawer.style.top = '0';
-    drawer.style.right = '0';
-    drawer.style.bottom = '0';
-    drawer.style.width = '320px';
-    drawer.style.background = '#fff';
-    drawer.style.borderLeft = '1px solid var(--border)';
-    drawer.style.boxShadow = '-4px 0 15px rgba(0,0,0,0.05)';
-    drawer.style.display = 'flex';
-    drawer.style.flexDirection = 'column';
-    drawer.style.zIndex = '10';
-    drawer.style.transform = 'translateX(100%)';
-    drawer.style.transition = 'transform 0.3s ease';
-    container.appendChild(drawer);
-    
-    // trigger reflow
-    drawer.offsetHeight;
-  }
-  
-  drawer.style.transform = 'translateX(0)';
-  
-  // mock data
   const tokenCount = Math.floor(Math.random() * 2000 + 500);
   const timeMs = Math.floor(Math.random() * 3000 + 500);
-  
   const isPending = (color === '#F59E0B' || color === '#CBD5E1' || color === '#3B82F6');
   
   let contentHtml = '';
@@ -725,7 +685,7 @@ window.showNodeDetails = function(stageName, nodeName, color) {
         <div style="font-weight:600; color:var(--warning); margin-bottom:12px;">&#9888; 节点处于待执行/执行中状态</div>
         <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">您可以为 Agent 注入额外的上下文或干预执行策略：</div>
         <textarea placeholder="例如：等下生成代码时，重点关注一下边界条件或性能损耗..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; font-family:var(--font); resize:none;"></textarea>
-        <button class="btn btn-primary btn-sm" style="margin-top:12px; width:100%;" onclick="toast('已成功注入干预指令'); document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)';">注入执行上下文</button>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px; width:100%;" onclick="toast('已成功注入干预指令'); document.getElementById('agentPanel').style.display='none';">注入执行上下文</button>
       </div>
     `;
   } else {
@@ -762,13 +722,12 @@ window.showNodeDetails = function(stageName, nodeName, color) {
     `;
   }
   
-  drawer.innerHTML = `
-    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#F8FAFC;">
-      <div style="font-weight:600; font-size:14px; color:var(--primary);">${nodeName} ${isPending ? '干预' : '细节'}</div>
-      <button onclick="document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-muted);">&#10005;</button>
-    </div>
-    ${contentHtml}
-  `;
+  openSidebar({
+    title: \`\${nodeName} \${isPending ? '干预' : '细节'}\`,
+    subtitle: \`所属阶段: \${stageName}\`,
+    contentHtml: contentHtml,
+    showInput: false
+  });
 };
 
 window.goToArtifacts = function(artifactName) {

@@ -4,11 +4,43 @@
 function toggleAgentPanel() {
   const panel = document.getElementById('agentPanel');
   if (panel.style.display === 'none') {
-    panel.style.display = 'flex';
+    openSidebar({}); // 打开默认面板
   } else {
     panel.style.display = 'none';
   }
 }
+
+window.openSidebar = function(config) {
+  const panel = document.getElementById('agentPanel');
+  panel.style.display = 'flex';
+  
+  const titleEl = panel.querySelector('.smart-panel-title-main');
+  const subEl = panel.querySelector('.smart-panel-title-sub');
+  if (titleEl) titleEl.innerHTML = config.title || '小智 · 软件工厂超级智能体';
+  if (subEl) subEl.innerHTML = config.subtitle || '智能生成软件研制方案，实现端到端交付';
+  
+  const bodyEl = document.getElementById('smartPanelBody');
+  const inputEl = document.querySelector('.smart-panel-input');
+  
+  if (config.contentHtml) {
+    bodyEl.innerHTML = config.contentHtml;
+  } else {
+    bodyEl.innerHTML = `
+      <div class="smart-welcome">
+        <div class="smart-welcome-icon">&#9759;</div>
+        <h2>${config.title || '我是软件工厂超级智能体'}</h2>
+        <p>${config.subtitle || '能帮你智能生成软件研制方案<br>实现端到端交付'}</p>
+      </div>
+      <div id="smartMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;"></div>
+    `;
+  }
+  
+  if (config.showInput === false) {
+    inputEl.style.display = 'none';
+  } else {
+    inputEl.style.display = 'flex';
+  }
+};
 
 function sendSmartMessage() {
   const input = document.getElementById('smartInput');
