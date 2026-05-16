@@ -487,6 +487,12 @@ function previewArtifact(name) {
   } else {
     preview.innerHTML = `<div style="margin-top:12px;padding:16px;background:#FAFBFC;border-radius:var(--radius);font-size:13px;color:var(--text-secondary);">&#9745; ${name} — 预览（模拟内容）<br>该产出物由 Agent 自动生成，包含结构化数据和详细分析。</div>`;
   }
+
+  openSidebar({
+    title: '产出物优化助手',
+    subtitle: `当前聚焦: ${name}`,
+    showInput: true
+  });
 }
 
 function drawMindMap(stageName) {
