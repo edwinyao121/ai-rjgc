@@ -723,8 +723,8 @@ window.showNodeDetails = function(stageName, nodeName, color) {
   }
   
   openSidebar({
-    title: \`\${nodeName} \${isPending ? '干预' : '细节'}\`,
-    subtitle: \`所属阶段: \${stageName}\`,
+    title: `${nodeName} ${isPending ? '干预' : '细节'}`,
+    subtitle: `所属阶段: ${stageName}`,
     contentHtml: contentHtml,
     showInput: false
   });
