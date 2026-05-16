@@ -581,15 +581,6 @@ function renderSidePanel(task) {
   const stageIdx = task.stageCurrent;
   const review = state.reviews.find(r => r.tid === task.id && r.status === 'pending');
   const stageName = stageIdx >= 0 ? task.stageNames[stageIdx] : '';
-  const logs = getActivityLogs(task);
-  const stageLogs = logs.filter(log => log.text.includes(stageName) || log.text.includes(stageAgents[stageName]?.name || '')).slice(0, 5);
-  const activityCompactHtml = stageLogs.length === 0
-    ? '<div style="font-size:11px;color:var(--text-muted);padding:4px 0;">暂无活动</div>'
-    : stageLogs.map(log => `
-      <div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border);">
-        <span class="activity-icon ${log.iconType}" style="width:16px;min-width:16px;height:16px;font-size:8px;">${log.icon}</span>
-        <span style="flex:1;color:var(--text-secondary);line-height:1.4;">${log.text}</span>
-      </div>`).join('');
 
   panel.innerHTML = `
     <div class="card">
@@ -608,27 +599,7 @@ function renderSidePanel(task) {
         <div style="font-size:13px;color:var(--text-muted);">当前阶段无需人工评审</div>
         <button class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;" onclick="requestReview()">&#9737; 请求评审</button>
       `}
-    </div>
-    <div class="card">
-      <div class="card-title" style="margin-bottom:8px;">&#9671; Agent 工作流 & 活动</div>
-      <div class="mindmap-container" id="sideMindmap" style="min-height:150px;"></div>
-      <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">最近活动</div>
-        ${activityCompactHtml}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title" style="margin-bottom:8px;">&#8986; 阶段历史</div>
-      <div class="timeline" style="font-size:12px;">
-        ${task.stageNames.map((name, i) => {
-          if (i > task.stageCurrent) return '';
-          return `<div class="timeline-item"><div class="time">${task.stages[i]>=1?'已完成':task.stageCurrent===i?'进行中':'待执行'}</div><div class="desc">${name}</div></div>`;
-        }).join('')}
-      </div>
     </div>`;
-  setTimeout(() => {
-    if (stageIdx >= 0 && task.stageNames[stageIdx]) drawSideMindMap(task.stageNames[stageIdx]);
-  }, 100);
 }
 
 function drawSideMindMap(stageName) {
