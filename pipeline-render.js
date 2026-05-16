@@ -198,6 +198,20 @@ function generateInitialActivityLogs(task) {
       });
     }
 
+    // Artifact Generation
+    if (isDone || isActive) {
+      const artifacts = getArtifacts(name);
+      if (artifacts.length > 0) {
+        logs.push({
+          time: fmt(baseTime + 60),
+          type: 'agent-work',
+          icon: '&#128196;',
+          iconType: 'agent',
+          text: `<strong>${agent.name}</strong> 产出了 <a href="javascript:void(0)" onclick="goToArtifacts('${artifacts[0].name}')" style="color:var(--primary);text-decoration:underline;font-weight:600;">${artifacts[0].name}</a> 等物料`
+        });
+      }
+    }
+
     // Gate check logs
     if (task.stageGates[i] && (isDone || isActive)) {
       const gateDefs = state.gateDefs[name] || [];
@@ -529,7 +543,7 @@ function drawMindMap(stageName) {
 
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.setAttribute('class','mindmap-clickable'); g.style.cursor = 'pointer';
-    g.onclick = () => showNodeDetails(stageName, child.text);
+    g.onclick = () => showNodeDetails(stageName, child.text, child.color || '#CBD5E1');
     const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',startX); r.setAttribute('y',cy); r.setAttribute('width',nodeW); r.setAttribute('height',nodeH);
     r.setAttribute('rx','5'); r.setAttribute('fill',child.fill || '#F1F5F9');
@@ -555,7 +569,7 @@ function drawMindMap(stageName) {
         svg.appendChild(p2);
         const g2 = document.createElementNS('http://www.w3.org/2000/svg','g');
         g2.setAttribute('class','mindmap-clickable'); g2.style.cursor = 'pointer';
-        g2.onclick = () => showNodeDetails(stageName, c2.text);
+        g2.onclick = () => showNodeDetails(stageName, c2.text, c2.color || '#CBD5E1');
         const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect');
         r2.setAttribute('x',c2x); r2.setAttribute('y',c2y); r2.setAttribute('width',72); r2.setAttribute('height',nodeH);
         r2.setAttribute('rx','4'); r2.setAttribute('fill',c2.fill||'#F8FAFC');
@@ -670,7 +684,7 @@ function renderChat(task) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-window.showNodeDetails = function(stageName, nodeName) {
+window.showNodeDetails = function(stageName, nodeName, color) {
   const container = document.getElementById('mindmapSvg');
   if (!container) return;
   let drawer = document.getElementById('nodeDetailsDrawer');
@@ -702,39 +716,57 @@ window.showNodeDetails = function(stageName, nodeName) {
   const tokenCount = Math.floor(Math.random() * 2000 + 500);
   const timeMs = Math.floor(Math.random() * 3000 + 500);
   
-  drawer.innerHTML = `
-    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#F8FAFC;">
-      <div style="font-weight:600; font-size:14px; color:var(--primary);">${nodeName} 细节</div>
-      <button onclick="document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-muted);">&#10005;</button>
-    </div>
-    <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; font-size:12px;">
-      <div>
-        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9881; 执行参数 (Meta)</div>
-        <div style="display:flex; gap:10px; color:var(--text-muted);">
-          <span class="tag tag-slate" style="font-family:var(--mono);">耗时: ${timeMs}ms</span>
-          <span class="tag tag-slate" style="font-family:var(--mono);">Tokens: ${tokenCount}</span>
+  const isPending = (color === '#F59E0B' || color === '#CBD5E1' || color === '#3B82F6');
+  
+  let contentHtml = '';
+  if (isPending) {
+    contentHtml = `
+      <div style="padding:16px;">
+        <div style="font-weight:600; color:var(--warning); margin-bottom:12px;">&#9888; 节点处于待执行/执行中状态</div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">您可以为 Agent 注入额外的上下文或干预执行策略：</div>
+        <textarea placeholder="例如：等下生成代码时，重点关注一下边界条件或性能损耗..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; font-family:var(--font); resize:none;"></textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px; width:100%;" onclick="toast('已成功注入干预指令'); document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)';">注入执行上下文</button>
+      </div>
+    `;
+  } else {
+    contentHtml = `
+      <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; font-size:12px;">
+        <div>
+          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9881; 执行参数 (Meta)</div>
+          <div style="display:flex; gap:10px; color:var(--text-muted);">
+            <span class="tag tag-slate" style="font-family:var(--mono);">耗时: ${timeMs}ms</span>
+            <span class="tag tag-slate" style="font-family:var(--mono);">Tokens: ${tokenCount}</span>
+          </div>
         </div>
-      </div>
-      <div>
-        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10148; System Prompt (系统提示词)</div>
-        <div class="code-block" style="padding:10px; background:#1E293B; color:#A5B4FC; font-size:11px;">You are an expert software engineer performing ${nodeName}. Analyze the context strictly and follow the DoD constraints...</div>
-      </div>
-      <div>
-        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9737; Chain of Thought (思维链)</div>
-        <div style="padding:10px; background:#F1F5F9; border-radius:var(--radius-sm); color:var(--text-secondary); line-height:1.5;">
-          1. 解析输入参数...<br>
-          2. 发现潜在依赖冲突，尝试调用 search_code 工具...<br>
-          3. 工具返回无冲突，准备生成结构...<br>
-          4. 最终完成格式化并返回。
+        <div>
+          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10148; System Prompt (系统提示词)</div>
+          <div class="code-block" style="padding:10px; background:#1E293B; color:#A5B4FC; font-size:11px;">You are an expert software engineer performing ${nodeName}. Analyze the context strictly and follow the DoD constraints...</div>
         </div>
-      </div>
-      <div>
-        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10003; Output (原始输出)</div>
-        <div class="code-block" style="padding:10px; background:#1E293B; color:#6EE7B7; font-size:11px; white-space:pre-wrap; word-wrap:break-word;">{
+        <div>
+          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9737; Chain of Thought (思维链)</div>
+          <div style="padding:10px; background:#F1F5F9; border-radius:var(--radius-sm); color:var(--text-secondary); line-height:1.5;">
+            1. 解析输入参数...<br>
+            2. 发现潜在依赖冲突，尝试调用 search_code 工具...<br>
+            3. 工具返回无冲突，准备生成结构...<br>
+            4. 最终完成格式化并返回。
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10003; Output (原始输出)</div>
+          <div class="code-block" style="padding:10px; background:#1E293B; color:#6EE7B7; font-size:11px; white-space:pre-wrap; word-wrap:break-word;">{
   "status": "success",
   "data": "..."
 }</div>
+        </div>
       </div>
+    `;
+  }
+  
+  drawer.innerHTML = `
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#F8FAFC;">
+      <div style="font-weight:600; font-size:14px; color:var(--primary);">${nodeName} ${isPending ? '干预' : '细节'}</div>
+      <button onclick="document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-muted);">&#10005;</button>
     </div>
+    ${contentHtml}
   `;
 };
