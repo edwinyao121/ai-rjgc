@@ -364,7 +364,7 @@ function renderTabContent(task, tab) {
           </div>`).join('')}</div>`;
     container.innerHTML = `
       <div style="margin-bottom:8px;font-size:13px;font-weight:600;">${stageName} Agent 工作流</div>
-      <div class="mindmap-container" id="mindmapSvg" style="min-height:240px;"></div>
+      <div class="mindmap-container" id="mindmapSvg" style="min-height:240px; position:relative; overflow:hidden;"></div>
       <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:13px;font-weight:600;">活动日志</div>
@@ -529,6 +529,7 @@ function drawMindMap(stageName) {
 
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.setAttribute('class','mindmap-clickable'); g.style.cursor = 'pointer';
+    g.onclick = () => showNodeDetails(stageName, child.text);
     const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',startX); r.setAttribute('y',cy); r.setAttribute('width',nodeW); r.setAttribute('height',nodeH);
     r.setAttribute('rx','5'); r.setAttribute('fill',child.fill || '#F1F5F9');
@@ -553,6 +554,8 @@ function drawMindMap(stageName) {
         p2.setAttribute('fill','none'); p2.setAttribute('stroke',c2.color||'#CBD5E1'); p2.setAttribute('stroke-width','1');
         svg.appendChild(p2);
         const g2 = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g2.setAttribute('class','mindmap-clickable'); g2.style.cursor = 'pointer';
+        g2.onclick = () => showNodeDetails(stageName, c2.text);
         const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect');
         r2.setAttribute('x',c2x); r2.setAttribute('y',c2y); r2.setAttribute('width',72); r2.setAttribute('height',nodeH);
         r2.setAttribute('rx','4'); r2.setAttribute('fill',c2.fill||'#F8FAFC');
@@ -666,3 +669,72 @@ function renderChat(task) {
   // Scroll to bottom
   msgs.scrollTop = msgs.scrollHeight;
 }
+
+window.showNodeDetails = function(stageName, nodeName) {
+  const container = document.getElementById('mindmapSvg');
+  if (!container) return;
+  let drawer = document.getElementById('nodeDetailsDrawer');
+  if (!drawer) {
+    drawer = document.createElement('div');
+    drawer.id = 'nodeDetailsDrawer';
+    drawer.style.position = 'absolute';
+    drawer.style.top = '0';
+    drawer.style.right = '0';
+    drawer.style.bottom = '0';
+    drawer.style.width = '320px';
+    drawer.style.background = '#fff';
+    drawer.style.borderLeft = '1px solid var(--border)';
+    drawer.style.boxShadow = '-4px 0 15px rgba(0,0,0,0.05)';
+    drawer.style.display = 'flex';
+    drawer.style.flexDirection = 'column';
+    drawer.style.zIndex = '10';
+    drawer.style.transform = 'translateX(100%)';
+    drawer.style.transition = 'transform 0.3s ease';
+    container.appendChild(drawer);
+    
+    // trigger reflow
+    drawer.offsetHeight;
+  }
+  
+  drawer.style.transform = 'translateX(0)';
+  
+  // mock data
+  const tokenCount = Math.floor(Math.random() * 2000 + 500);
+  const timeMs = Math.floor(Math.random() * 3000 + 500);
+  
+  drawer.innerHTML = `
+    <div style="padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#F8FAFC;">
+      <div style="font-weight:600; font-size:14px; color:var(--primary);">${nodeName} 细节</div>
+      <button onclick="document.getElementById('nodeDetailsDrawer').style.transform='translateX(100%)'" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-muted);">&#10005;</button>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; font-size:12px;">
+      <div>
+        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9881; 执行参数 (Meta)</div>
+        <div style="display:flex; gap:10px; color:var(--text-muted);">
+          <span class="tag tag-slate" style="font-family:var(--mono);">耗时: ${timeMs}ms</span>
+          <span class="tag tag-slate" style="font-family:var(--mono);">Tokens: ${tokenCount}</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10148; System Prompt (系统提示词)</div>
+        <div class="code-block" style="padding:10px; background:#1E293B; color:#A5B4FC; font-size:11px;">You are an expert software engineer performing ${nodeName}. Analyze the context strictly and follow the DoD constraints...</div>
+      </div>
+      <div>
+        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9737; Chain of Thought (思维链)</div>
+        <div style="padding:10px; background:#F1F5F9; border-radius:var(--radius-sm); color:var(--text-secondary); line-height:1.5;">
+          1. 解析输入参数...<br>
+          2. 发现潜在依赖冲突，尝试调用 search_code 工具...<br>
+          3. 工具返回无冲突，准备生成结构...<br>
+          4. 最终完成格式化并返回。
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10003; Output (原始输出)</div>
+        <div class="code-block" style="padding:10px; background:#1E293B; color:#6EE7B7; font-size:11px; white-space:pre-wrap; word-wrap:break-word;">{
+  "status": "success",
+  "data": "..."
+}</div>
+      </div>
+    </div>
+  `;
+};
