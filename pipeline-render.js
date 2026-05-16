@@ -46,8 +46,8 @@ function renderPipeline(container, data) {
     <div class="grid-70-30">
       <div class="card" id="stageDetailPanel">
         <div class="tabs">
-          <div class="tab active" data-tab="gates">门禁信息</div>
-          <div class="tab" data-tab="mindmap">Agent 思维 & 活动</div>
+          <div class="tab active" data-tab="mindmap">Agent 思维 & 活动</div>
+          <div class="tab" data-tab="gates">门禁信息</div>
           <div class="tab" data-tab="artifacts">产出物</div>
           <button class="btn btn-primary btn-sm" style="margin-left:auto;margin-bottom:5px;border-radius:20px;" onclick="window.open('https://opencode.ai', '_blank')" title="智能代码编辑器">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 3.5L17 8l-3.5 1.5L12 13l-1.5-3.5L7 8l3.5-1.5L12 3z"/><path d="M5 17l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/><path d="M19 13l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/></svg>
@@ -72,7 +72,7 @@ function renderPipeline(container, data) {
     });
   });
 
-  renderTabContent(task, 'gates');
+  renderTabContent(task, 'mindmap');
   renderSidePanel(task);
 
   // Next stage button
@@ -327,10 +327,9 @@ function renderTabContent(task, tab) {
       }).join('')}
       ${task.stageCurrent === stageIdx && gates.some(g => g === 0) ? `
         <div style="margin-top:16px;padding:16px;background:var(--danger-light);border-radius:var(--radius);font-size:13px;">
-          <strong>&#9888; AI 修复建议：</strong>
+          <strong>&#9888; 门禁阻断分析：</strong>
           <ul style="margin:8px 0 0 18px;line-height:1.6;" id="aiSuggestions"></ul>
-          <button class="btn btn-primary btn-sm fix-gate-btn" style="margin-top:10px;" onclick="autoFixGates('${state.activeTaskId}', ${stageIdx})">&#9881; 让 Agent 自动修复</button>
-          <button class="btn btn-outline btn-sm" style="margin-top:10px;margin-left:6px;" onclick="openChatForFix()">&#9998; 对话修改</button>
+          <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="toggleAgentPanel()">&#9742; 唤起 Agent 对话协助解决</button>
         </div>` : ''}
     `;
     // AI suggestions
