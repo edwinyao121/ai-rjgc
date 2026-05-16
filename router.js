@@ -114,12 +114,79 @@ function executeSmartPlan(taskId) {
 // ============================================================
 // NAVIGATION
 // ============================================================
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  
+  if (state.context.level === 'global') {
+    sidebar.innerHTML = `
+      <div class="logo" onclick="navigate('dashboard')"><div class="icon">&#9670;</div>智能软件工厂</div>
+      <div class="nav-section">概览与个人</div>
+      <div class="nav-item" data-page="dashboard" onclick="navigate('dashboard')">&#9698; 工作台</div>
+      <div class="nav-item" data-page="projects" onclick="navigate('projects')">&#9632; 项目空间</div>
+      <div class="nav-item" data-page="reviews" onclick="navigate('reviews')">&#9737; 我的评审<span class="badge" id="badgeReviews">0</span></div>
+      <div class="nav-section">平台资产</div>
+      <div class="nav-item" data-page="agents" onclick="navigate('agents')">&#129302; 智能体</div>
+      <div class="nav-item" data-page="skills" onclick="navigate('skills')">&#9730; 技能市场</div>
+      <div class="nav-section">效能与质量</div>
+      <div class="nav-item" data-page="summary" onclick="navigate('summary')">&#9776; 研制总结</div>
+      <div class="nav-item" data-page="gates" onclick="navigate('gates')">&#9745; 研发追溯</div>
+      <div class="nav-item" data-page="rules-config" onclick="navigate('rules-config')">&#9881; 门禁配置</div>
+    `;
+  } else {
+    const p = getProject(state.activeProjectId);
+    const pName = p ? p.name : '项目内';
+    sidebar.innerHTML = `
+      <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回全局工作台"><div class="icon">&#9664;</div>返回工作台</div>
+      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">${pName}</div>
+      <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
+      <div class="nav-item" data-page="pipeline-view" onclick="navigate('pipeline-view')">&#9733; 阶段流水线<span class="badge warn" id="badgeGates">0</span></div>
+      <div class="nav-section">项目智能</div>
+      <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
+      <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
+      <div class="nav-section">项目质量</div>
+      <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 项目门禁</div>
+      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审</div>
+    `;
+  }
+}
+
 function navigate(page, data) {
   state.activePage = page;
+  
+  const globalPages = ['dashboard', 'projects', 'gates', 'reviews', 'agents', 'skills', 'summary', 'rules-config'];
+  const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills'];
+  
+  if (globalPages.includes(page)) {
+    state.context.level = 'global';
+  } else if (projectPages.includes(page)) {
+    state.context.level = 'project';
+  }
+
+  renderSidebar();
+
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (navItem) navItem.classList.add('active');
-  document.getElementById('pageTitle').textContent = navItem ? navItem.textContent.replace(/\d+$/, '').trim() : page;
+  
+  const breadcrumbWrapper = document.getElementById('breadcrumbWrapper');
+  let pageName = navItem ? navItem.textContent.replace(/[\\d]+$/, '').trim() : page;
+  // Clean up icon symbols in textContent (assuming space after icon)
+  if (pageName.includes(' ')) {
+    pageName = pageName.split(' ').slice(1).join(' ').trim();
+  }
+  
+  if (state.context.level === 'project' && state.activeProjectId) {
+    const p = getProject(state.activeProjectId);
+    const pName = p ? p.name : '未知项目';
+    breadcrumbWrapper.innerHTML = `
+      / <span style="cursor:pointer;" onclick="navigate('projects')">项目空间</span> 
+      / <span style="cursor:pointer;font-weight:600;" onclick="navigate('kanban')">${pName}</span> 
+      / <span id="pageTitle">${pageName}</span>`;
+  } else {
+    breadcrumbWrapper.innerHTML = `/ <span id="pageTitle">${pageName}</span>`;
+  }
+
   renderPage(page, data);
   updateBadges();
   updateAgentWidget();
@@ -132,10 +199,7 @@ function updateAgentWidget() {
   }
 }
 
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => navigate(item.dataset.page));
-});
-
+// remove the previous querySelectorAll listener, let sidebar handle it via onclick
 // ============================================================
 // PAGE RENDERER
 // ============================================================
@@ -147,12 +211,16 @@ function renderPage(page, data) {
     case 'projects': renderProjects(container); break;
     case 'kanban': renderKanban(container); break;
     case 'pipeline-view': renderPipeline(container, data); break;
-    case 'gates': renderGates(container); break;
-    case 'reviews': renderReviews(container); break;
+    case 'gates': 
+    case 'project-gates': renderGates(container); break;
+    case 'reviews': 
+    case 'project-reviews': renderReviews(container); break;
     case 'rules-config': renderRulesConfig(container); break;
     case 'agents': renderAgents(container); break;
+    case 'project-agents': renderProjectAgents(container); break;
     case 'summary': renderSummary(container); break;
     case 'skills': renderSkills(container); break;
+    case 'project-skills': renderProjectSkills(container); break;
   }
 }
 
@@ -169,3 +237,6 @@ function init() {
     }
   });
 }
+
+// Bootstrap application
+init();

@@ -168,3 +168,68 @@ function runSkillDemo(name) {
     updateBadges();
   }, 1000);
 }
+
+// ============================================================
+// PROJECT AGENTS PAGE
+// ============================================================
+function renderProjectAgents(container) {
+  const project = getProject(state.activeProjectId);
+  // Pick a subset of agents for this project
+  const allAgents = Object.entries(stageAgents).filter(([k]) => k !== '测试').map(([stage, a]) => ({ stage, ...a }));
+  // Just for demo, take first 5 agents
+  const agents = allAgents.slice(0, 5);
+  
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div style="font-size:22px;font-weight:700;">项目智能体</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">本项目启用的研发智能体实例</div></div>
+      <button class="btn btn-primary btn-sm" onclick="navigate('agents')">+ 从全局市场引入</button>
+    </div>
+    <div class="grid-3" style="margin-top:16px;">${agents.map(a => `
+      <div class="card card-hover">
+        <div class="card-header">
+          <div><div class="card-title">${a.avatar} ${a.name}</div>
+          <div class="card-subtitle">负责阶段: ${a.stage}</div></div>
+          <span class="tag tag-green">运行中</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
+        <div style="margin-top:12px;display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:10px;">
+          <span style="font-size:12px;color:var(--text-muted);">&#9730; 已挂载 2 个专属技能</span>
+          <button class="btn btn-outline btn-xs" onclick="toast('正在打开实例配置面板...')">&#9881; 参数配置</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+// ============================================================
+// PROJECT SKILLS PAGE
+// ============================================================
+function renderProjectSkills(container) {
+  const skills = [
+    { name:'需求分析技能', ver:'v2.3', agent:'需求分析 Agent', status:'enabled', desc:'智能分析需求文档，执行完整性检查、语义一致性分析。', tags:['需求分析阶段','NLU'] },
+    { name:'代码生成技能', ver:'v3.1', agent:'代码生成 Agent', status:'enabled', desc:'智能生成高质量代码。支持 Java / Python / TypeScript。', tags:['代码生成阶段','CodeGen'] },
+    { name:'代码审查技能', ver:'v2.8', agent:'代码审查 Agent', status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测。', tags:['代码审查阶段','安全'] },
+    { name:'任务拆解技能', ver:'v2.0', agent:'任务拆解 Agent', status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，生成看板 Backlog。', tags:['需求拆解阶段'] }
+  ];
+  
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div style="font-size:22px;font-weight:700;">项目技能库</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">已从全局市场下载，并分配给本项目的技能</div></div>
+      <button class="btn btn-primary btn-sm" onclick="navigate('skills')">+ 去市场获取技能</button>
+    </div>
+    <div class="grid-3" style="margin-top:16px;">${skills.map(s => `
+      <div class="card card-hover">
+        <div class="card-header">
+          <div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver}</div></div>
+          <span class="tag tag-blue" style="background:#E0E7FF;color:#3730A3;">已绑定: ${s.agent}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${s.desc}</div>
+        <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
+        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
+          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="toast('打开技能参数配置...')">&#9881; 实例参数</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="toast('技能已解绑', true)">解除绑定</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}

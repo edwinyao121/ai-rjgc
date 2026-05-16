@@ -6,6 +6,7 @@ const m = (s) => new Date(now - s * 1000).toLocaleString('zh-CN', {hour:'2-digit
 
 const state = {
   activePage: 'dashboard',
+  context: { level: 'global' },
   activeProjectId: 'p1',
   activeTaskId: 't1',
   projects: [
@@ -181,9 +182,14 @@ function updateBadges() {
     return t.stageGates[t.stageCurrent].some(g => g === 0);
   });
   const pendingReviews = state.reviews.filter(r => r.status === 'pending');
-  document.getElementById('badgeTasks').textContent = tasks.filter(t => t.status !== 'done').length;
-  document.getElementById('badgeGates').textContent = blockedGates.length;
-  document.getElementById('badgeReviews').textContent = pendingReviews.length;
+  
+  const bTasks = document.getElementById('badgeTasks');
+  const bGates = document.getElementById('badgeGates');
+  const bReviews = document.getElementById('badgeReviews');
+  
+  if(bTasks) bTasks.textContent = tasks.filter(t => t.status !== 'done').length;
+  if(bGates) bGates.textContent = blockedGates.length;
+  if(bReviews) bReviews.textContent = pendingReviews.length;
 }
 
 // ============================================================

@@ -8,28 +8,12 @@
 </head>
 <body>
 
-<aside class="sidebar">
-  <div class="logo" onclick="navigate('dashboard')"><div class="icon">&#9670;</div>智能软件工厂</div>
-  <div class="nav-section">主菜单</div>
-  <div class="nav-item active" data-page="dashboard">&#9698; 工作台</div>
-  <div class="nav-item" data-page="projects">&#9632; 项目空间</div>
-  <div class="nav-section">研发</div>
-  <div class="nav-item" data-page="kanban">&#9776; 任务看板<span class="badge" id="badgeTasks">7</span></div>
-  <div class="nav-item" data-page="pipeline-view">&#9733; 阶段流水线<span class="badge warn" id="badgeGates">2</span></div>
-  <div class="nav-section">质量</div>
-  <div class="nav-item" data-page="gates">&#9745; 研发追溯</div>
-  <div class="nav-item" data-page="reviews">&#9737; 评审中心<span class="badge" id="badgeReviews">3</span></div>
-  <div class="nav-section">AI 能力</div>
-  <div class="nav-item" data-page="agents">&#129302; 智能体</div>
-  <div class="nav-item" data-page="skills">&#9730; 技能市场</div>
-  <div class="nav-section">效能管理</div>
-  <div class="nav-item" data-page="summary">&#9776; 研制总结</div>
-  <div class="nav-item" data-page="rules-config">&#9881; 门禁配置</div>
+<aside class="sidebar" id="sidebar">
 </aside>
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-left"><h1>智能软件工厂</h1><span class="breadcrumb">/ <span id="pageTitle">工作台</span></span></div>
+    <div class="topbar-left"><h1>智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span></div>
     <div class="topbar-right"><div class="avatar" title="张经理">张</div></div>
   </div>
   <div class="content" id="mainContent"></div>
