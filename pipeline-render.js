@@ -770,3 +770,21 @@ window.showNodeDetails = function(stageName, nodeName, color) {
     ${contentHtml}
   `;
 };
+
+window.goToArtifacts = function(artifactName) {
+  const tabs = document.querySelectorAll('#stageDetailPanel .tab');
+  let artifactsTab = null;
+  tabs.forEach(t => {
+    if (t.dataset.tab === 'artifacts') artifactsTab = t;
+  });
+  if (artifactsTab) {
+    artifactsTab.click();
+    setTimeout(() => {
+      if (typeof previewArtifact === 'function') {
+        previewArtifact(artifactName);
+      }
+    }, 50);
+  } else {
+    toast('当前阶段未找到产出物视图');
+  }
+};
