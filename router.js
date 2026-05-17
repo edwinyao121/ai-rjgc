@@ -178,7 +178,7 @@ function renderSidebar() {
       <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
       <div class="nav-section">项目质量</div>
       <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 项目门禁</div>
-      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审</div>
+      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
     `;
   }
 }

@@ -186,10 +186,16 @@ function updateBadges() {
   const bTasks = document.getElementById('badgeTasks');
   const bGates = document.getElementById('badgeGates');
   const bReviews = document.getElementById('badgeReviews');
+  const bProjectReviews = document.getElementById('badgeProjectReviews');
   
   if(bTasks) bTasks.textContent = tasks.filter(t => t.status !== 'done').length;
   if(bGates) bGates.textContent = blockedGates.length;
   if(bReviews) bReviews.textContent = pendingReviews.length;
+  if(bProjectReviews) {
+    const projectTaskIds = tasks.map(t => t.id);
+    const pendingProjectReviews = pendingReviews.filter(r => projectTaskIds.includes(r.tid));
+    bProjectReviews.textContent = pendingProjectReviews.length;
+  }
 }
 
 // ============================================================

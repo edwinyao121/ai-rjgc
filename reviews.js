@@ -1,7 +1,16 @@
 // ============================================================
 function renderReviews(container) {
-  const pending = state.reviews.filter(r => r.status === 'pending');
-  const done = state.reviews.filter(r => r.status !== 'pending');
+  let filteredReviews = state.reviews;
+  let pageTitle = '评审中心';
+
+  if (state.activePage === 'project-reviews' && state.activeProjectId) {
+    const projectTasks = state.tasks.filter(t => t.pid === state.activeProjectId).map(t => t.id);
+    filteredReviews = state.reviews.filter(r => projectTasks.includes(r.tid));
+    pageTitle = '项目评审';
+  }
+
+  const pending = filteredReviews.filter(r => r.status === 'pending');
+  const done = filteredReviews.filter(r => r.status !== 'pending');
 
   function renderReviewCard(r, showActions) {
     const task = getTask(r.tid);
@@ -28,7 +37,7 @@ function renderReviews(container) {
   }
 
   container.innerHTML = `
-    <div style="font-size:22px;font-weight:700;">评审中心</div>
+    <div style="font-size:22px;font-weight:700;">${pageTitle}</div>
     <div class="grid-2">
       <div class="card"><div class="card-title" style="margin-bottom:14px;">待我评审 (${pending.length})</div>
         ${pending.length === 0 ? '<div class="empty-state"><div>暂无待评审项</div></div>' : pending.map(r => renderReviewCard(r, true)).join('')}
