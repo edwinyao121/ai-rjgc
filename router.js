@@ -161,8 +161,6 @@ function renderSidebar() {
       <div class="nav-item" data-page="agents" onclick="navigate('agents')">&#129302; 智能体</div>
       <div class="nav-item" data-page="skills" onclick="navigate('skills')">&#9730; 技能市场</div>
       <div class="nav-section">效能与质量</div>
-      <div class="nav-item" data-page="summary" onclick="navigate('summary')">&#9776; 研制总结</div>
-      <div class="nav-item" data-page="gates" onclick="navigate('gates')">&#9745; 研发追溯</div>
       <div class="nav-item" data-page="rules-config" onclick="navigate('rules-config')">&#9881; 门禁配置</div>
     `;
   } else {
@@ -180,6 +178,7 @@ function renderSidebar() {
       <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 研发追溯</div>
       <div class="nav-item" data-page="project-rules-config" onclick="navigate('project-rules-config')">&#9881; 门禁配置</div>
       <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
+      <div class="nav-item" data-page="project-summary" onclick="navigate('project-summary')">&#9776; 研制总结</div>
     `;
   }
 }
@@ -187,8 +186,8 @@ function renderSidebar() {
 function navigate(page, data) {
   state.activePage = page;
   
-  const globalPages = ['dashboard', 'projects', 'gates', 'reviews', 'agents', 'skills', 'summary', 'rules-config'];
-  const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills', 'project-rules-config'];
+  const globalPages = ['dashboard', 'projects', 'reviews', 'agents', 'skills', 'rules-config'];
+  const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills', 'project-rules-config', 'project-summary'];
   
   if (globalPages.includes(page)) {
     state.context.level = 'global';
@@ -252,7 +251,8 @@ function renderPage(page, data) {
     case 'project-rules-config': renderRulesConfig(container); break;
     case 'agents': renderAgents(container); break;
     case 'project-agents': renderProjectAgents(container); break;
-    case 'summary': renderSummary(container); break;
+    case 'summary':
+    case 'project-summary': renderSummary(container); break;
     case 'skills': renderSkills(container); break;
     case 'project-skills': renderProjectSkills(container); break;
   }

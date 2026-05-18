@@ -16,10 +16,10 @@ const state = {
     { id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7 },
   ],
   tasks: [
-    { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], aiCreated:false },
-    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'executing', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], aiCreated:false },
-    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], aiCreated:true },
-    { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], aiCreated:false },
+    { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], aiCreated:false, assignee:'张伟' },
+    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'executing', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], aiCreated:false, assignee:'李工' },
+    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], aiCreated:true, assignee:'王工' },
+    { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], aiCreated:false, assignee:'赵工' },
   ],
   // Gate definitions per stage type
   gateDefs: {

@@ -42,6 +42,7 @@ function renderKanbanCard(t, col) {
         <span>${t.priority}</span>
         <span>&#9201; ${t.estimate}</span>
       </div>
+      ${t.assignee ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-secondary);"><span style="width:20px;height:20px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">${t.assignee.charAt(0)}</span>${t.assignee}</div>` : ''}
       ${stageInfo}
     </div>`;
 }
@@ -140,7 +141,10 @@ function showNewTaskModal() {
         <div class="form-group"><label>优先级</label><select id="ntPriority"><option>P0 - 紧急</option><option selected>P1 - 高</option><option>P2 - 中</option><option>P3 - 低</option></select></div>
         <div class="form-group"><label>估算工时</label><select id="ntEstimate"><option>1天</option><option selected>3天</option><option>5天</option><option>8天</option><option>10天</option></select></div>
       </div>
-      <div class="form-group"><label>任务类型</label><select id="ntType"><option>Feature</option><option>Enhancement</option><option>Bug</option><option>Refactor</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>任务类型</label><select id="ntType"><option>Feature</option><option>Enhancement</option><option>Bug</option><option>Refactor</option></select></div>
+        <div class="form-group"><label>负责人</label><input type="text" id="ntAssignee" placeholder="输入负责人姓名"></div>
+      </div>
       <div class="form-group"><label>AI 智能分析创建（可选）</label><textarea id="ntAiInput" rows="2" placeholder="粘贴需求文档、会议纪要等，AI 将自动分析生成候选 Backlog..."></textarea></div>
       <div id="aiResultContainer"></div>
       <div class="form-actions">
@@ -204,7 +208,8 @@ function showNewTaskModal() {
     const type = document.getElementById('ntType').value;
     const priority = document.getElementById('ntPriority').value.split(' ')[0];
     const estimate = document.getElementById('ntEstimate').value;
-    const task = createTask(title, type, priority, estimate, false);
+    const assignee = document.getElementById('ntAssignee').value.trim();
+    const task = createTask(title, type, priority, estimate, false, assignee);
     state.tasks.push(task);
     toast(`任务 "${title}" 创建成功`);
     overlay.remove();
@@ -213,11 +218,11 @@ function showNewTaskModal() {
   });
 }
 
-function createTask(title, type, priority, estimate, aiCreated) {
+function createTask(title, type, priority, estimate, aiCreated, assignee) {
   const id = 't' + (taskIdCounter++);
   return {
     id, pid: state.activeProjectId, title: (type === 'Bug' ? 'BUG-' : 'ST-') + String(taskIdCounter).padStart(3,'0') + ' ' + title,
     type, priority, estimate, status: 'backlog', stageCurrent: -1,
-    stageNames: [], stages: [], stageGates: [], aiCreated,
+    stageNames: [], stages: [], stageGates: [], aiCreated, assignee: assignee || '',
   };
 }
