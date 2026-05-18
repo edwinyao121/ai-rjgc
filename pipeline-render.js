@@ -381,7 +381,6 @@ function renderTabContent(task, tab) {
         <span class="tag tag-amber"><span class="status-dot amber"></span>人工操作</span>
         <span class="tag tag-red"><span class="status-dot red"></span>门禁阻断</span>
         <span class="tag tag-slate"><span class="status-dot"></span>门禁通过</span>
-        ${stageMultiAgents[stageName] ? '<span class="tag tag-purple"><span class="status-dot" style="background:#8B5CF6;"></span>多Agent协作</span>' : ''}
       </div>`;
     const activityHtml = stageLogs.length === 0
       ? '<div style="padding:12px;color:var(--text-muted);font-size:12px;text-align:center;">暂无该阶段活动记录</div>'
@@ -392,13 +391,9 @@ function renderTabContent(task, tab) {
             <span class="activity-text">${log.text}</span>
           </div>`).join('')}</div>`;
 
-    // 多Agent辩论视图
-    const debateHtml = stageMultiAgents[stageName] ? renderDebateView(stageName) : '';
-
     container.innerHTML = `
       <div style="margin-bottom:8px;font-size:13px;font-weight:600;">${stageName} Agent 工作流</div>
       <div class="mindmap-container" id="mindmapSvg" style="min-height:240px; position:relative; overflow:hidden;"></div>
-      ${debateHtml}
       <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:13px;font-weight:600;">活动日志</div>
@@ -791,145 +786,3 @@ function openVSCode() {
   toast('正在使用 VSCode 打开项目...');
 }
 
-// 渲染多Agent辩论视图
-function renderDebateView(stageName) {
-  const agents = stageMultiAgents[stageName];
-  if (!agents) return '';
-
-  // 获取辩论消息
-  const debates = agentDebates[stageName] || [];
-
-  // 如果没有辩论消息，显示开始按钮
-  if (debates.length === 0) {
-    return `
-      <div class="debate-container">
-        <div class="debate-header">
-          <span>🤝 多Agent协作</span>
-          <span class="tag tag-blue">${agents.length} 个Agent</span>
-        </div>
-        <div class="debate-agents">
-          ${agents.map(a => `
-            <div class="debate-agent" style="border-color:${a.color}">
-              <span class="avatar">${a.avatar}</span>
-              <div>
-                <div class="name">${a.name}</div>
-                <div class="role">${a.role}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        <div style="text-align:center;padding:20px;">
-          <button class="btn btn-primary btn-sm" onclick="startDebate('${stageName}')">🚀 启动多Agent协作</button>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">点击启动${agents.map(a => a.name).join('与')}的协作对话</div>
-        </div>
-      </div>
-    `;
-  }
-
-  // 显示辩论消息
-  return `
-    <div class="debate-container">
-      <div class="debate-header">
-        <span>🤝 多Agent协作</span>
-        <span class="tag tag-blue">${agents.length} 个Agent</span>
-      </div>
-      <div class="debate-agents">
-        ${agents.map(a => `
-          <div class="debate-agent" style="border-color:${a.color}">
-            <span class="avatar">${a.avatar}</span>
-            <div>
-              <div class="name">${a.name}</div>
-              <div class="role">${a.role}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="debate-messages">
-        ${debates.map(msg => {
-          const agent = agents.find(a => a.id === msg.agentId);
-          return `
-            <div class="debate-msg" style="border-left:3px solid ${agent?.color || '#94A3B8'}">
-              <span class="avatar" style="background:${agent?.color || '#94A3B8'}20;color:${agent?.color || '#94A3B8'}">${msg.avatar}</span>
-              <div class="bubble">
-                <div style="font-weight:600;font-size:12px;color:${agent?.color || '#94A3B8'};margin-bottom:4px;">${agent?.name || '未知Agent'}</div>
-                <div>${msg.text}</div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-      ${debates.length > 0 ? `
-        <div style="text-align:center;padding:12px;border-top:1px solid var(--border);margin-top:12px;">
-          <div style="font-size:12px;color:var(--success);">✅ 协作完成，已生成需求文档</div>
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-// 启动多Agent辩论
-function startDebate(stageName) {
-  const task = getTask(state.activeTaskId);
-  if (!task) return;
-
-  const templates = debateTemplates[stageName];
-  if (!templates) return;
-
-  // 初始化辩论记录
-  if (!agentDebates[stageName]) {
-    agentDebates[stageName] = [];
-  }
-
-  // 逐步显示辩论消息
-  templates.forEach((msg, i) => {
-    setTimeout(() => {
-      agentDebates[stageName].push(msg);
-
-      // 添加到活动日志
-      const now = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
-      addActivityLog(task.id, 'agent-debate', msg.avatar, 'purple', `[${stageName}协作] ${msg.text}`);
-
-      // 重新渲染辩论视图
-      const debateContainer = document.querySelector('.debate-container');
-      if (debateContainer) {
-        const messagesContainer = debateContainer.querySelector('.debate-messages');
-        if (messagesContainer) {
-          const agents = stageMultiAgents[stageName] || [];
-          const agent = agents.find(a => a.id === msg.agentId);
-          const msgHtml = `
-            <div class="debate-msg" style="border-left:3px solid ${agent?.color || '#94A3B8'};animation:fadeInUp 0.3s ease-out;">
-              <span class="avatar" style="background:${agent?.color || '#94A3B8'}20;color:${agent?.color || '#94A3B8'}">${msg.avatar}</span>
-              <div class="bubble">
-                <div style="font-weight:600;font-size:12px;color:${agent?.color || '#94A3B8'};margin-bottom:4px;">${agent?.name || '未知Agent'}</div>
-                <div>${msg.text}</div>
-              </div>
-            </div>
-          `;
-          messagesContainer.insertAdjacentHTML('beforeend', msgHtml);
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }
-
-      // 更新活动日志显示
-      renderActivityFeed(task);
-
-      // 最后一条消息后显示完成提示
-      if (i === templates.length - 1) {
-        setTimeout(() => {
-          const debateContainer = document.querySelector('.debate-container');
-          if (debateContainer) {
-            const completeHtml = `
-              <div style="text-align:center;padding:12px;border-top:1px solid var(--border);margin-top:12px;">
-                <div style="font-size:12px;color:var(--success);">✅ 协作完成，已生成需求文档</div>
-              </div>
-            `;
-            debateContainer.insertAdjacentHTML('beforeend', completeHtml);
-          }
-          toast(`${stageName}阶段多Agent协作完成`);
-        }, 500);
-      }
-    }, i * 2000);
-  });
-
-  toast(`启动${stageName}阶段多Agent协作...`);
-}

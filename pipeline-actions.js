@@ -137,15 +137,6 @@ function advanceStage(task) {
   // Log new agent starting
   addActivityLog(task.id, 'agent-work', agent.avatar, 'agent', `<strong>${agent.name}</strong> 开始执行「${stageName}」阶段`);
 
-  // 检查是否有多Agent配置，自动启动辩论
-  if (stageMultiAgents[stageName]) {
-    addActivityLog(task.id, 'agent-debate', '🤝', 'purple', `<strong>${stageName}</strong> 阶段启动多Agent协作: ${stageMultiAgents[stageName].map(a => a.name).join(' & ')}`);
-    // 延迟启动辩论，让用户看到阶段切换
-    setTimeout(() => {
-      startDebate(stageName);
-    }, 1000);
-  }
-
   // Log gate results
   newGates.forEach((g, i) => {
     const gateName = gateDefs[i]?.name || '检查';
