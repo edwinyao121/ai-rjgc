@@ -117,6 +117,12 @@ function renderPipelineGraph(task, icons) {
 
     // Stage node with agent
     html += `<div class="pipeline-stage">
+      ${hasHumanReview ? `
+      <div class="pipeline-human-node" onclick="event.stopPropagation();${review ? `focusStage(${i})` : `requestReviewForStage(${i})`}">
+        <div class="pipeline-human-icon">👤</div>
+        <div class="pipeline-human-label">人工评审</div>
+        ${reviewStatus ? `<span class="pipeline-human-status ${reviewStatus}">${reviewStatus==='approved'?'已通过':reviewStatus==='rejected'?'已驳回':reviewStatus==='changes'?'需修改':'待审批'}</span>` : '<span class="pipeline-human-status pending">待审批</span>'}
+      </div>` : ''}
       <div class="pipeline-node" onclick="focusStage(${i})">
         <div class="pipeline-node-center"></div>
         <div class="pipeline-node-circle ${cls}">${icon}</div>
@@ -144,12 +150,6 @@ function renderPipelineGraph(task, icons) {
           <div class="pipeline-agent-name" style="color:${agentState==='working'?agent.color:'var(--text-muted)'};">${agent.name}</div>
         `}
       </div>
-      ${hasHumanReview ? `
-      <div class="pipeline-human-node" onclick="event.stopPropagation();${review ? `focusStage(${i})` : `requestReviewForStage(${i})`}">
-        <div class="pipeline-human-icon">👤</div>
-        <div class="pipeline-human-label">人工评审</div>
-        ${reviewStatus ? `<span class="pipeline-human-status ${reviewStatus}">${reviewStatus==='approved'?'已通过':reviewStatus==='rejected'?'已驳回':reviewStatus==='changes'?'需修改':'待审批'}</span>` : '<span class="pipeline-human-status pending">待审批</span>'}
-      </div>` : ''}
     </div>`;
 
     // Connector with agent communication
