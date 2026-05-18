@@ -103,9 +103,9 @@ const state = {
     '技术债务检查': true, 'DoD检查清单': true, '合规审计检查': false,
   },
   reviews: [
-    { id:'r1', tid:'t7', stage:2, stageName:'代码审查', reviewer:'王工', status:'pending', desc:'安全相关代码需人工确认，门禁已全部通过' },
+    { id:'r1', tid:'t1', stage:2, stageName:'代码审查', reviewer:'王工', status:'pending', desc:'安全相关代码需人工确认，门禁已全部通过' },
     { id:'r2', tid:'t2', stage:2, stageName:'方案设计', reviewer:'李工', status:'pending', desc:'数据脱敏规则引擎的架构方案涉及 3 个核心模块调整，需技术负责人评审' },
-    { id:'r3', tid:'t9', stage:-1, stageName:'需求分析', reviewer:'赵工', status:'pending', desc:'日志采集组件升级方案确认' },
+    { id:'r3', tid:'t3', stage:-1, stageName:'需求分析', reviewer:'赵工', status:'pending', desc:'日志采集组件升级方案确认' },
   ],
   timeline: [
     { time:m(0), text:'代码审查 Agent 完成 <strong>OA办公系统</strong> 的代码审查阶段，1 项门禁阻断' },

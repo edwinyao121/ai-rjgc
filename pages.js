@@ -183,7 +183,7 @@ function renderProjectAgents(container) {
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div><div style="font-size:22px;font-weight:700;">项目智能体</div>
       <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">本项目启用的研发智能体实例</div></div>
-      <button class="btn btn-primary btn-sm" onclick="navigate('agents')">+ 从全局市场引入</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddProjectAgentModal()">+ 添加智能体</button>
     </div>
     <div class="grid-3" style="margin-top:16px;">${agents.map(a => `
       <div class="card card-hover">
@@ -199,6 +199,211 @@ function renderProjectAgents(container) {
         </div>
       </div>`).join('')}
     </div>`;
+}
+
+// ============================================================
+// ADD PROJECT AGENT MODAL
+// ============================================================
+function showAddProjectAgentModal() {
+  const project = getProject(state.activeProjectId);
+  if (!project) { toast('请先选择项目', true); return; }
+
+  const availableAgents = [
+    { name: '需求分析 Agent', avatar: '📋', stage: '需求分析', desc: '解析需求文档，执行完整性/语义/追溯性检查' },
+    { name: '任务拆解 Agent', avatar: '✂️', stage: '需求拆解', desc: '将需求拆解为可执行子任务，分析依赖关系' },
+    { name: '方案设计 Agent', avatar: '🏗️', stage: '方案设计', desc: '架构设计、接口定义、技术选型评估' },
+    { name: '代码生成 Agent', avatar: '💻', stage: '代码生成', desc: '基于方案生成代码，执行编码规范检查' },
+    { name: '代码审查 Agent', avatar: '🔍', stage: '代码审查', desc: '静态分析、安全扫描、复杂度检测' },
+    { name: '测试生成 Agent', avatar: '🧪', stage: '单元测试', desc: '生成测试用例，执行覆盖率门禁' },
+    { name: '质量分析 Agent', avatar: '📊', stage: '质量检查', desc: '技术债务检测、重复率分析、性能基线' },
+    { name: '验收检查 Agent', avatar: '✅', stage: '验收确认', desc: 'DoD 检查清单、合规审计、性能验收' },
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:600px;">
+      <h3>添加智能体到「${project.name}」</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">选择预置智能体或创建自定义智能体</p>
+
+      <!-- Tab 切换 -->
+      <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
+        <div class="agent-tab active" onclick="switchAgentTab('preset')" id="tabPreset" style="padding:10px 20px;cursor:pointer;font-size:14px;font-weight:600;border-bottom:2px solid var(--primary);margin-bottom:-2px;color:var(--primary);">预置智能体</div>
+        <div class="agent-tab" onclick="switchAgentTab('custom')" id="tabCustom" style="padding:10px 20px;cursor:pointer;font-size:14px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text-muted);">自定义智能体</div>
+      </div>
+
+      <!-- 预置智能体面板 -->
+      <div id="presetAgentsPanel" style="max-height:400px;overflow-y:auto;">
+        ${availableAgents.map((a, i) => `
+          <div class="card" style="margin-bottom:8px;cursor:pointer;padding:12px;" id="agentOption${i}">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <input type="checkbox" id="agentCheck${i}" style="width:16px;height:16px;">
+              <div style="font-size:24px;">${a.avatar}</div>
+              <div style="flex:1;">
+                <div style="font-weight:600;">${a.name}</div>
+                <div style="font-size:12px;color:var(--text-muted);">负责阶段: ${a.stage}</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">${a.desc}</div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- 自定义智能体面板 -->
+      <div id="customAgentPanel" style="display:none;max-height:400px;overflow-y:auto;">
+        <div style="background:var(--bg);border-radius:var(--radius);padding:20px;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:16px;">创建专属智能体</div>
+          <div class="form-group">
+            <label style="font-size:13px;font-weight:500;">智能体名称 *</label>
+            <input type="text" id="customAgentName" placeholder="例: 安全审计 Agent" style="margin-top:6px;">
+          </div>
+          <div class="form-group">
+            <label style="font-size:13px;font-weight:500;">图标</label>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;" id="avatarPicker">
+              ${['🤖','🛡️','⚡','🔧','📡','🎯','💡','🔬','🎨','📝'].map(icon => `
+                <div class="avatar-option" onclick="selectAvatar(this, '${icon}')" style="width:36px;height:36px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;">${icon}</div>
+              `).join('')}
+            </div>
+            <input type="hidden" id="customAgentAvatar" value="🤖">
+          </div>
+          <div class="form-group">
+            <label style="font-size:13px;font-weight:500;">负责阶段 *</label>
+            <select id="customAgentStage" style="margin-top:6px;">
+              <option value="">选择阶段</option>
+              <option value="需求分析">需求分析</option>
+              <option value="需求拆解">需求拆解</option>
+              <option value="方案设计">方案设计</option>
+              <option value="代码生成">代码生成</option>
+              <option value="代码审查">代码审查</option>
+              <option value="单元测试">单元测试</option>
+              <option value="质量检查">质量检查</option>
+              <option value="验收确认">验收确认</option>
+              <option value="自定义">自定义阶段</option>
+            </select>
+          </div>
+          <div class="form-group" id="customStageGroup" style="display:none;">
+            <label style="font-size:13px;font-weight:500;">自定义阶段名称</label>
+            <input type="text" id="customStageName" placeholder="例: 安全审计" style="margin-top:6px;">
+          </div>
+          <div class="form-group">
+            <label style="font-size:13px;font-weight:500;">功能描述 *</label>
+            <textarea id="customAgentDesc" rows="3" placeholder="描述该智能体的职责和能力..." style="margin-top:6px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label style="font-size:13px;font-weight:500;">技能标签</label>
+            <input type="text" id="customAgentTags" placeholder="用逗号分隔，例: 安全扫描, 漏洞检测" style="margin-top:6px;">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-primary" id="btnConfirmAddAgents">确认添加</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  // 监听自定义阶段选择
+  document.getElementById('customAgentStage').addEventListener('change', function() {
+    document.getElementById('customStageGroup').style.display = this.value === '自定义' ? 'block' : 'none';
+  });
+
+  // Toggle checkbox when clicking preset agent card
+  document.querySelectorAll('#presetAgentsPanel .card').forEach((card, i) => {
+    card.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const checkbox = document.getElementById(`agentCheck${i}`);
+      checkbox.checked = !checkbox.checked;
+      card.style.borderColor = checkbox.checked ? 'var(--primary)' : 'var(--border)';
+      card.style.background = checkbox.checked ? '#F0F4FF' : '';
+    });
+  });
+
+  document.getElementById('btnConfirmAddAgents').addEventListener('click', () => {
+    const activeTab = document.querySelector('.agent-tab.active');
+
+    if (activeTab.id === 'tabPreset') {
+      // 处理预置智能体选择
+      const selected = [];
+      availableAgents.forEach((a, i) => {
+        if (document.getElementById(`agentCheck${i}`).checked) {
+          selected.push(a);
+        }
+      });
+
+      if (selected.length === 0) {
+        toast('请至少选择一个智能体', true);
+        return;
+      }
+
+      toast(`已为「${project.name}」添加 ${selected.length} 个智能体`);
+    } else {
+      // 处理自定义智能体创建
+      const name = document.getElementById('customAgentName').value.trim();
+      const avatar = document.getElementById('customAgentAvatar').value;
+      const stage = document.getElementById('customAgentStage').value;
+      const customStage = document.getElementById('customStageName').value.trim();
+      const desc = document.getElementById('customAgentDesc').value.trim();
+      const tags = document.getElementById('customAgentTags').value.trim();
+
+      if (!name) { toast('请输入智能体名称', true); return; }
+      if (!stage) { toast('请选择负责阶段', true); return; }
+      if (stage === '自定义' && !customStage) { toast('请输入自定义阶段名称', true); return; }
+      if (!desc) { toast('请输入功能描述', true); return; }
+
+      const agentData = {
+        name,
+        avatar,
+        stage: stage === '自定义' ? customStage : stage,
+        desc,
+        tags: tags ? tags.split(',').map(t => t.trim()) : [],
+        isCustom: true
+      };
+
+      toast(`已创建自定义智能体「${name}」并添加到项目`);
+    }
+
+    overlay.remove();
+
+    // Refresh the project agents page
+    if (state.activePage === 'project-agents') {
+      renderProjectAgents(document.getElementById('mainContent'));
+    }
+  });
+}
+
+function switchAgentTab(tab) {
+  const tabPreset = document.getElementById('tabPreset');
+  const tabCustom = document.getElementById('tabCustom');
+  const presetPanel = document.getElementById('presetAgentsPanel');
+  const customPanel = document.getElementById('customAgentPanel');
+
+  if (tab === 'preset') {
+    tabPreset.style.borderBottomColor = 'var(--primary)';
+    tabPreset.style.color = 'var(--primary)';
+    tabCustom.style.borderBottomColor = 'transparent';
+    tabCustom.style.color = 'var(--text-muted)';
+    presetPanel.style.display = 'block';
+    customPanel.style.display = 'none';
+  } else {
+    tabPreset.style.borderBottomColor = 'transparent';
+    tabPreset.style.color = 'var(--text-muted)';
+    tabCustom.style.borderBottomColor = 'var(--primary)';
+    tabCustom.style.color = 'var(--primary)';
+    presetPanel.style.display = 'none';
+    customPanel.style.display = 'block';
+  }
+}
+
+function selectAvatar(el, icon) {
+  document.querySelectorAll('.avatar-option').forEach(opt => {
+    opt.style.borderColor = 'var(--border)';
+    opt.style.background = '';
+  });
+  el.style.borderColor = 'var(--primary)';
+  el.style.background = '#F0F4FF';
+  document.getElementById('customAgentAvatar').value = icon;
 }
 
 // ============================================================

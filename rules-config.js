@@ -1,13 +1,16 @@
 // ============================================================
 function renderRulesConfig(container) {
-  const project = getProject(state.activeProjectId);
+  const isProject = state.context.level === 'project';
   const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
   const categories = stageNames
     .filter(s => state.gateDefs[s] && state.gateDefs[s].length > 0)
     .map(s => ({ title: s + '规则', keys: state.gateDefs[s].map(g => g.name) }));
+  const subtitle = isProject
+    ? '项目: ' + (getProject(state.activeProjectId)?.name || '未选择')
+    : '平台级全局规则，所有项目共享';
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">门禁配置</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">项目: ${project.name}</div></div>
+      <div><div style="font-size:22px;font-weight:700;">门禁配置</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${subtitle}</div></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary btn-sm" onclick="showAddRuleModal()">+ 添加规则</button>
         <button class="btn btn-outline btn-sm" onclick="resetRules()">&#9881; 恢复默认</button>

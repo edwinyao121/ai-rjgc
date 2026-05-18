@@ -1,7 +1,17 @@
 // ============================================================
 function renderGates(container) {
-  const project = getProject(state.activeProjectId);
-  const tasks = getProjectTasks(state.activeProjectId).filter(t => t.stageNames.length > 0);
+  const isGlobal = state.activePage === 'gates';
+  let pageTitle = '研发追溯';
+  let pageSubtitle, tasks;
+
+  if (isGlobal) {
+    tasks = state.tasks.filter(t => t.stageNames.length > 0);
+    pageSubtitle = `全部项目 · ${tasks.length} 个任务的审计报告`;
+  } else {
+    const project = getProject(state.activeProjectId);
+    tasks = getProjectTasks(state.activeProjectId).filter(t => t.stageNames.length > 0);
+    pageSubtitle = `${project ? project.name : '未知项目'} · ${tasks.length} 个任务的审计报告`;
+  }
 
   // 模拟检查结果描述
   const gateResults = {
@@ -195,12 +205,7 @@ function renderGates(container) {
     </div>`;
   }
 
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">研发追溯</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${project.name} · ${tasks.length} 个任务的审计报告</div></div>
-      <button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button>
-    </div>
+  const statsHtml = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
       <div class="stat-card">
         <div class="stat-icon indigo">&#128203;</div>
@@ -214,8 +219,76 @@ function renderGates(container) {
         <div class="stat-icon ${blockedTasks > 0 ? 'amber' : 'green'}">&#9888;</div>
         <div><div class="stat-value">${blockedTasks}</div><div class="stat-label">阻断任务数</div></div>
       </div>
-    </div>
-    ${tasks.length === 0 ? '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>' : tasks.map(t => renderAuditCard(t)).join('')}`;
+    </div>`;
+
+  if (isGlobal) {
+    // 全局模式：按项目分组展示
+    const tasksByProject = {};
+    tasks.forEach(t => {
+      if (!tasksByProject[t.pid]) tasksByProject[t.pid] = [];
+      tasksByProject[t.pid].push(t);
+    });
+
+    const projectCards = state.projects.map(p => {
+      const pTasks = tasksByProject[p.id] || [];
+      if (pTasks.length === 0) return '';
+
+      let pTotalGates = 0, pPassedGates = 0, pBlockedTasks = 0;
+      pTasks.forEach(task => {
+        let taskBlocked = false;
+        task.stageNames.forEach((name, i) => {
+          if (i > task.stageCurrent) return;
+          const gates = task.stageGates[i] || [];
+          gates.forEach(v => { pTotalGates++; if (v === 1) pPassedGates++; });
+        });
+        if (task.stageCurrent >= 0 && task.stageGates[task.stageCurrent]) {
+          if (task.stageGates[task.stageCurrent].some(g => g === 0)) taskBlocked = true;
+        }
+        if (taskBlocked) pBlockedTasks++;
+      });
+      const pRate = pTotalGates > 0 ? Math.round(pPassedGates / pTotalGates * 100) : 0;
+
+      return `
+        <div class="card" style="margin-bottom:20px;border:1px solid var(--border);overflow:hidden;">
+          <div style="padding:16px 22px;background:linear-gradient(135deg,#F8FAFC,#EFF6FF);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;" onclick="toggleProjectGateCard(this)">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:16px;font-weight:700;color:var(--text);">&#9632; ${p.name}</div>
+              <span class="audit-toggle" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">&#9660;</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px 20px;font-size:12px;color:var(--text-secondary);line-height:1.8;margin-top:6px;">
+              <span>任务数: <strong>${pTasks.length}</strong></span>
+              <span>通过率: <strong>${pRate}%</strong></span>
+              <span>阻断: <strong>${pBlockedTasks}</strong></span>
+              <span style="margin-left:auto;"><span class="tag ${pBlockedTasks>0?'tag-red':'tag-green'}">${pBlockedTasks>0?pBlockedTasks+' 项阻断':'全部通过'}</span></span>
+            </div>
+          </div>
+          <div class="audit-body" style="max-height:0;overflow:hidden;transition:max-height .3s ease;">
+            <div style="padding:12px 22px;">
+              ${pTasks.map(t => renderAuditCard(t)).join('')}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:22px;font-weight:700;">${pageTitle}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${pageSubtitle}</div></div>
+        <button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button>
+      </div>
+      ${statsHtml}
+      ${projectCards || '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>'}`;
+  } else {
+    // 项目模式：保持原有行为
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:22px;font-weight:700;">${pageTitle}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${pageSubtitle}</div></div>
+        <button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button>
+      </div>
+      ${statsHtml}
+      ${tasks.length === 0 ? '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>' : tasks.map(t => renderAuditCard(t)).join('')}`;
+  }
 }
 
 function toggleAuditCard(header) {
@@ -230,10 +303,25 @@ function toggleAuditCard(header) {
   }
 }
 
+function toggleProjectGateCard(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.audit-toggle');
+  if (body.style.maxHeight && body.style.maxHeight !== '0px') {
+    body.style.maxHeight = '0px';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    arrow.style.transform = 'rotate(180deg)';
+  }
+}
+
 function refreshAllGates() {
   toast('正在重新执行全部追溯检查...');
   setTimeout(() => {
-    getProjectTasks(state.activeProjectId).forEach(task => {
+    const isGlobal = state.activePage === 'gates';
+    const tasksToRefresh = isGlobal ? state.tasks : getProjectTasks(state.activeProjectId);
+
+    tasksToRefresh.forEach(task => {
       task.stageGates.forEach((gates, i) => {
         if (i <= task.stageCurrent && gates) {
           for (let j = 0; j < gates.length; j++) {
@@ -243,7 +331,9 @@ function refreshAllGates() {
       });
     });
     toast('追溯检查完成');
-    if (state.activePage === 'gates') renderGates(document.getElementById('mainContent'));
+    if (state.activePage === 'gates' || state.activePage === 'project-gates') {
+      renderGates(document.getElementById('mainContent'));
+    }
     updateBadges();
   }, 1200);
 }
