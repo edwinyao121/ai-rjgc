@@ -143,6 +143,38 @@ const stageAgents = {
   '测试': { name: '测试生成 Agent', avatar: '🧪', color: '#EF4444', desc: '执行测试用例，统计覆盖率' },
 };
 
+// 多Agent协作配置 - 支持某些阶段有多个Agent协作/辩论
+const stageMultiAgents = {
+  '需求分析': [
+    { id: 'req-analyst', name: '需求分析师', avatar: '📋', color: '#10B981', role: '分析需求完整性' },
+    { id: 'req-reviewer', name: '需求评审员', avatar: '🔍', color: '#3B82F6', role: '质疑需求合理性' },
+  ],
+  '方案设计': [
+    { id: 'architect', name: '架构师', avatar: '🏗️', color: '#8B554A', role: '设计系统架构' },
+    { id: 'tech-lead', name: '技术负责人', avatar: '👨‍💻', color: '#6366F1', role: '评估技术可行性' },
+  ],
+};
+
+// Agent辩论/交互记录
+const agentDebates = {};
+
+// 预定义的辩论内容模板
+const debateTemplates = {
+  '需求分析': [
+    { agentId: 'req-analyst', avatar: '📋', text: '根据用户故事，系统需要支持批量导入员工数据功能，包括Excel和CSV格式...' },
+    { agentId: 'req-reviewer', avatar: '🔍', text: '批量导入的性能要求是什么？需要明确并发数和响应时间限制...' },
+    { agentId: 'req-analyst', avatar: '📋', text: '建议设定为单次最多1000条记录，响应时间≤10秒，支持断点续传...' },
+    { agentId: 'req-reviewer', avatar: '🔍', text: '同意，还需要考虑失败回滚机制和数据校验规则...' },
+    { agentId: 'req-analyst', avatar: '📋', text: '已补充：导入前预览、冲突检测、错误报告生成。需求文档已更新完成。' },
+  ],
+  '方案设计': [
+    { agentId: 'architect', avatar: '🏗️', text: '建议采用微服务架构，将人事管理模块拆分为员工服务、考勤服务、薪资服务...' },
+    { agentId: 'tech-lead', avatar: '👨‍💻', text: '当前项目规模是否需要微服务？单体架构可能更简单，后期可拆分...' },
+    { agentId: 'architect', avatar: '🏗️', text: '考虑到未来的扩展性和团队协作，建议采用模块化单体，预留微服务拆分接口...' },
+    { agentId: 'tech-lead', avatar: '👨‍💻', text: '同意模块化单体方案，技术栈选择Spring Boot + MyBatis Plus...' },
+  ],
+};
+
 // Agent communication messages between stages
 const agentCommMessages = {
   '需求分析→需求拆解': '需求文档已通过完整性检查',
