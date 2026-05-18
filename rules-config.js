@@ -27,10 +27,19 @@ function renderRulesGrid(categories) {
     <div class="card">
       <div class="card-title" style="margin-bottom:14px;">${cat.title}</div>
       ${cat.keys.map(key => {
-        const on = state.rulesConfig[key] !== false;
-        return `<div class="rule-config-item">
-          <div><div class="rule-name">${key}</div><div class="rule-desc">${getRuleDesc(key)}</div></div>
-          <div class="toggle${on?' on':''}" onclick="toggleRule(this,'${key}')"></div>
+        const config = state.rulesConfig[key] || { enabled: true, threshold: 80 };
+        const on = config.enabled;
+        const threshold = config.threshold;
+        return `<div class="rule-config-item" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div class="rule-name">${key}</div><div class="rule-desc">${getRuleDesc(key)}</div></div>
+            <div class="toggle${on?' on':''}" onclick="toggleRule(this,'${key}')"></div>
+          </div>
+          <div class="threshold-control" style="margin-top:10px;display:${on?'flex':'none'};align-items:center;gap:12px;">
+            <span style="font-size:12px;color:var(--text-muted);min-width:60px;">阈值: ${threshold}%</span>
+            <input type="range" min="0" max="100" value="${threshold}" style="flex:1;height:6px;-webkit-appearance:none;background:linear-gradient(to right,var(--success) 0%,var(--success) ${threshold}%,var(--border) ${threshold}%,var(--border) 100%);border-radius:3px;outline:none;cursor:pointer;" oninput="updateThreshold('${key}',this.value,this)">
+            <span style="font-size:12px;font-weight:600;color:var(--primary);min-width:35px;">${threshold}%</span>
+          </div>
         </div>`;
       }).join('')}
     </div>`).join('');
@@ -59,8 +68,21 @@ function getRuleDesc(key) {
 function toggleRule(el, key) {
   const newVal = !el.classList.contains('on');
   if (newVal) el.classList.add('on'); else el.classList.remove('on');
-  state.rulesConfig[key] = newVal;
+
+  // 更新 rulesConfig 中的 enabled 状态
+  if (!state.rulesConfig[key]) {
+    state.rulesConfig[key] = { enabled: true, threshold: 80 };
+  }
+  state.rulesConfig[key].enabled = newVal;
+
+  // 显示/隐藏阈值控制
+  const thresholdControl = el.closest('.rule-config-item').querySelector('.threshold-control');
+  if (thresholdControl) {
+    thresholdControl.style.display = newVal ? 'flex' : 'none';
+  }
+
   toast(`规则 "${key}" 已${newVal?'启用':'禁用'}`);
+
   // Propagate to active gates
   const task = getTask(state.activeTaskId);
   if (task && task.stageCurrent >= 0 && task.stageGates[task.stageCurrent]) {
@@ -76,9 +98,54 @@ function toggleRule(el, key) {
   }
 }
 
+function updateThreshold(key, value, inputEl) {
+  const threshold = parseInt(value);
+
+  // 更新 rulesConfig 中的 threshold
+  if (!state.rulesConfig[key]) {
+    state.rulesConfig[key] = { enabled: true, threshold: 80 };
+  }
+  state.rulesConfig[key].threshold = threshold;
+
+  // 更新显示
+  const container = inputEl.closest('.threshold-control');
+  const label = container.querySelector('span:first-child');
+  const valueLabel = container.querySelector('span:last-child');
+  if (label) label.textContent = `阈值: ${threshold}%`;
+  if (valueLabel) valueLabel.textContent = `${threshold}%`;
+
+  // 更新滑块背景
+  inputEl.style.background = `linear-gradient(to right, var(--success) 0%, var(--success) ${threshold}%, var(--border) ${threshold}%, var(--border) 100%)`;
+}
+
 function resetRules() {
-  Object.keys(state.rulesConfig).forEach(k => state.rulesConfig[k] = true);
-  state.rulesConfig['合规审计检查'] = false;
+  // 恢复默认阈值配置
+  const defaultThresholds = {
+    '需求完整性检查': 80,
+    '语义冲突检测': 90,
+    '可追溯性检查': 85,
+    '粒度合理性检查': 70,
+    '依赖无环检测': 100,
+    '架构合规检查': 75,
+    '技术选型评估': 80,
+    '编码规范检查': 90,
+    '安全漏洞扫描': 100,
+    '代码复杂度检查': 85,
+    '最佳实践检测': 80,
+    '覆盖率门禁': 80,
+    '测试通过率': 100,
+    '技术债务检查': 95,
+    'DoD检查清单': 100,
+    '合规审计检查': 100,
+  };
+
+  Object.keys(state.rulesConfig).forEach(k => {
+    state.rulesConfig[k] = {
+      enabled: k !== '合规审计检查',
+      threshold: defaultThresholds[k] || 80
+    };
+  });
+
   toast('规则配置已恢复默认');
   const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
   const categories = stageNames
@@ -116,9 +183,13 @@ function addNewRule() {
   const desc = document.getElementById('arDesc').value.trim() || '自定义规则';
   const type = document.getElementById('arType').value;
   if (!name) { toast('请输入规则名称', true); return; }
-  state.rulesConfig[name] = true;
+
+  // 添加到 rulesConfig，默认阈值 80%
+  state.rulesConfig[name] = { enabled: true, threshold: 80 };
+
   if (!state.gateDefs[stage]) state.gateDefs[stage] = [];
   state.gateDefs[stage].push({ name, desc, type });
+
   toast(`规则 "${name}" 已添加到「${stage}」阶段`);
   document.querySelector('.modal-overlay')?.remove();
   renderRulesConfig(document.getElementById('mainContent'));
