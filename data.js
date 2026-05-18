@@ -133,25 +133,25 @@ let chatTimeout = null;
 // Agent assignments per stage
 const stageAgents = {
   '需求分析': { name: '需求分析 Agent', avatar: '📋', color: '#10B981', desc: '解析需求文档，执行完整性/语义/追溯性检查' },
-  '需求拆解': { name: '任务拆解 Agent', avatar: '✂️', color: '#8B5CF6', desc: '将需求拆解为可执行子任务，分析依赖关系' },
+  '需求拆解': { name: '需求拆解 Agent', avatar: '✂️', color: '#8B5CF6', desc: '将需求拆解为可执行子任务，分析依赖关系' },
   '方案设计': { name: '方案设计 Agent', avatar: '🏗️', color: '#3B82F6', desc: '架构设计、接口定义、技术选型评估' },
   '代码生成': { name: '代码生成 Agent', avatar: '💻', color: '#06B6D4', desc: '基于方案生成代码，执行编码规范检查' },
   '代码审查': { name: '代码审查 Agent', avatar: '🔍', color: '#F59E0B', desc: '静态分析、安全扫描、复杂度检测' },
-  '单元测试': { name: '测试生成 Agent', avatar: '🧪', color: '#EF4444', desc: '生成测试用例，执行覆盖率门禁' },
-  '质量检查': { name: '质量分析 Agent', avatar: '📊', color: '#10B981', desc: '技术债务检测、重复率分析、性能基线' },
-  '验收确认': { name: '验收检查 Agent', avatar: '✅', color: '#22C55E', desc: 'DoD 检查清单、合规审计、性能验收' },
-  '测试': { name: '测试生成 Agent', avatar: '🧪', color: '#EF4444', desc: '执行测试用例，统计覆盖率' },
+  '单元测试': { name: '单元测试 Agent', avatar: '🧪', color: '#EF4444', desc: '生成测试用例，执行覆盖率门禁' },
+  '质量检查': { name: '质量检查 Agent', avatar: '📊', color: '#10B981', desc: '技术债务检测、重复率分析、性能基线' },
+  '验收确认': { name: '验收确认 Agent', avatar: '✅', color: '#22C55E', desc: 'DoD 检查清单、合规审计、性能验收' },
+  '测试': { name: '测试 Agent', avatar: '🧪', color: '#EF4444', desc: '执行测试用例，统计覆盖率' },
 };
 
 // 多Agent协作配置 - 某些阶段有多个Agent协作
 const stageMultiAgents = {
   '需求分析': [
-    { id: 'req-analyst', name: '需求分析师', avatar: '📋', color: '#10B981', role: '分析需求完整性' },
-    { id: 'req-reviewer', name: '需求评审员', avatar: '🔍', color: '#3B82F6', role: '质疑需求合理性' },
+    { id: 'req-analyst', name: '需求分析 Agent', avatar: '📋', color: '#10B981', role: '分析需求完整性' },
+    { id: 'req-reviewer', name: '需求分析 Agent', avatar: '🔍', color: '#3B82F6', role: '质疑需求合理性' },
   ],
   '方案设计': [
-    { id: 'architect', name: '架构师', avatar: '🏗️', color: '#8B554A', role: '设计系统架构' },
-    { id: 'tech-lead', name: '技术负责人', avatar: '👨‍💻', color: '#6366F1', role: '评估技术可行性' },
+    { id: 'architect', name: '方案设计 Agent', avatar: '🏗️', color: '#8B554A', role: '设计系统架构' },
+    { id: 'tech-lead', name: '方案设计 Agent', avatar: '👨‍💻', color: '#6366F1', role: '评估技术可行性' },
   ],
 };
 
