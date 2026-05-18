@@ -49,7 +49,7 @@ function renderPipeline(container, data) {
           <div class="tab active" data-tab="mindmap">Agent 思维 & 活动</div>
           <div class="tab" data-tab="gates">门禁信息</div>
           <div class="tab" data-tab="artifacts">产出物</div>
-          <button class="btn btn-primary btn-sm" style="margin-left:auto;margin-bottom:5px;border-radius:20px;" onclick="window.open('https://opencode.ai', '_blank')" title="智能代码编辑器">
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;margin-bottom:5px;border-radius:20px;" onclick="openVSCode()" title="打开本地 VSCode">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 3.5L17 8l-3.5 1.5L12 13l-1.5-3.5L7 8l3.5-1.5L12 3z"/><path d="M5 17l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/><path d="M19 13l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/></svg>
             智能代码编辑器
           </button>
@@ -753,3 +753,20 @@ window.goToArtifacts = function(artifactName) {
     toast('当前阶段未找到产出物视图');
   }
 };
+
+function openVSCode() {
+  // 使用 vscode://file/ 协议打开指定路径
+  const projectPath = '/home/edwin/桌面/demo4.6/原型';
+  const vscodeUrl = `vscode://file${projectPath}`;
+
+  // 创建一个隐藏的链接并点击它
+  const link = document.createElement('a');
+  link.href = vscodeUrl;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // 显示提示信息
+  toast('正在使用 VSCode 打开项目...');
+}
