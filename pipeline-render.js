@@ -621,6 +621,8 @@ function renderSidePanel(task) {
   const stageIdx = task.stageCurrent;
   const review = state.reviews.find(r => r.tid === task.id && r.status === 'pending');
   const stageName = stageIdx >= 0 ? task.stageNames[stageIdx] : '';
+  const stageAssignee = task.stageAssignees ? task.stageAssignees[stageIdx] : null;
+  const assignableUsers = stageOwners[stageName] || [];
 
   panel.innerHTML = `
     <div class="card">
@@ -639,6 +641,14 @@ function renderSidePanel(task) {
         <div style="font-size:13px;color:var(--text-muted);">当前阶段无需人工评审</div>
         <button class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;" onclick="requestReview()">&#9737; 请求评审</button>
       `}
+      ${stageName && assignableUsers.length > 0 ? `
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">阶段负责人</div>
+          <select class="side-owner-select" onchange="changeStageOwner('${task.id}', ${stageIdx}, this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font);background:var(--surface);">
+            ${assignableUsers.map(u => `<option value="${u}" ${u === stageAssignee ? 'selected' : ''}>${u}</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
     </div>`;
 }
 
@@ -784,5 +794,22 @@ function openVSCode() {
 
   // 显示提示信息
   toast('正在使用 VSCode 打开项目...');
+}
+
+// 切换阶段负责人
+function changeStageOwner(taskId, stageIdx, newOwner) {
+  const task = getTask(taskId);
+  if (!task) return;
+
+  if (!task.stageAssignees) {
+    task.stageAssignees = new Array(task.stageNames.length).fill('');
+  }
+
+  const oldOwner = task.stageAssignees[stageIdx];
+  task.stageAssignees[stageIdx] = newOwner;
+
+  const stageName = task.stageNames[stageIdx];
+  addActivityLog(taskId, 'human-action', '👤', 'human', `「${stageName}」阶段负责人变更为 <strong>${newOwner}</strong>`);
+  toast(`「${stageName}」阶段负责人已变更为 ${newOwner}`);
 }
 

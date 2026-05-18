@@ -163,8 +163,8 @@ tr:hover td{background:#F8FAFC;}
 @keyframes msg-pop{from{opacity:0;transform:translateX(-50%) translateY(4px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
 /* Human Review Checkpoint */
-.pipeline-human-node{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;background:var(--warning-light);border:1px dashed var(--warning);border-radius:var(--radius-sm);cursor:pointer;transition:all .3s;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;z-index:3;}
-.pipeline-human-node:hover{background:#FEF3C7;transform:translateX(-50%) scale(1.03);margin-bottom:6px;}
+.pipeline-human-node{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;background:var(--warning-light);border:1px dashed var(--warning);border-radius:var(--radius-sm);cursor:pointer;transition:all .3s;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:40px;z-index:3;}
+.pipeline-human-node:hover{background:#FEF3C7;transform:translateX(-50%) scale(1.03);}
 .pipeline-human-icon{width:28px;height:28px;border-radius:50%;background:var(--warning);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;}
 .pipeline-human-label{font-size:9px;color:var(--warning);font-weight:700;}
 .pipeline-human-status{font-size:8px;padding:1px 6px;border-radius:4px;font-weight:600;}
