@@ -208,7 +208,27 @@ function generateInitialActivityLogs(task) {
         type: 'agent-work',
         icon: agent.avatar,
         iconType: 'agent',
-        text: `<strong>${agent.name}</strong> 开始执行「${name}」阶段`
+        text: `<strong>${agent.name}</strong> 开始执行「${name}」阶段`,
+        stageName: name,
+        isStageLog: true
+      });
+
+      // 为每个步骤生成独立日志
+      const steps = getAgentSteps(name);
+      steps.forEach((step, si) => {
+        const stepTime = fmt(baseTime + 115 - si * 5);
+        const isStepDone = isDone || (isActive && si < 2);
+        const isStepActive = isActive && si === 2;
+        logs.push({
+          time: stepTime,
+          type: isStepDone ? 'agent-work' : (isStepActive ? 'agent-work' : 'agent-comm'),
+          icon: isStepDone ? '✓' : (isStepActive ? '▶' : '○'),
+          iconType: 'agent',
+          text: `<strong>${agent.name}</strong> ${step.text} <span style="color:${isStepDone ? 'var(--success)' : (isStepActive ? 'var(--primary)' : 'var(--text-muted)')};font-size:10px;">${isStepDone ? '已完成' : (isStepActive ? '执行中' : '待执行')}</span>`,
+          stageName: name,
+          stepName: step.text,
+          isStepLog: true
+        });
       });
     }
 
@@ -827,18 +847,28 @@ function highlightActivityLog(stageName, nodeName) {
 
   const items = feedContainer.querySelectorAll('.activity-item');
 
-  // 查找匹配的条目 - 通过阶段名称匹配总结性日志
+  // 查找匹配的条目 - 优先匹配步骤级别日志，再匹配阶段级别日志
   let targetItem = null;
   items.forEach(item => {
     const text = item.querySelector('.activity-text')?.textContent || '';
-    // 匹配包含阶段名称的日志，如"开始执行「需求分析」阶段"
-    if (text.includes(`「${stageName}」`)) {
+    // 优先匹配步骤级别的日志，如"分析需求 已完成"
+    if (text.includes(nodeName)) {
       targetItem = item;
     }
   });
 
+  // 如果没有找到步骤级别日志，匹配阶段级别日志
   if (!targetItem) {
-    toast(`未找到「${stageName}」阶段相关日志`, true);
+    items.forEach(item => {
+      const text = item.querySelector('.activity-text')?.textContent || '';
+      if (text.includes(`「${stageName}」`)) {
+        targetItem = item;
+      }
+    });
+  }
+
+  if (!targetItem) {
+    toast(`未找到"${nodeName}"相关日志`, true);
     return;
   }
 
