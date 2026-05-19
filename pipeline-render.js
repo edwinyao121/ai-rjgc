@@ -827,10 +827,6 @@ function highlightActivityLog(stageName, nodeName) {
 
   const items = feedContainer.querySelectorAll('.activity-item');
 
-  // 移除之前的高亮和详情
-  feedContainer.querySelectorAll('.activity-detail').forEach(el => el.remove());
-  items.forEach(item => item.classList.remove('highlighted'));
-
   // 查找匹配的条目 - 通过阶段名称匹配总结性日志
   let targetItem = null;
   items.forEach(item => {
@@ -841,22 +837,36 @@ function highlightActivityLog(stageName, nodeName) {
     }
   });
 
-  if (targetItem) {
-    // 添加高亮样式
-    targetItem.classList.add('highlighted');
-
-    // 生成并插入详情区域
-    const detailHtml = generateNodeDetail(stageName, nodeName);
-    const detailDiv = document.createElement('div');
-    detailDiv.className = 'activity-detail';
-    detailDiv.innerHTML = detailHtml;
-    targetItem.after(detailDiv);
-
-    // 滚动到该条目
-    targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } else {
+  if (!targetItem) {
     toast(`未找到「${stageName}」阶段相关日志`, true);
+    return;
   }
+
+  // 检查该条目是否已经有详情展开
+  const existingDetail = targetItem.nextElementSibling;
+  if (existingDetail && existingDetail.classList.contains('activity-detail')) {
+    // 已展开，收起详情
+    existingDetail.remove();
+    targetItem.classList.remove('highlighted');
+    return;
+  }
+
+  // 移除其他条目的高亮和详情
+  feedContainer.querySelectorAll('.activity-detail').forEach(el => el.remove());
+  items.forEach(item => item.classList.remove('highlighted'));
+
+  // 添加高亮样式
+  targetItem.classList.add('highlighted');
+
+  // 生成并插入详情区域
+  const detailHtml = generateNodeDetail(stageName, nodeName);
+  const detailDiv = document.createElement('div');
+  detailDiv.className = 'activity-detail';
+  detailDiv.innerHTML = detailHtml;
+  targetItem.after(detailDiv);
+
+  // 滚动到该条目
+  targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function generateNodeDetail(stageName, nodeName) {
