@@ -176,16 +176,16 @@ function renderSidebar() {
     const p = getProject(state.activeProjectId);
     const pName = p ? p.name : '项目内';
     sidebar.innerHTML = `
-      <div class="logo"><div class="icon">&#9670;</div>${pName}</div>
-      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">项目导航</div>
+      <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回工作台"><div class="icon">&#9670;</div>智能软件工厂</div>
+      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">${pName}</div>
       <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
+      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
       <div class="nav-section">项目智能</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
       <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
       <div class="nav-section">效能与质量</div>
       <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 研发追溯</div>
       <div class="nav-item" data-page="project-rules-config" onclick="navigate('project-rules-config')">&#9881; 门禁配置</div>
-      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
       <div class="nav-item" data-page="project-summary" onclick="navigate('project-summary')">&#9776; 研制总结</div>
     `;
   }
@@ -220,11 +220,10 @@ function navigate(page, data) {
     const p = getProject(state.activeProjectId);
     const pName = p ? p.name : '未知项目';
     breadcrumbWrapper.innerHTML = `
-      / <span style="cursor:pointer;" onclick="navigate('projects')">项目空间</span> 
-      / <span style="cursor:pointer;font-weight:600;" onclick="navigate('kanban')">${pName}</span> 
+      <span style="cursor:pointer;font-weight:600;" onclick="navigate('kanban')">${pName}</span>
       / <span id="pageTitle">${pageName}</span>`;
   } else {
-    breadcrumbWrapper.innerHTML = `/ <span id="pageTitle">${pageName}</span>`;
+    breadcrumbWrapper.innerHTML = `<span id="pageTitle">${pageName}</span>`;
   }
 
   renderPage(page, data);
