@@ -553,6 +553,8 @@ function drawMindMap(stageName) {
 
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     g.setAttribute('class','mindmap-clickable');
+    g.style.cursor = 'pointer';
+    g.onclick = () => highlightActivityLog(stageName, child.text);
     const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',startX); r.setAttribute('y',cy); r.setAttribute('width',nodeW); r.setAttribute('height',nodeH);
     r.setAttribute('rx','5'); r.setAttribute('fill',child.fill || '#F1F5F9');
@@ -578,6 +580,8 @@ function drawMindMap(stageName) {
         svg.appendChild(p2);
         const g2 = document.createElementNS('http://www.w3.org/2000/svg','g');
         g2.setAttribute('class','mindmap-clickable');
+        g2.style.cursor = 'pointer';
+        g2.onclick = () => highlightActivityLog(stageName, c2.text);
         const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect');
         r2.setAttribute('x',c2x); r2.setAttribute('y',c2y); r2.setAttribute('width',72); r2.setAttribute('height',nodeH);
         r2.setAttribute('rx','4'); r2.setAttribute('fill',c2.fill||'#F8FAFC');
@@ -809,5 +813,90 @@ function changeStageOwner(taskId, stageIdx, newOwner) {
   const stageName = task.stageNames[stageIdx];
   addActivityLog(taskId, 'human-action', '👤', 'human', `「${stageName}」阶段负责人变更为 <strong>${newOwner}</strong>`);
   toast(`「${stageName}」阶段负责人已变更为 ${newOwner}`);
+}
+
+// ============================================================
+// 活动日志高亮展示
+// ============================================================
+function highlightActivityLog(stageName, nodeName) {
+  const feedContainer = document.querySelector('.activity-feed');
+  if (!feedContainer) {
+    toast('暂无活动日志', true);
+    return;
+  }
+
+  const items = feedContainer.querySelectorAll('.activity-item');
+
+  // 移除之前的高亮和详情
+  feedContainer.querySelectorAll('.activity-detail').forEach(el => el.remove());
+  items.forEach(item => item.classList.remove('highlighted'));
+
+  // 查找匹配的条目
+  let targetItem = null;
+  items.forEach(item => {
+    const text = item.querySelector('.activity-text')?.textContent || '';
+    if (text.includes(nodeName)) {
+      targetItem = item;
+    }
+  });
+
+  if (targetItem) {
+    // 添加高亮样式
+    targetItem.classList.add('highlighted');
+
+    // 生成并插入详情区域
+    const detailHtml = generateNodeDetail(stageName, nodeName);
+    const detailDiv = document.createElement('div');
+    detailDiv.className = 'activity-detail';
+    detailDiv.innerHTML = detailHtml;
+    targetItem.after(detailDiv);
+
+    // 滚动到该条目
+    targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    toast(`未找到"${nodeName}"相关日志`, true);
+  }
+}
+
+function generateNodeDetail(stageName, nodeName) {
+  const tokenCount = Math.floor(Math.random() * 2000 + 500);
+  const timeMs = Math.floor(Math.random() * 3000 + 500);
+
+  const isPending = (nodeName.includes('读取') || nodeName.includes('执行') || nodeName.includes('生成'));
+  const hasChildren = nodeName.includes('检查') || nodeName.includes('扫描');
+
+  return `
+    <div style="padding:12px;background:#F8FAFC;border-radius:8px;margin:8px 0;border-left:3px solid var(--primary);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:600;font-size:13px;color:var(--primary);">${nodeName} - 执行详情</div>
+        <div style="display:flex;gap:8px;">
+          <span class="tag tag-slate" style="font-size:11px;font-family:var(--mono);">耗时: ${timeMs}ms</span>
+          <span class="tag tag-slate" style="font-size:11px;font-family:var(--mono);">Tokens: ${tokenCount}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;">
+        <div>
+          <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">System Prompt</div>
+          <div style="padding:8px;background:#1E293B;border-radius:6px;color:#A5B4FC;font-size:11px;font-family:var(--mono);">
+            You are performing ${nodeName} for ${stageName} stage...
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">思维链 (Chain of Thought)</div>
+          <div style="padding:8px;background:#F1F5F9;border-radius:6px;color:var(--text-secondary);line-height:1.6;">
+            1. 解析输入参数...<br>
+            2. 执行 ${nodeName} 逻辑...<br>
+            3. 验证结果并输出
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Output</div>
+        <div style="padding:8px;background:#1E293B;border-radius:6px;color:#6EE7B7;font-size:11px;font-family:var(--mono);">
+          {"status": "success", "node": "${nodeName}", "result": "..."}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
