@@ -156,7 +156,9 @@ function renderSidebar() {
     if (state.context.level === 'global') {
       topbarLeft.innerHTML = `<h1>智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
     } else {
-      topbarLeft.innerHTML = `<h1 onclick="navigate('dashboard')" style="cursor:pointer;" title="返回工作台">智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
+      const p = getProject(state.activeProjectId);
+      const pName = p ? p.name : '项目内';
+      topbarLeft.innerHTML = `<h1 onclick="navigate('kanban')" style="cursor:pointer;" title="返回任务看板">${pName}</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
     }
   }
 
@@ -177,7 +179,7 @@ function renderSidebar() {
     const pName = p ? p.name : '项目内';
     sidebar.innerHTML = `
       <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回工作台"><div class="icon">&#9670;</div>智能软件工厂</div>
-      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">${pName}</div>
+      <div class="nav-section">任务与评审</div>
       <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
       <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
       <div class="nav-section">项目智能</div>
@@ -217,11 +219,7 @@ function navigate(page, data) {
   }
   
   if (state.context.level === 'project' && state.activeProjectId) {
-    const p = getProject(state.activeProjectId);
-    const pName = p ? p.name : '未知项目';
-    breadcrumbWrapper.innerHTML = `
-      <span style="cursor:pointer;font-weight:600;" onclick="navigate('kanban')">${pName}</span>
-      / <span id="pageTitle">${pageName}</span>`;
+    breadcrumbWrapper.innerHTML = `<span id="pageTitle">${pageName}</span>`;
   } else {
     breadcrumbWrapper.innerHTML = `<span id="pageTitle">${pageName}</span>`;
   }
