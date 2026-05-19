@@ -11,7 +11,7 @@ function renderPipeline(container, data) {
   if (task.stageNames.length === 0) {
     container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:22px;font-weight:700;">阶段流水线</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
+        <div><div style="font-size:22px;font-weight:700;">任务监控</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
         <div style="display:flex;gap:10px;"><button class="btn btn-primary btn-sm" id="btnAutoPlan">&#9730; AI 智能规划阶段</button></div>
       </div>
       <div class="card"><div class="empty-state"><div class="icon">&#9730;</div><div>该任务尚未规划执行阶段</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px;">点击上方按钮，AI 将根据任务类型自动规划执行流水线</div></div></div>`;
@@ -33,14 +33,14 @@ function renderPipeline(container, data) {
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">阶段流水线</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
+      <div><div style="font-size:22px;font-weight:700;">任务监控</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-outline btn-sm" onclick="navigate('kanban')">&#9664; 返回看板</button>
         <button class="btn btn-primary btn-sm" id="btnNextStage">&#9654; 执行下一阶段</button>
       </div>
     </div>
     <div class="card" style="overflow-x:auto;">
-      <div class="card-title" style="margin-bottom:12px;">动态流水线（AI 规划: ${task.stageNames.length} 阶段）</div>
+      <div class="card-title" style="margin-bottom:12px;">任务流程</div>
       <div class="pipeline" id="pipelineGraph"></div>
     </div>
     <div class="grid-70-30">

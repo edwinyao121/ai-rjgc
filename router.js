@@ -169,7 +169,6 @@ function renderSidebar() {
       <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回全局工作台"><div class="icon">&#9664;</div>返回工作台</div>
       <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">${pName}</div>
       <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
-      <div class="nav-item" data-page="pipeline-view" onclick="navigate('pipeline-view')">&#9733; 阶段流水线<span class="badge warn" id="badgeGates">0</span></div>
       <div class="nav-section">项目智能</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
       <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
