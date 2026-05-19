@@ -15,8 +15,8 @@ const state = {
       guidelines: {
         stack: 'Java 17, Spring Boot 3.0, Vue 3, Element Plus, MySQL 8.0, Redis 6.2',
         coding: '1. 命名规范：后端遵循阿里巴巴Java开发规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
-        domain: '• 用户 (User): 系统登录与操作主体\n• 角色 (Role): 权限集合\n• 流程 (Process): OA审批流定义\n• 节点 (Node): 流程中的具体执行步骤\n• 表单 (Form): 流程关联的业务数据界面',
-        quality: '1. 单元测试：行覆盖率需达到 80% 以上。\n2. 代码质量：SonarQube 扫描不允许存在 Blocker 和 Critical 级别缺陷。\n3. 安全：通过 OWASP Top 10 安全扫描，不包含硬编码密钥。'
+        businessRules: '1. 金额计算统一使用 BigDecimal，严禁使用 Double。\n2. 数据删除统一采用逻辑删除（更新 is_deleted = 1），禁止物理删除。\n3. 审批流状态机严格遵循：草稿 -> 审批中 -> 已通过/已驳回，不可跳级。',
+        bestPractices: '1. JSON 解析统一使用 Jackson，禁止引入 Fastjson。\n2. 异常处理：严禁 catch 后吞掉异常，必须打印 ERROR 日志并抛出自定义业务异常。\n3. 测试：单测必须使用 Mockito 隔离外部 DB 和第三方接口调用。'
       }
     },
     { 
@@ -24,17 +24,17 @@ const state = {
       guidelines: {
         stack: 'Go 1.20, Gin, gRPC, Etcd, Prometheus',
         coding: '遵循 Uber Go Style Guide；使用 Uber-fx 进行依赖注入；Prometheus 指标命名需符合规范。',
-        domain: '• 路由 (Route): 请求转发规则\n• 过滤器 (Filter): 请求/响应处理链\n• 限流器 (RateLimiter): 流量控制组件\n• 上游 (Upstream): 后端服务集群',
-        quality: '1. 性能：核心路径延迟 P99 < 10ms。\n2. 测试：集成测试覆盖所有核心 Filter。'
+        businessRules: '1. 路由匹配规则：优先精确匹配，兜底通配符匹配。\n2. 限流阈值动态下发：本地缓存有效期最大 10s，失效必须 fallback 到全局配置。',
+        bestPractices: '1. 并发处理：必须 handle ctx.Done()，严防 Goroutine 泄漏。\n2. 日志打印：所有 ERROR 级别日志必须携带 trace_id 方便全链路追踪。'
       }
     },
     { 
       id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6,
       guidelines: {
         stack: 'Node.js 18, NestJS, TypeScript, PostgreSQL, Keycloak',
-        coding: '遵循 NestJS 推荐的项目结构和编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
-        domain: '• 租户 (Tenant): 多租户隔离标识\n• 身份 (Identity): 用户认证信息\n• 令牌 (Token): JWT 访问凭证',
-        quality: '1. 认证：必须通过 OAuth 2.0 / OIDC 标准合规性测试。\n2. 安全：敏感数据需进行加密存储。'
+        coding: '遵循 NestJS 推荐的项目结构 and 编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
+        businessRules: '1. 密码安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
+        bestPractices: '1. ORM 规范：数据库查询必须使用 TypeORM QueryBuilder，防范 SQL 注入风险。\n2. 文档同步：所有 Controller 接口变更必须同步更新 Swagger 装饰器。'
       }
     },
     { 
@@ -42,8 +42,8 @@ const state = {
       guidelines: {
         stack: 'Kafka 3.4, Kubernetes, Terraform, Grafana',
         coding: '基础设施即代码 (IaC)；所有部署脚本必须经过 dry-run 验证。',
-        domain: '• 主题 (Topic): 消息类别\n• 分区 (Partition): 数据分片\n• 消费者组 (Consumer Group): 负载均衡消费单元',
-        quality: '1. 可用性：集群升级过程中需保持 99.9% 的可用性。\n2. 监控：核心指标必须配置告警。'
+        businessRules: '1. 核心交易 Topic 配置：必须设置 replicas=3, min.insync.replicas=2 保证高可用。\n2. 消费端约定：所有接入的业务消费端必须实现幂等处理。',
+        bestPractices: '1. 变更验证：部署脚本变更必须先通过 Terraform plan 验证并 Review。\n2. 镜像规范：线上环境 Kubernetes 部署严禁使用 latest 镜像标签，必须固定版本号。'
       }
     },
   ],
