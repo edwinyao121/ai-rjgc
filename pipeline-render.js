@@ -210,6 +210,20 @@ function generateInitialActivityLogs(task) {
         iconType: 'agent',
         text: `<strong>${agent.name}</strong> 开始执行「${name}」阶段`
       });
+
+      // 为每个步骤生成详细日志
+      const steps = getAgentSteps(name);
+      steps.forEach((step, si) => {
+        const stepTime = fmt(baseTime + 110 - si * 5);
+        const stepStatus = isDone ? '完成' : (si === 0 ? '执行中' : '待执行');
+        logs.push({
+          time: stepTime,
+          type: isDone ? 'agent-work' : (si === 0 ? 'agent-work' : 'agent-comm'),
+          icon: isDone ? '✓' : (si === 0 ? '▶' : '○'),
+          iconType: isDone ? 'agent' : (si === 0 ? 'agent' : 'agent'),
+          text: `<strong>${agent.name}</strong> ${step.text} — <span style="color:${isDone ? 'var(--success)' : (si === 0 ? 'var(--primary)' : 'var(--text-muted)')}">${stepStatus}</span>`
+        });
+      });
     }
 
     // Artifact Generation
