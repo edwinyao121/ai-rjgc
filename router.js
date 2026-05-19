@@ -149,7 +149,17 @@ function executeSmartPlan(taskId) {
 function renderSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  
+
+  // 更新顶部菜单栏
+  const topbarLeft = document.querySelector('.topbar-left');
+  if (topbarLeft) {
+    if (state.context.level === 'global') {
+      topbarLeft.innerHTML = `<h1>智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
+    } else {
+      topbarLeft.innerHTML = `<h1 onclick="navigate('dashboard')" style="cursor:pointer;" title="返回工作台">智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
+    }
+  }
+
   if (state.context.level === 'global') {
     sidebar.innerHTML = `
       <div class="logo" onclick="navigate('dashboard')"><div class="icon">&#9670;</div>智能软件工厂</div>
@@ -166,8 +176,8 @@ function renderSidebar() {
     const p = getProject(state.activeProjectId);
     const pName = p ? p.name : '项目内';
     sidebar.innerHTML = `
-      <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回全局工作台"><div class="icon">&#9664;</div>返回工作台</div>
-      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">${pName}</div>
+      <div class="logo"><div class="icon">&#9670;</div>${pName}</div>
+      <div class="nav-section" style="color:var(--primary);font-weight:600;font-size:14px;padding:8px 20px;">项目导航</div>
       <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
       <div class="nav-section">项目智能</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
