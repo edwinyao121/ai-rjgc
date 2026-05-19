@@ -210,20 +210,6 @@ function generateInitialActivityLogs(task) {
         iconType: 'agent',
         text: `<strong>${agent.name}</strong> 开始执行「${name}」阶段`
       });
-
-      // 为每个步骤生成详细日志
-      const steps = getAgentSteps(name);
-      steps.forEach((step, si) => {
-        const stepTime = fmt(baseTime + 110 - si * 5);
-        const stepStatus = isDone ? '完成' : (si === 0 ? '执行中' : '待执行');
-        logs.push({
-          time: stepTime,
-          type: isDone ? 'agent-work' : (si === 0 ? 'agent-work' : 'agent-comm'),
-          icon: isDone ? '✓' : (si === 0 ? '▶' : '○'),
-          iconType: isDone ? 'agent' : (si === 0 ? 'agent' : 'agent'),
-          text: `<strong>${agent.name}</strong> ${step.text} — <span style="color:${isDone ? 'var(--success)' : (si === 0 ? 'var(--primary)' : 'var(--text-muted)')}">${stepStatus}</span>`
-        });
-      });
     }
 
     // Artifact Generation
@@ -845,11 +831,12 @@ function highlightActivityLog(stageName, nodeName) {
   feedContainer.querySelectorAll('.activity-detail').forEach(el => el.remove());
   items.forEach(item => item.classList.remove('highlighted'));
 
-  // 查找匹配的条目
+  // 查找匹配的条目 - 通过阶段名称匹配总结性日志
   let targetItem = null;
   items.forEach(item => {
     const text = item.querySelector('.activity-text')?.textContent || '';
-    if (text.includes(nodeName)) {
+    // 匹配包含阶段名称的日志，如"开始执行「需求分析」阶段"
+    if (text.includes(`「${stageName}」`)) {
       targetItem = item;
     }
   });
@@ -868,7 +855,7 @@ function highlightActivityLog(stageName, nodeName) {
     // 滚动到该条目
     targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else {
-    toast(`未找到"${nodeName}"相关日志`, true);
+    toast(`未找到「${stageName}」阶段相关日志`, true);
   }
 }
 
@@ -876,38 +863,61 @@ function generateNodeDetail(stageName, nodeName) {
   const tokenCount = Math.floor(Math.random() * 2000 + 500);
   const timeMs = Math.floor(Math.random() * 3000 + 500);
 
-  const isPending = (nodeName.includes('读取') || nodeName.includes('执行') || nodeName.includes('生成'));
-  const hasChildren = nodeName.includes('检查') || nodeName.includes('扫描');
+  // 生成步骤执行详情
+  const steps = getAgentSteps(stageName);
+  const stepsHtml = steps.map((step, i) => {
+    const status = i < 2 ? '✓ 已完成' : (i === 2 ? '▶ 执行中' : '○ 待执行');
+    const color = i < 2 ? 'var(--success)' : (i === 2 ? 'var(--primary)' : 'var(--text-muted)');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span style="color:${color};font-size:11px;">${status}</span>
+      <span style="font-size:12px;">${step.text}</span>
+    </div>`;
+  }).join('');
+
+  // 生成工具调用信息
+  const tools = ['read_file', 'search_code', 'analyze_syntax', 'check_security'];
+  const toolCalls = tools.slice(0, Math.floor(Math.random() * 3) + 1).map(tool =>
+    `<div style="padding:4px 8px;background:#EFF6FF;border-radius:4px;font-size:11px;font-family:var(--mono);color:var(--primary);">call: ${tool}()</div>`
+  ).join('');
 
   return `
     <div style="padding:12px;background:#F8FAFC;border-radius:8px;margin:8px 0;border-left:3px solid var(--primary);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-weight:600;font-size:13px;color:var(--primary);">${nodeName} - 执行详情</div>
+        <div style="font-weight:600;font-size:13px;color:var(--primary);">${stageName} - ${nodeName} 执行详情</div>
         <div style="display:flex;gap:8px;">
           <span class="tag tag-slate" style="font-size:11px;font-family:var(--mono);">耗时: ${timeMs}ms</span>
           <span class="tag tag-slate" style="font-size:11px;font-family:var(--mono);">Tokens: ${tokenCount}</span>
         </div>
       </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;font-size:12px;">执行步骤</div>
+        <div style="padding:8px;background:#fff;border-radius:6px;border:1px solid var(--border);">
+          ${stepsHtml}
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;">
         <div>
           <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">System Prompt</div>
-          <div style="padding:8px;background:#1E293B;border-radius:6px;color:#A5B4FC;font-size:11px;font-family:var(--mono);">
-            You are performing ${nodeName} for ${stageName} stage...
+          <div style="padding:8px;background:#1E293B;border-radius:6px;color:#A5B4FC;font-size:11px;font-family:var(--mono);max-height:80px;overflow-y:auto;">
+            You are an expert performing ${nodeName} for ${stageName}. Follow the project guidelines and ensure quality output...
           </div>
         </div>
         <div>
-          <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">思维链 (Chain of Thought)</div>
-          <div style="padding:8px;background:#F1F5F9;border-radius:6px;color:var(--text-secondary);line-height:1.6;">
-            1. 解析输入参数...<br>
-            2. 执行 ${nodeName} 逻辑...<br>
-            3. 验证结果并输出
+          <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">工具调用</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${toolCalls}
           </div>
         </div>
       </div>
+
       <div style="margin-top:10px;">
-        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Output</div>
-        <div style="padding:8px;background:#1E293B;border-radius:6px;color:#6EE7B7;font-size:11px;font-family:var(--mono);">
-          {"status": "success", "node": "${nodeName}", "result": "..."}
+        <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px;">思维链 (Chain of Thought)</div>
+        <div style="padding:8px;background:#F1F5F9;border-radius:6px;color:var(--text-secondary);line-height:1.6;font-size:11px;">
+          1. 解析 ${stageName} 阶段输入参数...<br>
+          2. 执行 ${nodeName} 核心逻辑...<br>
+          3. 验证结果并生成产出物
         </div>
       </div>
     </div>
