@@ -438,3 +438,83 @@ function renderProjectSkills(container) {
       </div>`).join('')}
     </div>`;
 }
+
+// ============================================================
+// PROJECT GUIDELINES PAGE
+// ============================================================
+function renderProjectGuidelines(container) {
+  const p = getProject(state.activeProjectId);
+  if (!p) return;
+  const g = p.guidelines || { stack: '', coding: '', domain: '', quality: '' };
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:22px;font-weight:700;">项目规范</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">配置本项目的技术约束与业务背景，自动注入 Agent 执行上下文</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProjectGuidelines()">保存配置</button>
+    </div>
+    
+    <div style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--primary);">🏗️</span> 架构与技术栈约束
+        </div>
+        <textarea id="guidelineStack" class="form-control" style="width:100%;height:120px;padding:10px;border-radius:6px;border:1px solid var(--border);font-family:inherit;font-size:14px;" placeholder="描述本项目采用的技术栈，如：JDK 17, Spring Boot 3.2, Vue 3, Redis 等">${g.stack}</textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">提示：Agent 会根据技术栈约束生成符合版本的代码和配置文件。</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--primary);">📜</span> 编码与格式规范
+        </div>
+        <textarea id="guidelineCoding" class="form-control" style="width:100%;height:120px;padding:10px;border-radius:6px;border:1px solid var(--border);font-family:inherit;font-size:14px;" placeholder="输入本项目的编码风格、命名习惯、接口规范等">${g.coding}</textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">提示：Agent 在代码生成和审查阶段会严格遵循这些规范。</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--primary);">💡</span> 业务领域知识与名词解释
+        </div>
+        <textarea id="guidelineDomain" class="form-control" style="width:100%;height:120px;padding:10px;border-radius:6px;border:1px solid var(--border);font-family:inherit;font-size:14px;" placeholder="定义本项目中的核心业务实体和术语，帮助 Agent 理解上下文">${g.domain}</textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">提示：有助于 Agent 在需求分析和方案设计时保持业务语义一致。</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--primary);">✅</span> 测试与质量要求
+        </div>
+        <textarea id="guidelineQuality" class="form-control" style="width:100%;height:120px;padding:10px;border-radius:6px;border:1px solid var(--border);font-family:inherit;font-size:14px;" placeholder="配置单测覆盖率、静态检查、性能指标等质量门禁要求">${g.quality}</textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">提示：这些要求将作为 Agent 自动执行门禁检查的判定依据。</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;background:#F0F7FF;border-color:#BFDBFE;">
+      <div style="display:flex;gap:12px;">
+        <div style="font-size:24px;">🤖</div>
+        <div>
+          <div style="font-weight:600;color:#1E40AF;">Agent 自动注入说明</div>
+          <div style="font-size:13px;color:#374151;margin-top:4px;line-height:1.6;">
+            上述规范将在本项目下的任何 Agent 执行任务前，自动通过 <b>System Prompt</b> 注入其上下文。
+            Agent 会在理解这些规范的基础上，执行需求拆解、代码生成、代码审查等操作，确保其产出物与项目既定标准高度一致。
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveProjectGuidelines() {
+  const p = getProject(state.activeProjectId);
+  if (!p) return;
+  
+  p.guidelines = {
+    stack: document.getElementById('guidelineStack').value,
+    coding: document.getElementById('guidelineCoding').value,
+    domain: document.getElementById('guidelineDomain').value,
+    quality: document.getElementById('guidelineQuality').value
+  };
+  
+  toast('项目规范已保存，已同步至 Agent 执行引擎');
+}

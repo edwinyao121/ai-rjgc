@@ -10,10 +10,42 @@ const state = {
   activeProjectId: 'p1',
   activeTaskId: 't1',
   projects: [
-    { id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8 },
-    { id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8 },
-    { id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6 },
-    { id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7 },
+    { 
+      id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8,
+      guidelines: {
+        stack: 'Java 17, Spring Boot 3.0, Vue 3, Element Plus, MySQL 8.0, Redis 6.2',
+        coding: '1. 命名规范：后端遵循阿里巴巴Java开发规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
+        domain: '• 用户 (User): 系统登录与操作主体\n• 角色 (Role): 权限集合\n• 流程 (Process): OA审批流定义\n• 节点 (Node): 流程中的具体执行步骤\n• 表单 (Form): 流程关联的业务数据界面',
+        quality: '1. 单元测试：行覆盖率需达到 80% 以上。\n2. 代码质量：SonarQube 扫描不允许存在 Blocker 和 Critical 级别缺陷。\n3. 安全：通过 OWASP Top 10 安全扫描，不包含硬编码密钥。'
+      }
+    },
+    { 
+      id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8,
+      guidelines: {
+        stack: 'Go 1.20, Gin, gRPC, Etcd, Prometheus',
+        coding: '遵循 Uber Go Style Guide；使用 Uber-fx 进行依赖注入；Prometheus 指标命名需符合规范。',
+        domain: '• 路由 (Route): 请求转发规则\n• 过滤器 (Filter): 请求/响应处理链\n• 限流器 (RateLimiter): 流量控制组件\n• 上游 (Upstream): 后端服务集群',
+        quality: '1. 性能：核心路径延迟 P99 < 10ms。\n2. 测试：集成测试覆盖所有核心 Filter。'
+      }
+    },
+    { 
+      id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6,
+      guidelines: {
+        stack: 'Node.js 18, NestJS, TypeScript, PostgreSQL, Keycloak',
+        coding: '遵循 NestJS 推荐的项目结构和编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
+        domain: '• 租户 (Tenant): 多租户隔离标识\n• 身份 (Identity): 用户认证信息\n• 令牌 (Token): JWT 访问凭证',
+        quality: '1. 认证：必须通过 OAuth 2.0 / OIDC 标准合规性测试。\n2. 安全：敏感数据需进行加密存储。'
+      }
+    },
+    { 
+      id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7,
+      guidelines: {
+        stack: 'Kafka 3.4, Kubernetes, Terraform, Grafana',
+        coding: '基础设施即代码 (IaC)；所有部署脚本必须经过 dry-run 验证。',
+        domain: '• 主题 (Topic): 消息类别\n• 分区 (Partition): 数据分片\n• 消费者组 (Consumer Group): 负载均衡消费单元',
+        quality: '1. 可用性：集群升级过程中需保持 99.9% 的可用性。\n2. 监控：核心指标必须配置告警。'
+      }
+    },
   ],
   tasks: [
     { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },

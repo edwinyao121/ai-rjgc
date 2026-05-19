@@ -185,6 +185,7 @@ function renderSidebar() {
       <div class="nav-section">项目智能</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
       <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
+      <div class="nav-item" data-page="project-guidelines" onclick="navigate('project-guidelines')">&#9881; 项目规范</div>
       <div class="nav-section">效能与质量</div>
       <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 研发追溯</div>
       <div class="nav-item" data-page="project-rules-config" onclick="navigate('project-rules-config')">&#9881; 门禁配置</div>
@@ -197,7 +198,7 @@ function navigate(page, data) {
   state.activePage = page;
   
   const globalPages = ['dashboard', 'projects', 'reviews', 'agents', 'skills', 'rules-config'];
-  const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills', 'project-rules-config', 'project-summary'];
+  const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills', 'project-rules-config', 'project-summary', 'project-guidelines'];
   
   if (globalPages.includes(page)) {
     state.context.level = 'global';
@@ -260,6 +261,7 @@ function renderPage(page, data) {
     case 'project-summary': renderSummary(container); break;
     case 'skills': renderSkills(container); break;
     case 'project-skills': renderProjectSkills(container); break;
+    case 'project-guidelines': renderProjectGuidelines(container); break;
   }
 }
 
