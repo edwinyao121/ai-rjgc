@@ -552,8 +552,7 @@ function drawMindMap(stageName) {
     svg.appendChild(path);
 
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('class','mindmap-clickable'); g.style.cursor = 'pointer';
-    g.onclick = () => showNodeDetails(stageName, child.text, child.color || '#CBD5E1');
+    g.setAttribute('class','mindmap-clickable');
     const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',startX); r.setAttribute('y',cy); r.setAttribute('width',nodeW); r.setAttribute('height',nodeH);
     r.setAttribute('rx','5'); r.setAttribute('fill',child.fill || '#F1F5F9');
@@ -578,8 +577,7 @@ function drawMindMap(stageName) {
         p2.setAttribute('fill','none'); p2.setAttribute('stroke',c2.color||'#CBD5E1'); p2.setAttribute('stroke-width','1');
         svg.appendChild(p2);
         const g2 = document.createElementNS('http://www.w3.org/2000/svg','g');
-        g2.setAttribute('class','mindmap-clickable'); g2.style.cursor = 'pointer';
-        g2.onclick = () => showNodeDetails(stageName, c2.text, c2.color || '#CBD5E1');
+        g2.setAttribute('class','mindmap-clickable');
         const r2 = document.createElementNS('http://www.w3.org/2000/svg','rect');
         r2.setAttribute('x',c2x); r2.setAttribute('y',c2y); r2.setAttribute('width',72); r2.setAttribute('height',nodeH);
         r2.setAttribute('rx','4'); r2.setAttribute('fill',c2.fill||'#F8FAFC');
