@@ -33,7 +33,7 @@ function renderDashboard(container) {
           </div>
           <div class="hero-step" onclick="navigate('projects')">
             <div class="hero-step-icon">&#128640;</div>
-            <div>3. 启动流水线</div>
+            <div>3. 启动任务监控</div>
             <div style="font-weight:400;opacity:0.8;font-size:11px;">AI 自动推演，人类决策</div>
           </div>
         </div>
