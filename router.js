@@ -183,9 +183,9 @@ function renderSidebar() {
       <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
       <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
       <div class="nav-section">项目智能</div>
+      <div class="nav-item" data-page="project-guidelines" onclick="navigate('project-guidelines')">&#9881; 项目规范</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
       <div class="nav-item" data-page="project-skills" onclick="navigate('project-skills')">&#9730; 项目技能库</div>
-      <div class="nav-item" data-page="project-guidelines" onclick="navigate('project-guidelines')">&#9881; 项目规范</div>
       <div class="nav-section">效能与质量</div>
       <div class="nav-item" data-page="project-gates" onclick="navigate('project-gates')">&#9745; 研发追溯</div>
       <div class="nav-item" data-page="project-rules-config" onclick="navigate('project-rules-config')">&#9881; 门禁配置</div>
