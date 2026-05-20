@@ -164,10 +164,33 @@ const state = {
     { time:m(1920), text:'单元测试门禁在 <strong>公文档案模块</strong> 触发阻断：覆盖率 62% < 80%' },
     { time:m(3600), text:'部署 Agent 完成 <strong>办公系统基线版本</strong> 的灰度发布，验收全部通过' },
   ],
+  skills: [
+    { id:'sk1', name:'需求分析技能', ver:'v2.3', calls:1247, status:'enabled', desc:'智能分析需求文档，执行完整性检查、语义一致性分析、可追溯性验证。支持 .html / .docx / .txt 格式输入。', tags:['需求分析阶段','NLU'] },
+    { id:'sk2', name:'代码生成技能', ver:'v3.1', calls:3892, status:'enabled', desc:'基于方案设计与需求，智能生成高质量代码。支持 Java / Python / TypeScript / Go，内置编码规范和最佳实践。', tags:['代码生成阶段','CodeGen'] },
+    { id:'sk3', name:'代码审查技能', ver:'v2.8', calls:2104, status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测、最佳实践审查。输出结构化审查报告和修复建议。', tags:['代码审查阶段','安全'] },
+    { id:'sk4', name:'测试生成技能', ver:'v1.9', calls:1856, status:'enabled', desc:'自动生成单元测试和集成测试用例，支持 JUnit / pytest / Jest。目标覆盖率可配置。', tags:['测试阶段','TDD'] },
+    { id:'sk5', name:'任务拆解技能', ver:'v2.0', calls:923, status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，评估依赖关系 and 工时，生成看板 Backlog。', tags:['需求拆解阶段'] },
+    { id:'sk6', name:'质量分析技能', ver:'v1.7', calls:1567, status:'enabled', desc:'技术债务检测、代码重复率分析、性能基线检查。', tags:['质量检查阶段','Metrics'] },
+    { id:'sk7', name:'方案设计技能', ver:'v1.8', calls:892, status:'enabled', desc:'架构设计辅助、接口定义、技术选型建议。自动生成设计文档。', tags:['方案设计阶段'] },
+    { id:'sk8', name:'部署编排技能', ver:'v1.5', calls:412, status:'disabled', desc:'灰度发布策略生成、回滚条件校验、部署环境一致性检查。', tags:['部署阶段'] },
+    { id:'sk9', name:'验收检查技能', ver:'v1.6', calls:678, status:'enabled', desc:'DoD 检查清单自动化校验、合规审计辅助、性能验收。', tags:['验收阶段'] },
+  ],
+  agents: [
+    { id:'ag1', name:'需求分析 Agent', avatar:'📋', color:'#10B981', stage:'需求分析', desc:'解析需求文档，执行完整性/语义/追溯性检查' },
+    { id:'ag2', name:'需求拆解 Agent', avatar:'✂️', color:'#8B5CF6', stage:'需求拆解', desc:'将需求拆解为可执行子任务，分析依赖关系' },
+    { id:'ag3', name:'方案设计 Agent', avatar:'🏗️', color:'#3B82F6', stage:'方案设计', desc:'架构设计、接口定义、技术选型评估' },
+    { id:'ag4', name:'代码生成 Agent', avatar:'💻', color:'#06B6D4', stage:'代码生成', desc:'基于方案生成代码，执行编码规范检查' },
+    { id:'ag5', name:'代码审查 Agent', avatar:'🔍', color:'#F59E0B', stage:'代码审查', desc:'静态分析、安全扫描、复杂度检测' },
+    { id:'ag6', name:'单元测试 Agent', avatar:'🧪', color:'#EF4444', stage:'单元测试', desc:'生成测试用例，执行覆盖率门禁' },
+    { id:'ag7', name:'质量检查 Agent', avatar:'📊', color:'#10B981', stage:'质量检查', desc:'技术债务检测、重复率分析、性能基线' },
+    { id:'ag8', name:'验收确认 Agent', avatar:'✅', color:'#22C55E', stage:'验收确认', desc:'DoD 检查清单、合规审计、性能验收' },
+  ],
 };
 
 let taskIdCounter = 10;
 let reviewIdCounter = 4;
+let skillIdCounter = 10;
+let agentIdCounter = 10;
 let chatTimeout = null;
 
 // Agent assignments per stage
@@ -346,3 +369,41 @@ const scheduledTasks = [
     ],
   },
 ];
+
+// Persist skills to localStorage
+function saveSkills() {
+  localStorage.setItem('app_skills', JSON.stringify(state.skills));
+  localStorage.setItem('app_skillIdCounter', skillIdCounter);
+}
+
+// Load skills from localStorage on init
+(function loadSkills() {
+  try {
+    const saved = localStorage.getItem('app_skills');
+    if (saved) {
+      state.skills = JSON.parse(saved);
+    }
+    const savedCounter = localStorage.getItem('app_skillIdCounter');
+    if (savedCounter) {
+      skillIdCounter = parseInt(savedCounter, 10);
+    }
+  } catch(e) { /* ignore corrupt data */ }
+})();
+
+function saveAgents() {
+  localStorage.setItem('app_agents', JSON.stringify(state.agents));
+  localStorage.setItem('app_agentIdCounter', agentIdCounter);
+}
+
+(function loadAgents() {
+  try {
+    const saved = localStorage.getItem('app_agents');
+    if (saved) {
+      state.agents = JSON.parse(saved);
+    }
+    const savedCounter = localStorage.getItem('app_agentIdCounter');
+    if (savedCounter) {
+      agentIdCounter = parseInt(savedCounter, 10);
+    }
+  } catch(e) { /* ignore corrupt data */ }
+})();

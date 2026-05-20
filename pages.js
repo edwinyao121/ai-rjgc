@@ -1,11 +1,14 @@
 // ============================================================
 function renderAgents(container) {
-  const agents = Object.entries(stageAgents).filter(([k]) => k !== '测试').map(([stage, a]) => ({ stage, ...a }));
+  const agents = state.agents;
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div><div style="font-size:22px;font-weight:700;">智能体管理</div>
       <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">平台内置研发智能体一览</div></div>
-      <span class="tag tag-blue">${agents.length} 个智能体</span>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${agents.length} 个智能体</span>
+        <button class="btn btn-primary btn-sm" onclick="showAgentModal()">+ 新增智能体</button>
+      </div>
     </div>
     <div class="grid-3">${agents.map(a => `
       <div class="card card-hover">
@@ -15,9 +18,167 @@ function renderAgents(container) {
           <span class="tag tag-green">运行中</span>
         </div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
-      </div>`).join('')}
-    </div>`;
+        ${a.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${a.packageFile.name} <span style="color:var(--text-muted);">(${(a.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
+        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
+          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
+        </div>
+      </div>`).join('')}</div>`;
 }
+
+function showAgentModal(agentId) {
+  const agent = agentId ? state.agents.find(a => a.id === agentId) : null;
+  const isEdit = !!agent;
+  const avatarOptions = ['📋','✂️','🏗️','💻','🔍','🧪','📊','✅','🤖','🛡️','⚡','🔧','📡','🎯','💡','🔬','🎨','📝','🚀','🔔'];
+  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认','测试','部署发布','持续监控','自定义'];
+  const existingFile = agent && agent.packageFile ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">当前: ${agent.packageFile.name} (${(agent.packageFile.size/1024).toFixed(1)} KB)</div>` : '';
+  const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="width:540px;">
+      <h3>${isEdit ? '编辑智能体' : '新增智能体'}</h3>
+      <div class="form-group"><label>名称</label><input type="text" id="agName" value="${agent?agent.name:''}" placeholder="输入智能体名称"></div>
+      <div class="form-group"><label>负责阶段</label>
+        <select id="agStage">${stages.map(s => `<option value="${s}" ${agent&&agent.stage===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>头像图标</label>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;" id="avatarPicker">
+          ${avatarOptions.map(icon => `
+            <div onclick="selectAgentAvatar(this, '${icon}')" style="width:34px;height:34px;border:2px solid ${agent&&agent.avatar===icon?'var(--primary)':'var(--border)'};border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;background:${agent&&agent.avatar===icon?'#F0F4FF':''};">${icon}</div>
+          `).join('')}
+        </div>
+        <input type="hidden" id="agAvatar" value="${agent?agent.avatar:'🤖'}">
+      </div>
+      <div class="form-group"><label>描述</label><textarea id="agDesc" rows="3" placeholder="描述该智能体的职责和能力">${agent?agent.desc:''}</textarea></div>
+      <div class="form-group"><label>上传压缩包</label>
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;" onclick="document.getElementById('agPackageFile').click()">
+          <div style="font-size:28px;">&#128230;</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">点击选择 .zip / .tar.gz / .rar 文件</div>
+          <div id="agPackageName" style="font-size:12px;color:var(--primary);margin-top:4px;font-weight:600;"></div>
+          ${existingFile}
+        </div>
+        <input type="file" id="agPackageFile" accept=".zip,.tar.gz,.rar,.7z,.gz" style="display:none;" onchange="handleAgentPackageSelect(this)">
+        <input type="hidden" id="agPackageData">
+        <input type="hidden" id="agPackageFileName">
+        <input type="hidden" id="agPackageFileSize">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-primary" id="btnSaveAgent">${isEdit ? '保存修改' : '添加智能体'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  // Avatar picker
+  document.querySelectorAll('#avatarPicker div').forEach(el => {
+    el.addEventListener('click', () => selectAgentAvatar(el, el.textContent));
+  });
+
+  // Pre-fill package data for edit mode
+  if (agent && agent.packageFile) {
+    document.getElementById('agPackageData').value = agent.packageFile.data || '';
+    document.getElementById('agPackageFileName').value = agent.packageFile.name || '';
+    document.getElementById('agPackageFileSize').value = agent.packageFile.size || '';
+  }
+
+  document.getElementById('btnSaveAgent').addEventListener('click', () => {
+    const name = document.getElementById('agName').value.trim();
+    const stage = document.getElementById('agStage').value;
+    const avatar = document.getElementById('agAvatar').value;
+    const desc = document.getElementById('agDesc').value.trim();
+    if (!name) { toast('请输入智能体名称', true); return; }
+
+    const packageData = document.getElementById('agPackageData').value;
+    const packageFileName = document.getElementById('agPackageFileName').value;
+    const packageFileSize = parseInt(document.getElementById('agPackageFileSize').value) || 0;
+
+    const agentData = {
+      id: isEdit ? agent.id : ('ag' + (agentIdCounter++)),
+      name, avatar, stage, desc
+    };
+
+    if (packageData && packageFileName) {
+      agentData.packageFile = {
+        name: packageFileName,
+        size: packageFileSize,
+        data: packageData
+      };
+    } else if (isEdit && agent.packageFile) {
+      agentData.packageFile = agent.packageFile;
+    }
+
+    if (isEdit) {
+      Object.assign(agent, agentData);
+      toast(`智能体 "${name}" 已更新`);
+    } else {
+      state.agents.push(agentData);
+      toast(`智能体 "${name}" 已添加`);
+    }
+    saveAgents();
+    overlay.remove();
+    renderAgents(document.getElementById('mainContent'));
+  });
+}
+
+function selectAgentAvatar(el, icon) {
+  document.querySelectorAll('#avatarPicker div').forEach(opt => {
+    opt.style.borderColor = 'var(--border)';
+    opt.style.background = '';
+  });
+  el.style.borderColor = 'var(--primary)';
+  el.style.background = '#F0F4FF';
+  document.getElementById('agAvatar').value = icon;
+}
+
+function handleAgentPackageSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    document.getElementById('agPackageData').value = reader.result;
+    document.getElementById('agPackageFileName').value = file.name;
+    document.getElementById('agPackageFileSize').value = file.size;
+    document.getElementById('agPackageName').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleSkillPackageSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    document.getElementById('skPackageData').value = reader.result;
+    document.getElementById('skPackageFileName').value = file.name;
+    document.getElementById('skPackageFileSize').value = file.size;
+    document.getElementById('skPackageName').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteAgent(agentId) {
+  const agent = state.agents.find(a => a.id === agentId);
+  if (!agent) return;
+  const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="width:400px;">
+      <h3>确认删除</h3>
+      <p style="color:var(--text-secondary);margin-bottom:20px;">确定要删除智能体「<strong>${agent.name}</strong>」吗？此操作不可恢复。</p>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-danger" id="btnConfirmDelete">确认删除</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('btnConfirmDelete').addEventListener('click', () => {
+    state.agents = state.agents.filter(a => a.id !== agentId);
+    saveAgents();
+    toast(`智能体 "${agent.name}" 已删除`);
+    overlay.remove();
+    renderAgents(document.getElementById('mainContent'));
+  });
+}
+
 
 // ============================================================
 // SUMMARY PAGE - 定时任务管理
@@ -122,21 +283,14 @@ function executeScheduledTask(taskId) {
 // SKILLS PAGE
 // ============================================================
 function renderSkills(container) {
-  const skills = [
-    { name:'需求分析技能', ver:'v2.3', calls:1247, status:'enabled', desc:'智能分析需求文档，执行完整性检查、语义一致性分析、可追溯性验证。支持 .html / .docx / .txt 格式输入。', tags:['需求分析阶段','NLU'] },
-    { name:'代码生成技能', ver:'v3.1', calls:3892, status:'enabled', desc:'基于方案设计与需求，智能生成高质量代码。支持 Java / Python / TypeScript / Go，内置编码规范和最佳实践。', tags:['代码生成阶段','CodeGen'] },
-    { name:'代码审查技能', ver:'v2.8', calls:2104, status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测、最佳实践审查。输出结构化审查报告和修复建议。', tags:['代码审查阶段','安全'] },
-    { name:'测试生成技能', ver:'v1.9', calls:1856, status:'enabled', desc:'自动生成单元测试和集成测试用例，支持 JUnit / pytest / Jest。目标覆盖率可配置。', tags:['测试阶段','TDD'] },
-    { name:'任务拆解技能', ver:'v2.0', calls:923, status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，评估依赖关系和工时，生成看板 Backlog。', tags:['需求拆解阶段'] },
-    { name:'质量分析技能', ver:'v1.7', calls:1567, status:'enabled', desc:'技术债务检测、代码重复率分析、性能基线检查。', tags:['质量检查阶段','Metrics'] },
-    { name:'方案设计技能', ver:'v1.8', calls:892, status:'enabled', desc:'架构设计辅助、接口定义、技术选型建议。自动生成设计文档。', tags:['方案设计阶段'] },
-    { name:'部署编排技能', ver:'v1.5', calls:412, status:'disabled', desc:'灰度发布策略生成、回滚条件校验、部署环境一致性检查。', tags:['部署阶段'] },
-    { name:'验收检查技能', ver:'v1.6', calls:678, status:'enabled', desc:'DoD 检查清单自动化校验、合规审计辅助、性能验收。', tags:['验收阶段'] },
-  ];
+  const skills = state.skills;
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div><div style="font-size:22px;font-weight:700;">技能市场</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">内置 Agent 技能库（Multica 风格）— 管理员维护，全局复用</div></div>
-      <span class="tag tag-blue">${skills.filter(s=>s.status==='enabled').length} 个技能可用</span>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${skills.filter(s=>s.status==='enabled').length} 个技能可用</span>
+        <button class="btn btn-primary btn-sm" onclick="showSkillModal()">+ 新增技能</button>
+      </div>
     </div>
     <div class="grid-3">${skills.map(s => `
       <div class="card card-hover">
@@ -144,6 +298,11 @@ function renderSkills(container) {
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${s.desc}</div>
         <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
         ${s.status==='enabled'?`<button class="btn btn-outline btn-sm" style="margin-top:10px;width:100%;" onclick="runSkillDemo('${s.name}')">&#9654; 演示调用</button>`:''}
+        ${s.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${s.packageFile.name} <span style="color:var(--text-muted);">(${(s.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
+        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
+          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showSkillModal('${s.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteSkill('${s.id}')">&#10005; 删除</button>
+        </div>
       </div>`).join('')}</div>`;
 }
 
@@ -167,6 +326,116 @@ function runSkillDemo(name) {
     }
     updateBadges();
   }, 1000);
+}
+
+function showSkillModal(skillId) {
+  const skill = skillId ? state.skills.find(s => s.id === skillId) : null;
+  const isEdit = !!skill;
+  const existingFile = skill && skill.packageFile ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);margin-top:4px;">当前: ${skill.packageFile.name} (${(skill.packageFile.size/1024).toFixed(1)} KB)</div>` : '';
+  const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="width:520px;">
+      <h3>${isEdit ? '编辑技能' : '新增技能'}</h3>
+      <div class="form-group"><label>技能名称</label><input type="text" id="skName" value="${skill?skill.name:''}" placeholder="输入技能名称"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>版本号</label><input type="text" id="skVer" value="${skill?skill.ver:'v1.0'}" placeholder="v1.0"></div>
+        <div class="form-group"><label>状态</label>
+          <select id="skStatus">
+            <option value="enabled" ${skill&&skill.status==='enabled'?'selected':''}>启用</option>
+            <option value="disabled" ${skill&&skill.status==='disabled'?'selected':''}>禁用</option>
+          </select></div>
+      </div>
+      <div class="form-group"><label>描述</label><textarea id="skDesc" rows="3" placeholder="描述该技能的功能和用途">${skill?skill.desc:''}</textarea></div>
+      <div class="form-group"><label>标签（逗号分隔）</label><input type="text" id="skTags" value="${skill?skill.tags.join(', '):''}" placeholder="如：需求分析阶段, NLU"></div>
+      <div class="form-group"><label>上传压缩包</label>
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;" onclick="document.getElementById('skPackageFile').click()">
+          <div style="font-size:28px;">&#128230;</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">点击选择 .zip / .tar.gz / .rar 文件</div>
+          <div id="skPackageName" style="font-size:12px;color:var(--primary);margin-top:4px;font-weight:600;"></div>
+          ${existingFile}
+        </div>
+        <input type="file" id="skPackageFile" accept=".zip,.tar.gz,.rar,.7z,.gz" style="display:none;" onchange="handleSkillPackageSelect(this)">
+        <input type="hidden" id="skPackageData">
+        <input type="hidden" id="skPackageFileName">
+        <input type="hidden" id="skPackageFileSize">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-primary" id="btnSaveSkill">${isEdit ? '保存修改' : '添加技能'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  if (skill && skill.packageFile) {
+    document.getElementById('skPackageData').value = skill.packageFile.data || '';
+    document.getElementById('skPackageFileName').value = skill.packageFile.name || '';
+    document.getElementById('skPackageFileSize').value = skill.packageFile.size || '';
+  }
+
+  document.getElementById('btnSaveSkill').addEventListener('click', () => {
+    const name = document.getElementById('skName').value.trim();
+    const ver = document.getElementById('skVer').value.trim();
+    const status = document.getElementById('skStatus').value;
+    const desc = document.getElementById('skDesc').value.trim();
+    const tagsStr = document.getElementById('skTags').value.trim();
+    if (!name) { toast('请输入技能名称', true); return; }
+    const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+    const packageData = document.getElementById('skPackageData').value;
+    const packageFileName = document.getElementById('skPackageFileName').value;
+    const packageFileSize = parseInt(document.getElementById('skPackageFileSize').value) || 0;
+
+    if (isEdit) {
+      skill.name = name;
+      skill.ver = ver || 'v1.0';
+      skill.status = status;
+      skill.desc = desc;
+      skill.tags = tags;
+      if (packageData && packageFileName) {
+        skill.packageFile = { name: packageFileName, size: packageFileSize, data: packageData };
+      }
+      toast(`技能 "${name}" 已更新`);
+      saveSkills();
+    } else {
+      const newSkill = {
+        id: 'sk' + (skillIdCounter++),
+        name, ver: ver || 'v1.0', calls: 0, status, desc, tags
+      };
+      if (packageData && packageFileName) {
+        newSkill.packageFile = { name: packageFileName, size: packageFileSize, data: packageData };
+      }
+      state.skills.push(newSkill);
+      toast(`技能 "${name}" 已添加`);
+      saveSkills();
+    }
+    overlay.remove();
+    renderSkills(document.getElementById('mainContent'));
+  });
+}
+
+function deleteSkill(skillId) {
+  const skill = state.skills.find(s => s.id === skillId);
+  if (!skill) return;
+  const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="width:400px;">
+      <h3>确认删除</h3>
+      <p style="color:var(--text-secondary);margin-bottom:20px;">确定要删除技能「<strong>${skill.name}</strong>」吗？此操作不可恢复。</p>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
+        <button class="btn btn-danger" id="btnConfirmDelete">确认删除</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('btnConfirmDelete').addEventListener('click', () => {
+    state.skills = state.skills.filter(s => s.id !== skillId);
+    saveSkills();
+    toast(`技能 "${skill.name}" 已删除`);
+    overlay.remove();
+    renderSkills(document.getElementById('mainContent'));
+  });
 }
 
 // ============================================================
