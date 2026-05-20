@@ -3,8 +3,7 @@ function renderAgents(container) {
   const agents = state.agents;
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">智能体管理</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">平台内置研发智能体一览</div></div>
+      <div><div style="font-size:13px;color:var(--text-muted);">平台内置研发智能体一览</div></div>
       <div style="display:flex;gap:10px;align-items:center;">
         <span class="tag tag-blue">${agents.length} 个智能体</span>
         <button class="btn btn-primary btn-sm" onclick="showAgentModal()">+ 新增智能体</button>
@@ -286,7 +285,7 @@ function renderSkills(container) {
   const skills = state.skills;
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">技能市场</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">内置 Agent 技能库（Multica 风格）— 管理员维护，全局复用</div></div>
+      <div><div style="font-size:13px;color:var(--text-muted);">内置 Agent 技能库（Multica 风格）— 管理员维护，全局复用</div></div>
       <div style="display:flex;gap:10px;align-items:center;">
         <span class="tag tag-blue">${skills.filter(s=>s.status==='enabled').length} 个技能可用</span>
         <button class="btn btn-primary btn-sm" onclick="showSkillModal()">+ 新增技能</button>

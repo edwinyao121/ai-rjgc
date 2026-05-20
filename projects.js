@@ -4,7 +4,7 @@
 function renderProjects(container) {
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">项目空间</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">管理所有智能研发项目</div></div>
+      <div><div style="font-size:13px;color:var(--text-muted);">管理所有智能研发项目</div></div>
       <button class="btn btn-primary" onclick="showNewProjectModal()">+ 新建项目</button>
     </div>
     <div class="grid-3" id="projectGrid"></div>`;

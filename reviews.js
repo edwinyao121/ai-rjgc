@@ -37,7 +37,7 @@ function renderReviews(container) {
   }
 
   container.innerHTML = `
-    <div style="font-size:22px;font-weight:700;">${pageTitle}</div>
+    <div style="font-size:13px;color:var(--text-muted);">${pageTitle}</div>
     <div class="grid-2">
       <div class="card"><div class="card-title" style="margin-bottom:14px;">待我评审 (${pending.length})</div>
         ${pending.length === 0 ? '<div class="empty-state"><div>暂无待评审项</div></div>' : pending.map(r => renderReviewCard(r, true)).join('')}

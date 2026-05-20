@@ -10,7 +10,7 @@ function renderRulesConfig(container) {
     : '平台级全局规则，所有项目共享';
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">门禁配置</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${subtitle}</div></div>
+      <div><div style="font-size:13px;color:var(--text-muted);">${subtitle}</div></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-primary btn-sm" onclick="showAddRuleModal()">+ 添加规则</button>
         <button class="btn btn-outline btn-sm" onclick="resetRules()">&#9881; 恢复默认</button>

@@ -154,7 +154,7 @@ function renderSidebar() {
   const topbarLeft = document.querySelector('.topbar-left');
   if (topbarLeft) {
     if (state.context.level === 'global') {
-      topbarLeft.innerHTML = `<h1>智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span>`;
+      topbarLeft.innerHTML = `<span class="breadcrumb" id="breadcrumbWrapper"></span>`;
     } else {
       const p = getProject(state.activeProjectId);
       const pName = p ? p.name : '项目内';
@@ -220,9 +220,9 @@ function navigate(page, data) {
   }
   
   if (state.context.level === 'project' && state.activeProjectId) {
-    breadcrumbWrapper.innerHTML = `<span id="pageTitle">${pageName}</span>`;
+    breadcrumbWrapper.innerHTML = `<span id="pageTitle" style="font-size:20px;font-weight:700;">${pageName}</span>`;
   } else {
-    breadcrumbWrapper.innerHTML = `<span id="pageTitle">${pageName}</span>`;
+    breadcrumbWrapper.innerHTML = `<span id="pageTitle" style="font-size:20px;font-weight:700;">${pageName}</span>`;
   }
 
   renderPage(page, data);
