@@ -11,7 +11,7 @@ const state = {
   activeTaskId: 't1',
   projects: [
     { 
-      id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8,
+      id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'gitlab.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8,
       guidelines: {
         dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
         collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
@@ -22,7 +22,7 @@ const state = {
       }
     },
     { 
-      id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8,
+      id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'gitlab.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8,
       guidelines: {
         dependency: '1. 包管理：统一使用 Go Modules 进行依赖管理，Go.sum 必须随代码库提交。\n2. 依赖原则：严禁引入未经安全评估的第三方组件，优先使用官方原生标准库。',
         collaboration: '1. 分支管理：主分支保持稳定，开发在 dev 分支进行，发布分支遵循 release/v* 命名。\n2. 提交约定：符合 Conventional Commits 格式规则。',
@@ -33,18 +33,18 @@ const state = {
       }
     },
     { 
-      id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6,
+      id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'gitlab.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6,
       guidelines: {
         dependency: '1. 包管理：统一使用 npm/yarn 进行依赖导入，lockfile 必须保证提交。\n2. 安全扫描：引入包必须经过 npm audit 安全漏洞扫描。',
-        collaboration: '1. 提交说明：详细描述重构修改的模块和影响范围。\n2. 分支规范：refactor/feature 分支按模块隔离。',
+        collaboration: '1. 提交说明：详细描述重构修改的模块 and 影响范围。\n2. 分支规范：refactor/feature 分支按模块隔离。',
         stack: 'Node.js 18, NestJS, TypeScript, PostgreSQL, Keycloak',
         coding: '遵循 NestJS 推荐的项目结构 and 编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
-        domain: '1. 密码安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
+        domain: '1. 口令安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
         quality: '1. ORM 规范：数据库查询必须使用 TypeORM QueryBuilder，防范 SQL 注入风险。\n2. 文档同步：所有 Controller 接口变更必须同步更新 Swagger 装饰器。'
       }
     },
     { 
-      id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7,
+      id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'gitlab.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7,
       guidelines: {
         dependency: '1. 镜像管理：严禁使用 latest 标签，必须指定具体的 Docker 镜像 tag。\n2. 依赖校验：Terraform 模块统一使用私有 Registry 版本。',
         collaboration: '1. 变更评审：所有部署脚本与 IaC 变更必须至少有 2 人联合 Review 后方能合并。',
@@ -54,12 +54,29 @@ const state = {
         quality: '1. 变更验证：部署脚本变更必须先通过 Terraform plan 验证并 Review。\n2. 镜像规范：线上环境 Kubernetes 部署严禁使用 latest 镜像标签，必须固定版本号。'
       }
     },
+    { 
+      id:'p5', name:'公文管理系统', desc:'支持大模型文档摘要、既定流转顺序、双核验下载及印章审计的公文管理系统', repo:'gitlab.com/gov/doc-management', members:6, status:'blocked', stagesDone:0, stagesTotal:8,
+      guidelines: {
+        dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
+        collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
+        stack: 'Spring Boot 3.2, Vue 3, PostgreSQL 15, OFD Reader, Gemini API, Redis 7',
+        coding: '1. 命名规范：后端遵循中国信创开源规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
+        domain: '1. 文档摘要：对接大模型 API 生成文档摘要，长文本需流式读取分块处理。\n2. 流转顺序：阅件处理必须严格遵循“接收、审批、传阅、归档”既定顺序，由流转状态机进行强控，严禁逆向或越级。\n3. 登记防篡改：信件登记信息一经录入系统，任何员工均无权直接修改。若需更正必须提交“信息更正申请单”，经部门领导审批通过后方可由系统管理员操作。\n4. 用印审批：用印流程支持根据文件类型、次数、印章类型自定义多级审批，支持在线待用印文件预览、电子签名确认及用印后文件自动归档。\n5. 版本管理：档案修改后生成独立版本，历史版本需完整保留并随时回溯查看。',
+        quality: '1. 安全下载：阅件下载必须实施双重身份核验（安全口令 + 短信/动态验证码 2FA）。\n2. 审计追溯：每次用印完成后自动归档申请单、审批记录、前后文件，生成唯一的档案编号。'
+      }
+    }
   ],
   tasks: [
     { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },
-    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'executing', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
-    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'王工' },
+    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'review', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
+    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'planning', stageCurrent:-1, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0], stageGates:[[0],[0],[0],[0],[0],[0]], stageAssignees:['王工','王工','王工','王工','王工','王工'], aiCreated:true, assignee:'王工' },
     { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
+    { id:'t5', pid:'p5', title:'公文阅件流转与用印审批核心功能研制', type:'Feature', priority:'P0', estimate:'25d', status:'executing', stageCurrent:0, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[1,0,1],[0,0],[0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['张经理','李工','王工','赵工','刘工','李工','王工','张经理'], aiCreated:false, assignee:'张经理' },
+    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'planning', stageCurrent:-1, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[0,0,0],[0,0],[0,0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['李工','李工','李工','李工','李工','李工','李工','李工'], aiCreated:true, assignee:'李工' },
+    { id:'t7', pid:'p5', title:'阅件二次身份核验双因子(2FA)下载模块开发', type:'Feature', priority:'P1', estimate:'8d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
+    { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'review', stageCurrent:2, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0], stageGates:[[1],[1],[1,1],[0,0],[0],[0]], stageAssignees:['刘工','刘工','刘工','刘工','刘工','刘工'], aiCreated:false, assignee:'刘工' },
+    { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,1,1],[1,1],[1],[1]], stageAssignees:['王工','王工','王工','王工','王工','王工','王工','王工'], aiCreated:false, assignee:'王工' },
+    { id:'t10', pid:'p1', title:'系统安全加固与配置巡检', type:'Enhancement', priority:'P1', estimate:'5d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1],[1],[1],[1],[1],[1],[1],[1]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' }
   ],
   // Gate definitions per stage type
   gateDefs: {
@@ -103,6 +120,9 @@ const state = {
   },
   // Conversations per task stage
   conversations: {
+    't5-0': [
+      { role:'agent', text:'需求分析阶段已开启自动门禁检查。<br>• <strong>需求完整性检查</strong>：通过 (100%) ✅<br>• <strong>可追溯性检查</strong>：通过 (100%) ✅<br>• <strong>语义冲突检测</strong>：<span style="color:var(--danger);font-weight:bold;">阻断 ❌</span><br><br><strong>检测到重大语义冲突（版本规则矛盾）：</strong><br>开发规范第8条指出“档案修改后生成独立版本，历史版本需完整保留并随时回溯查看”，而需求第9条指出“档案每次修改后自动覆盖版本，仅保留最新版本记录”。<br>这两个规则在公文版本的更新策略上存在根本的逻辑冲突！该门禁已阻断流水线，系统已自动提交“【高危需求冲突决策】公文系统版本控制行政决策”评审（ID: r4），等待项目负责人张经理进行行政决策。', time:m(1) }
+    ],
     't1-4': [ // task t1, stage index 4 (代码审查)
       { role:'agent', text:'代码审查阶段已完成自动门禁检查。编码规范和安全扫描通过，但 <strong>QueryOptimizer.process()</strong> 圈复杂度超标 (23>15)，<strong>SQLBuilder.build()</strong> 方法过长 (142>80行)。这是详细的检查报告，需要我帮你自动重构吗？', time:m(120) },
       { role:'user', text:'先帮我重构 QueryOptimizer.process()。把子查询优化那块拆出来，注意不要改业务逻辑。', time:m(60) },
@@ -115,11 +135,11 @@ const state = {
     ],
     't2-3': [
       { role:'user', text:'参考需求分析报告，我要新增一个人事管理模块。', time:m(1800) },
-      { role:'agent', text:'已读取需求分析报告。主要功能包括：<br>• P0：员工花名册管理、入职流程、转正管理、离职管理<br>• P1：岗位调动、人事报表<br><br>技术要求：查询响应≤500ms，批量导入1000条≤10s，敏感数据加密存储。<br><br>先创建项目结构和数据库模型，可以吗？', time:m(1740) },
-      { role:'user', text:'可以。', time:m(1680) },
+      { role:'agent', text:'已读取需求分析报告。主要功能包括：<br>• P0：员工花名册管理、入职流程、转正管理、离职管理<br>• P1：岗位调动、人事报表<br><br>技术要求：查询响应≤500ms，批量导入1000条≤10s，敏感数据脱敏存储。<br><br>先创建项目结构和数据库模型，可以吗？', time:m(1740) },
+      { role:'user', text:'张经理：可以。', time:m(1680) },
       { role:'agent', text:'正在创建项目结构...<br><br><pre style="background:#F8FAFC;padding:10px;border-radius:6px;font-size:12px;">src/modules/hr/\n├── employee/      # 员工花名册\n├── onboarding/    # 入职流程\n├── confirmation/  # 转正管理\n├── transfer/      # 岗位调动\n├── resignation/   # 离职管理\n└── report/        # 人事报表</pre><br>数据库设计完成：<br>• ✅ employees 表 - 花名册主数据<br>• ✅ employee_events 表 - 入转调离事件流水<br>• ✅ approval_flows 表 - 审批流程配置', time:m(1620) },
       { role:'user', text:'先做员工花名册管理。', time:m(1560) },
-      { role:'agent', text:'正在实现员工花名册管理...<br><br>• ✅ model: Employee, EmployeeEvent<br>• ✅ API: POST/GET/PUT/DELETE /api/hr/employees<br>• ✅ 敏感字段（身份证、薪资）加密存储<br>• ✅ 支持批量导入/导出，Excel模板下载<br><br>需要实现入职流程模块吗？', time:m(1500) },
+      { role:'agent', text:'正在实现员工花名册管理...<br><br>• ✅ model: Employee, EmployeeEvent<br>• ✅ API: POST/GET/PUT/DELETE /api/hr/employees<br>• ✅ 敏感字段（身份证、薪资）脱敏存储<br>• ✅ 支持批量导入/导出，Excel模板下载<br><br>需要实现入职流程模块吗？', time:m(1500) },
       { role:'user', text:'接下来做入职流程。', time:m(1440) },
       { role:'agent', text:'正在实现入职流程...<br><br>• ✅ workflow: 发起申请 → 部门审批 → HR确认 → 自动建账<br>• ✅ 消息通知集成（邮件/站内信）<br>• ✅ 状态机：pending → department_approved → hr_approved → active<br><br>需要实现转正管理吗？', time:m(1380) },
       { role:'user', text:'接下来做转正管理。', time:m(1320) },
@@ -152,13 +172,27 @@ const state = {
     'DoD检查清单': { enabled: true, threshold: 100 },
     '合规审计检查': { enabled: false, threshold: 100 },
   },
+  globalGuidelines: {
+    engineering: '1. 版本控制：所有代码必须纳入 Git 管理，主分支受保护，禁止直接 push。\n2. 分支策略：采用 GitFlow 工作流，功能分支命名 feature/{module}-{desc}，修复分支 hotfix/{issue}。\n3. 代码评审：合并请求必须通过至少 1 名核心成员 Code Review，严禁自审自合。\n4. 持续集成：每次提交自动触发 CI 流水线，包含编译、单测、静态扫描三个阶段。',
+    security: '1. 身份认证：所有系统入口必须实施多因素认证（MFA），禁止明文传输凭据。\n2. 数据安全：敏感数据（身份证、薪资、密钥）必须加密存储，日志中严禁打印明文敏感信息。\n3. 权限控制：遵循最小权限原则，接口级鉴权必须覆盖全部写操作。\n4. 依赖安全：引入第三方组件前必须通过漏洞扫描（CVE/CNVD），高危组件严禁上线。',
+    collaboration: '1. 提交规范：Commit Message 格式为 <type>(<scope>): <subject>，type 取 feat/fix/refactor/docs/chore。\n2. 文档同步：接口变更必须同步更新 API 文档，需求变更必须同步更新 PRD。\n3. 沟通机制：每日站会不超过 15 分钟，技术方案评审需提前 24 小时发出文档。',
+    quality: '1. 单测覆盖：核心业务逻辑单元测试行覆盖率 ≥ 80%，使用 Mock 隔离外部依赖。\n2. 静态扫描：SonarQube 扫描不允许 Blocker/Critical 级别问题，圈复杂度单函数 ≤ 15。\n3. 性能基线：核心 API 在 P99 延迟 ≤ 500ms，批量操作 ≤ 5s。\n4. 技术债务：项目技术债务比率不得超过 5%，每迭代安排 ≥ 10% 容量偿还。',
+    testing: '1. 测试分层：单元测试（70%）→ 集成测试（20%）→ E2E 测试（10%），金字塔模型。\n2. 环境隔离：测试环境必须与生产环境配置隔离，禁止测试写入生产库。\n3. 回归策略：每次发版前必须执行全量回归测试套件，关键路径用例 100% 通过。',
+    release: '1. 发布流程：采用灰度发布策略，先金丝雀（5%）→ 小流量（20%）→ 全量。\n2. 回滚机制：每次发布必须具备一键回滚能力，回滚操作 ≤ 5 分钟完成。\n3. 变更窗口：非紧急变更仅在工作日 10:00-16:00 执行，禁止周五下午发布。',
+  },
   reviews: [
     { id:'r1', tid:'t1', stage:2, stageName:'代码审查', reviewer:'王工', status:'pending', desc:'安全相关代码需人工确认，门禁已全部通过' },
     { id:'r2', tid:'t2', stage:2, stageName:'方案设计', reviewer:'李工', status:'pending', desc:'数据脱敏规则引擎的架构方案涉及 3 个核心模块调整，需技术负责人评审' },
     { id:'r3', tid:'t3', stage:-1, stageName:'需求分析', reviewer:'赵工', status:'pending', desc:'日志采集组件升级方案确认' },
+    { id:'r4', tid:'t5', stage:0, stageName:'需求分析', reviewer:'张经理', status:'pending', desc:'【高危需求冲突决策】公文系统开发规范第8条（保留历史版本）与需求第9条（单版本自动覆盖）存在根本性冲突，请项目负责人进行行政决策！' },
+    { id:'r5', tid:'t8', stage:2, stageName:'方案设计', reviewer:'刘工', status:'pending', desc:'公文多版本控制引擎架构设计，涉及底层存储及归档逻辑，需核心架构师评审' },
   ],
   timeline: [
-    { time:m(0), text:'代码审查 Agent 完成 <strong>OA办公系统</strong> 的代码审查阶段，1 项门禁阻断' },
+    { time:m(0), text:'AI 语义分析 Agent 发现 <strong>公文管理系统</strong> 存在第8条与第9条版本控制规则语义冲突，门禁触发阻断！' },
+    { time:m(2), text:'系统自动创建了 <strong>公文管理系统</strong> 的“语义一致性行政决策评审” (r4)' },
+    { time:m(5), text:'李工 提交了 <strong>公文管理系统</strong> 阅件二次身份核验方案设计评审意见' },
+    { time:m(10), text:'测试 Agent 为 <strong>公文管理系统</strong> 生成了双重核验与用印状态机测试报告' },
+    { time:m(15), text:'代码审查 Agent 完成 <strong>OA办公系统</strong> 的代码审查阶段，1 项门禁阻断' },
     { time:m(480), text:'张伟提交了 <strong>人事管理模块</strong> 的方案设计评审意见' },
     { time:m(900), text:'AI 自动拆解了 <strong>OA办公系统</strong> 的"流程审批模块"需求，生成 6 个子任务' },
     { time:m(1920), text:'单元测试门禁在 <strong>公文档案模块</strong> 触发阻断：覆盖率 62% < 80%' },
@@ -187,8 +221,8 @@ const state = {
   ],
 };
 
-let taskIdCounter = 10;
-let reviewIdCounter = 4;
+let taskIdCounter = 11;
+let reviewIdCounter = 5;
 let skillIdCounter = 10;
 let agentIdCounter = 10;
 let chatTimeout = null;

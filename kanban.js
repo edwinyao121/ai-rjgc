@@ -184,7 +184,7 @@ function showNewTaskModal() {
           <div style="display:flex;flex-direction:column;gap:6px;">
             <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;"><input type="checkbox" checked data-title="数据导出格式支持 CSV/Excel" data-type="Feature" data-priority="P1" data-estimate="3天"> 数据导出格式支持 CSV/Excel — Feature · P1 · 3天</label>
             <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;"><input type="checkbox" checked data-title="导出进度实时通知优化" data-type="Enhancement" data-priority="P2" data-estimate="2天"> 导出进度实时通知优化 — Enhancement · P2 · 2天</label>
-            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;"><input type="checkbox" data-title="导出文件自动压缩与加密" data-type="Feature" data-priority="P2" data-estimate="5天"> 导出文件自动压缩与加密 — Feature · P2 · 5天</label>
+            <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;"><input type="checkbox" data-title="导出文件自动压缩与安全防护" data-type="Feature" data-priority="P2" data-estimate="5天"> 导出文件自动压缩与安全防护 — Feature · P2 · 5天</label>
           </div>
           <button class="btn btn-primary btn-sm" style="margin-top:12px;" id="btnBatchCreate">批量创建选中任务</button>
         </div>`;

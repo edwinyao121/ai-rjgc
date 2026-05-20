@@ -686,6 +686,152 @@ function renderProjectSkills(container) {
 }
 
 // ============================================================
+// GLOBAL GUIDELINES PAGE
+// ============================================================
+function renderGuidelines(container) {
+  const gg = state.globalGuidelines;
+  const categories = [
+    { key: 'engineering', label: '工程规范', icon: '&#9881;', desc: '版本控制、分支策略、代码评审、持续集成', color: '#3B82F6' },
+    { key: 'security', label: '安全规范', icon: '&#128274;', desc: '身份认证、数据安全、权限控制、依赖安全', color: '#EF4444' },
+    { key: 'collaboration', label: '协作规范', icon: '&#129309;', desc: '提交规范、文档同步、沟通机制', color: '#8B5CF6' },
+    { key: 'quality', label: '质量标准', icon: '&#9989;', desc: '单测覆盖、静态扫描、性能基线、技术债务', color: '#10B981' },
+    { key: 'testing', label: '测试规范', icon: '&#129514;', desc: '测试分层、环境隔离、回归策略', color: '#F59E0B' },
+    { key: 'release', label: '发布规范', icon: '&#128640;', desc: '灰度发布、回滚机制、变更窗口', color: '#06B6D4' },
+  ];
+
+  container.innerHTML = `
+    <style>
+      .gg-header {
+        background: linear-gradient(135deg, #1E40AF 0%, #6366F1 100%);
+        color: #fff;
+        border-radius: var(--radius-lg);
+        padding: 28px 32px;
+        margin-bottom: 24px;
+      }
+      .gg-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+      .gg-header p { font-size: 13px; opacity: 0.85; }
+      .gg-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+        gap: 20px;
+      }
+      .gg-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: var(--transition);
+      }
+      .gg-card:hover { box-shadow: var(--shadow-md); }
+      .gg-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      .gg-card-head-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .gg-card-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: #fff;
+      }
+      .gg-card-label { font-size: 15px; font-weight: 700; color: var(--text); }
+      .gg-card-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .gg-card-body { padding: 16px 20px; }
+      .gg-preview {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        white-space: pre-wrap;
+      }
+      .gg-edit-area {
+        width: 100%;
+        min-height: 140px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: var(--font);
+        line-height: 1.6;
+        resize: vertical;
+        display: none;
+      }
+      .gg-card-actions {
+        display: flex;
+        gap: 8px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--border);
+        background: #F8FAFC;
+      }
+    </style>
+
+    <div class="gg-header">
+      <h1>&#128220; 平台通用规范</h1>
+      <p>定义全局研发工程标准与质量基线，所有项目共享的通用规范准则</p>
+    </div>
+
+    <div class="gg-grid">
+      ${categories.map(cat => {
+        const content = gg[cat.key] || '';
+        const lines = content.split('\n').filter(l => l.trim());
+        return `
+          <div class="gg-card" id="gg-card-${cat.key}">
+            <div class="gg-card-head">
+              <div class="gg-card-head-left">
+                <div class="gg-card-icon" style="background:${cat.color};">${cat.icon}</div>
+                <div>
+                  <div class="gg-card-label">${cat.label}</div>
+                  <div class="gg-card-desc">${cat.desc}</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);">${lines.length} 条规则</div>
+            </div>
+            <div class="gg-card-body">
+              <div class="gg-preview" id="gg-preview-${cat.key}">${lines.map(l => {
+                const trimmed = l.replace(/^\d+\.\s*/, '');
+                const num = l.match(/^(\d+)\./);
+                return num ? `<div style="display:flex;gap:8px;padding:3px 0;"><span style="color:${cat.color};font-weight:600;min-width:18px;">${num[1]}.</span><span>${trimmed}</span></div>` : `<div style="padding:3px 0;">${l}</div>`;
+              }).join('')}</div>
+              <textarea class="gg-edit-area" id="gg-edit-${cat.key}">${content}</textarea>
+            </div>
+            <div class="gg-card-actions" id="gg-actions-${cat.key}">
+              <button class="btn btn-outline btn-sm" onclick="ggToggleEdit('${cat.key}')">&#9998; 编辑</button>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function ggToggleEdit(key) {
+  const preview = document.getElementById('gg-preview-' + key);
+  const editArea = document.getElementById('gg-edit-' + key);
+  const actions = document.getElementById('gg-actions-' + key);
+  const isEditing = editArea.style.display === 'block';
+
+  if (isEditing) {
+    // Save
+    state.globalGuidelines[key] = editArea.value;
+    preview.style.display = 'block';
+    editArea.style.display = 'none';
+    actions.innerHTML = '<button class="btn btn-outline btn-sm" onclick="ggToggleEdit(\'' + key + '\')">&#9998; 编辑</button>';
+    toast('规范已保存');
+    renderGuidelines(document.getElementById('mainContent'));
+  } else {
+    // Enter edit mode
+    preview.style.display = 'none';
+    editArea.style.display = 'block';
+    editArea.focus();
+    actions.innerHTML = '<button class="btn btn-primary btn-sm" onclick="ggToggleEdit(\'' + key + '\')">&#10003; 保存</button><button class="btn btn-outline btn-sm" onclick="renderGuidelines(document.getElementById(\'mainContent\'))">取消</button>';
+  }
+}
+
+// ============================================================
 // PROJECT GUIDELINES PAGE
 // ============================================================
 function renderProjectGuidelines(container) {
