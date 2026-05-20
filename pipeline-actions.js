@@ -487,7 +487,7 @@ function resolveConflictReview(rid, choice) {
     project.status = 'running';
   }
   
-  state.timeline.unshift({ time: m(0), text: `项目负责人张经理通过行政干预化解了 <strong>电子公文管理系统</strong> 的需求语义冲突` });
+  state.timeline.unshift({ time: m(0), text: `项目负责人张经理通过行政干预化解了 <strong>公文管理系统</strong> 的需求语义冲突` });
   
   const container = document.getElementById('mainContent');
   if (state.activePage === 'pipeline-view') {

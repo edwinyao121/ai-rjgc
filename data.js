@@ -55,7 +55,7 @@ const state = {
       }
     },
     { 
-      id:'p5', name:'电子公文管理系统', desc:'支持大模型文档摘要、既定流转顺序、双核验下载及印章审计的电子公文管理系统', repo:'gitlab.com/gov/doc-management', members:6, status:'blocked', stagesDone:0, stagesTotal:8,
+      id:'p5', name:'公文管理系统', desc:'支持大模型文档摘要、既定流转顺序、双核验下载及印章审计的公文管理系统', repo:'gitlab.com/gov/doc-management', members:6, status:'blocked', stagesDone:0, stagesTotal:8,
       guidelines: {
         dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
         collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
@@ -178,10 +178,10 @@ const state = {
     { id:'r4', tid:'t5', stage:0, stageName:'需求分析', reviewer:'张经理', status:'pending', desc:'【高危需求冲突决策】公文系统开发规范第8条（保留历史版本）与需求第9条（单版本自动覆盖）存在根本性冲突，请项目负责人进行行政决策！' },
   ],
   timeline: [
-    { time:m(0), text:'AI 语义分析 Agent 发现 <strong>电子公文管理系统</strong> 存在第8条与第9条版本控制规则语义冲突，门禁触发阻断！' },
-    { time:m(2), text:'系统自动创建了 <strong>电子公文管理系统</strong> 的“语义一致性行政决策评审” (r4)' },
-    { time:m(5), text:'李工 提交了 <strong>电子公文管理系统</strong> 阅件二次身份核验方案设计评审意见' },
-    { time:m(10), text:'测试 Agent 为 <strong>电子公文管理系统</strong> 生成了双重核验与用印状态机测试报告' },
+    { time:m(0), text:'AI 语义分析 Agent 发现 <strong>公文管理系统</strong> 存在第8条与第9条版本控制规则语义冲突，门禁触发阻断！' },
+    { time:m(2), text:'系统自动创建了 <strong>公文管理系统</strong> 的“语义一致性行政决策评审” (r4)' },
+    { time:m(5), text:'李工 提交了 <strong>公文管理系统</strong> 阅件二次身份核验方案设计评审意见' },
+    { time:m(10), text:'测试 Agent 为 <strong>公文管理系统</strong> 生成了双重核验与用印状态机测试报告' },
     { time:m(15), text:'代码审查 Agent 完成 <strong>OA办公系统</strong> 的代码审查阶段，1 项门禁阻断' },
     { time:m(480), text:'张伟提交了 <strong>人事管理模块</strong> 的方案设计评审意见' },
     { time:m(900), text:'AI 自动拆解了 <strong>OA办公系统</strong> 的"流程审批模块"需求，生成 6 个子任务' },

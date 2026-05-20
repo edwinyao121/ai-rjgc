@@ -1162,7 +1162,7 @@ window.switchTestEvidence = function(caseId) {
     
     mockupHtml = `
       <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; align-items:center; position:relative;">
-        <div style="font-size:13px; font-weight:700; color:var(--text);">电子公文阅件流转状态机模型</div>
+        <div style="font-size:13px; font-weight:700; color:var(--text);">公文阅件流转状态机模型</div>
         
         <div style="display:flex; align-items:center; gap:6px; justify-content:center; width:100%; flex-wrap:wrap; position:relative; padding:10px 0;">
           <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
@@ -1203,7 +1203,7 @@ window.switchTestEvidence = function(caseId) {
     `;
   } else if (caseId === 'immutable') {
     title = 'testRegistrationImmutable';
-    desc = '验证电子公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、公文级别或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
+    desc = '验证公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、公文级别或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
     logs = `[INFO]  Running test testImmutableRegistrationInfo...
 [DEBUG] Querying document metadata for ID: DOC-2026-9903
 [INFO]  Immutable Fields locked in Data Access Object (DAO) context.
@@ -1264,7 +1264,7 @@ window.switchTestEvidence = function(caseId) {
 [DEBUG] Commencing electronic sealing sequence...
 [DEBUG] Generating SM2 asymmetric digital signature key...
 [INFO]  Asymmetric digital signature successfully created using standard algorithm SM2!
-[INFO]  Affixing Official Seal: 智能软件工厂电子公文专用章
+[INFO]  Affixing Official Seal: 智能软件工厂公文专用章
 [DEBUG] Cryptographic hash (SM3): 8ae94fbcd8c102a9b3c4f7...
 [INFO]  Generated Archive ID: SEAL-2026-0038491
 [INFO]  Test testCustomStampApprovalEChain: SUCCESS!`;
@@ -1277,9 +1277,9 @@ window.switchTestEvidence = function(caseId) {
         </div>
         
         <div style="font-size:11px; color:var(--text); line-height:1.6; font-family:'SimSun', serif;">
-          <h4 style="text-align:center; font-size:12px; margin-bottom:8px; font-weight:bold;">关于电子公文管理系统上线试运行的通知</h4>
+          <h4 style="text-align:center; font-size:12px; margin-bottom:8px; font-weight:bold;">关于公文管理系统上线试运行的通知</h4>
           各科室、下属分厂：<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“电子公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
           特此通知。
         </div>
         
@@ -1296,7 +1296,7 @@ window.switchTestEvidence = function(caseId) {
               <path d="M 50 25 L 53 35 L 63 35 L 55 41 L 58 51 L 50 45 L 42 51 L 45 41 L 37 35 L 47 35 Z" fill="#EF4444" />
               <path id="seal-text-path" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" stroke="none" />
               <text font-size="7.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" letter-spacing="1">
-                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂电子公文</textPath>
+                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂公文</textPath>
               </text>
               <text x="50" y="68" font-size="8.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" text-anchor="middle">专用印章</text>
             </svg>
@@ -1452,7 +1452,7 @@ window.showEvidenceLightbox = function(caseId) {
     caseTitle = '阅件流转顺序强控 - 证据截图';
     mockupHtml = `
       <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:16px; padding:30px; display:flex; flex-direction:column; gap:24px; align-items:center; width:520px;">
-        <div style="font-size:14px; font-weight:700; color:var(--text);">电子公文阅件流转状态机模型</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text);">公文阅件流转状态机模型</div>
         
         <div style="display:flex; align-items:center; gap:8px; justify-content:center; width:100%; flex-wrap:wrap; position:relative; padding:20px 0;">
           <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
@@ -1540,9 +1540,9 @@ window.showEvidenceLightbox = function(caseId) {
         </div>
         
         <div style="font-size:12px; color:var(--text); line-height:1.7; font-family:'SimSun', serif;">
-          <h4 style="text-align:center; font-size:14px; margin-bottom:12px; font-weight:bold;">关于电子公文管理系统上线试运行的通知</h4>
+          <h4 style="text-align:center; font-size:14px; margin-bottom:12px; font-weight:bold;">关于公文管理系统上线试运行的通知</h4>
           各科室、下属分厂：<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“电子公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
           特此通知。
         </div>
         
@@ -1559,7 +1559,7 @@ window.showEvidenceLightbox = function(caseId) {
               <path d="M 50 25 L 53 35 L 63 35 L 55 41 L 58 51 L 50 45 L 42 51 L 45 41 L 37 35 L 47 35 Z" fill="#EF4444" />
               <path id="seal-text-path" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" stroke="none" />
               <text font-size="7.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" letter-spacing="1">
-                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂电子公文</textPath>
+                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂公文</textPath>
               </text>
               <text x="50" y="68" font-size="8.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" text-anchor="middle">专用印章</text>
             </svg>
