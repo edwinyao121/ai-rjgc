@@ -117,8 +117,57 @@ function renderGates(container) {
         const icon = passed ? '&#10003;' : failed ? '&#10007;' : '&#9679;';
         const iconColor = passed ? 'var(--success)' : failed ? 'var(--danger)' : 'var(--text-muted)';
         const statusText = passed ? '通过' : failed ? '未通过' : '待执行';
-        const resultDesc = gateResults[g.name] || (g.detail || '检测未通过');
-        const evidenceFile = gateEvidenceFiles[g.name] || (g.name + ' 检测报告.pdf');
+        
+        let resultDesc = gateResults[g.name] || (g.detail || '检测未通过');
+        let evidenceFile = gateEvidenceFiles[g.name] || (g.name + ' 检测报告.pdf');
+
+        if (task.pid === 'p5') {
+          const p5GateResults = {
+            '需求完整性检查': '包含大模型文档摘要、既定流转顺序、双核验下载及印章审计的公文管理系统需求规范检查已通过',
+            '语义冲突检测': (function() {
+              const r4 = state.reviews.find(r => r.id === 'r4');
+              if (r4 && r4.status === 'approved') {
+                const choiceA = r4.desc.includes('方案A') || r4.desc.includes('方案八');
+                return `【行政干预解除】张经理决策：${choiceA ? '采用方案八（保留完整历史版本，保障合规审计，废止方案九）' : '采用方案九（自动覆盖最新，限制方案八的使用）'}`;
+              }
+              return '检测到第8条（保留历史版本）与第9条（单版本自动覆盖）存在根本语义冲突，门禁触发强力阻断';
+            })(),
+            '可追溯性检查': '已完成“双因子(2FA)下载”、“流转状态机”及“多级印章审批”到国家公文安全标准的双向追溯审计',
+            '粒度合理性检查': '状态机控制、2FA模块、版本重构、印章审批等子任务粒度拆分均在1-3人天范围内，无超大任务',
+            '依赖无环检测': '子任务状态流转及代码依赖关系分析完成，图拓扑排序验证无环路依赖',
+            '架构合规检查': '阅件流转状态机采用强控制拦截切面，满足信创架构的流程强可审计性要求',
+            '技术选型评估': '已验证国产OFD阅读器兼容性及基于国产自主SM2/SM3算法的电子签名与证书安全集成可行性',
+            '编码规范检查': '电子签名组件及流转切面规范检查 0 errors, 0 warnings，规范评级 A',
+            '安全漏洞扫描': 'OWASP 安全扫描 100% 通过，公开级公文防篡改沙箱及越权检查无任何中高危漏洞',
+            '最佳实践检测': '双因子(2FA)验证会话生存周期及电子印章 SM2 签名私钥内存管理最佳实践合规检查全部通过',
+            '覆盖率门禁': '状态机及2FA下载切面单元测试行覆盖率 88%，分支覆盖率 82%（均超过80%门限）',
+            '测试通过率': '5项核心安全测试用例（2FA核验、顺序强控、登记防篡改、电子公章印章、冲突决策）全部通过',
+            '技术债务检查': 'SonarQube 扫描技术债务比率 0.5%，评级 A，预计偿还时间 0.5h',
+            'DoD检查清单': '公文摘要、流转强控、2FA、多级印章及版本回溯核心 DoD 验收条件全部达成',
+            '合规审计检查': '公开级公文流转审计追溯完成，已生成安全电子印章日志与唯一档案归档编号 SEAL-2026-0038491'
+          };
+          
+          const p5GateEvidenceFiles = {
+            '需求完整性检查': '公文系统需求规格说明书.pdf',
+            '语义冲突检测': '语义冲突一致性决策报告.pdf',
+            '可追溯性检查': '公文系统追溯矩阵表.xlsx',
+            '粒度合理性检查': '公文系统子任务拆解评估表.xlsx',
+            '依赖无环检测': '公文系统任务依赖拓扑图.png',
+            '架构合规检查': '公文系统架构合规评估报告.pdf',
+            '技术选型评估': '国产算法及OFD选型对比分析.xlsx',
+            '编码规范检查': '公文系统代码规范扫描报告.html',
+            '安全漏洞扫描': '公文系统防篡改漏洞扫描报告.pdf',
+            '最佳实践检测': '公文系统最佳实践合规度量.pdf',
+            '覆盖率门禁': '公文单元测试覆盖率报告.png',
+            '测试通过率': '测试用例证据报告.html',
+            '技术债务检查': '公文系统SonarQube技术债务报告.png',
+            'DoD检查清单': '公文系统DoD验收核对单.pdf',
+            '合规审计检查': '公文系统合规审计及印章日志报告.pdf'
+          };
+          
+          if (p5GateResults[g.name]) resultDesc = p5GateResults[g.name];
+          if (p5GateEvidenceFiles[g.name]) evidenceFile = p5GateEvidenceFiles[g.name];
+        }
 
         const detailHtml = failed
           ? `<div style="margin-top:3px;font-size:11px;color:var(--danger);line-height:1.5;">检查结果: ${resultDesc}</div>`

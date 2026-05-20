@@ -457,6 +457,49 @@ function submitReviewWithComment(rid) {
   submitReview(rid, comment ? 'changes' : 'approved');
 }
 
+function resolveConflictReview(rid, choice) {
+  const review = state.reviews.find(r => r.id === rid);
+  if (!review) return;
+  
+  const choiceText = choice === 'A' 
+    ? '【已决策】采用方案八（保留完整历史版本，确保审计可追溯，废止方案九）' 
+    : '【已决策】采用方案九（自动覆盖仅保留最新，限制方案八的使用）';
+    
+  review.status = 'approved';
+  review.desc += '<br><br><strong style="color:var(--success);">' + choiceText + '</strong>';
+  
+  const task = getTask(review.tid);
+  if (task) {
+    // Clear the semantic conflict gate (index 1 of stage 0)
+    if (task.stageGates[0]) {
+      task.stageGates[0][1] = 1;
+    }
+    
+    // Log human action
+    addActivityLog(task.id, 'human-action', '👤', 'human', `项目负责人张经理进行行政干预决策：<strong>${choiceText}</strong>`);
+    
+    toast('行政决策成功！语义一致性冲突已消除，门禁阻断已清空！');
+  }
+  
+  // Set project p5 status to running
+  const project = state.projects.find(p => p.id === 'p5');
+  if (project) {
+    project.status = 'running';
+  }
+  
+  state.timeline.unshift({ time: m(0), text: `项目负责人张经理通过行政干预化解了 <strong>公文管理系统</strong> 的需求语义冲突` });
+  
+  const container = document.getElementById('mainContent');
+  if (state.activePage === 'pipeline-view') {
+    if (task) renderPipeline(container, { tid: task.id });
+  } else if (state.activePage === 'reviews' || state.activePage === 'project-reviews') {
+    renderReviews(container);
+  } else if (state.activePage === 'dashboard') {
+    renderDashboard(container);
+  }
+  updateBadges();
+}
+
 function requestReview() {
   const task = getTask(state.activeTaskId);
   if (!task) return;
