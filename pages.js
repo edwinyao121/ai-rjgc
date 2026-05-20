@@ -1198,17 +1198,10 @@ function renderProjectGuidelines(container) {
       <div class="pg-header-card" id="pgHeaderCard">
         <div class="pg-header-info">
           <h2>项目规范配置与校验中心</h2>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-            <div class="pg-pulse-badge"><span class="pg-pulse-dot"></span>已激活 · 智能体自动对齐中</div>
-            <span style="font-size:12px;opacity:0.85;">项目空间：<b>${p.name}</b> (${p.repo})</span>
-          </div>
+          <p style="margin-top:6px;opacity:0.85;font-size:13px;">定义并校验本项目的 AI 智能体执行规范，规范将自动注入到对应智能体的 System Prompt 中</p>
         </div>
         
         <div class="pg-header-stats">
-          <div class="pg-stat-box">
-            <div class="pg-stat-val" style="color:#38BDF8;">已启用</div>
-            <div class="pg-stat-lbl">智能体同步状态</div>
-          </div>
           <div class="pg-stat-box">
             <div class="pg-stat-val" id="pgStatCount">6 个</div>
             <div class="pg-stat-lbl">规范块</div>

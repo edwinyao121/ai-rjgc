@@ -242,6 +242,9 @@ function updateAgentWidget() {
 // PAGE RENDERER
 // ============================================================
 function renderPage(page, data) {
+  // 清理可能从 body 泄漏的“项目规范”弹窗、向导及遮罩层元素，防止切换页面后由于 CSS 样式卸载导致这些元素在页面底部以无样式块级形式显示，破坏其他页面的排版
+  document.querySelectorAll('.pg-tooltip-box, .pg-tour-overlay, .pg-tour-box').forEach(el => el.remove());
+
   const container = document.getElementById('mainContent');
   container.innerHTML = '';
   switch(page) {
