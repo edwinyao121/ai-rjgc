@@ -68,14 +68,15 @@ const state = {
   ],
   tasks: [
     { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },
-    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'executing', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
-    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'王工' },
+    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'review', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
+    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'planning', stageCurrent:-1, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0], stageGates:[[0],[0],[0],[0],[0],[0]], stageAssignees:['王工','王工','王工','王工','王工','王工'], aiCreated:true, assignee:'王工' },
     { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
     { id:'t5', pid:'p5', title:'公文阅件流转与用印审批核心功能研制', type:'Feature', priority:'P0', estimate:'25d', status:'executing', stageCurrent:0, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[1,0,1],[0,0],[0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['张经理','李工','王工','赵工','刘工','李工','王工','张经理'], aiCreated:false, assignee:'张经理' },
-    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'李工' },
+    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'planning', stageCurrent:-1, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[0,0,0],[0,0],[0,0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['李工','李工','李工','李工','李工','李工','李工','李工'], aiCreated:true, assignee:'李工' },
     { id:'t7', pid:'p5', title:'阅件二次身份核验双因子(2FA)下载模块开发', type:'Feature', priority:'P1', estimate:'8d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
-    { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'刘工' },
-    { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'王工' }
+    { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'review', stageCurrent:2, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0], stageGates:[[1],[1],[1,1],[0,0],[0],[0]], stageAssignees:['刘工','刘工','刘工','刘工','刘工','刘工'], aiCreated:false, assignee:'刘工' },
+    { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,1,1],[1,1],[1],[1]], stageAssignees:['王工','王工','王工','王工','王工','王工','王工','王工'], aiCreated:false, assignee:'王工' },
+    { id:'t10', pid:'p1', title:'系统安全加固与配置巡检', type:'Enhancement', priority:'P1', estimate:'5d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1],[1],[1],[1],[1],[1],[1],[1]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' }
   ],
   // Gate definitions per stage type
   gateDefs: {
@@ -176,6 +177,7 @@ const state = {
     { id:'r2', tid:'t2', stage:2, stageName:'方案设计', reviewer:'李工', status:'pending', desc:'数据脱敏规则引擎的架构方案涉及 3 个核心模块调整，需技术负责人评审' },
     { id:'r3', tid:'t3', stage:-1, stageName:'需求分析', reviewer:'赵工', status:'pending', desc:'日志采集组件升级方案确认' },
     { id:'r4', tid:'t5', stage:0, stageName:'需求分析', reviewer:'张经理', status:'pending', desc:'【高危需求冲突决策】公文系统开发规范第8条（保留历史版本）与需求第9条（单版本自动覆盖）存在根本性冲突，请项目负责人进行行政决策！' },
+    { id:'r5', tid:'t8', stage:2, stageName:'方案设计', reviewer:'刘工', status:'pending', desc:'公文多版本控制引擎架构设计，涉及底层存储及归档逻辑，需核心架构师评审' },
   ],
   timeline: [
     { time:m(0), text:'AI 语义分析 Agent 发现 <strong>公文管理系统</strong> 存在第8条与第9条版本控制规则语义冲突，门禁触发阻断！' },
@@ -211,8 +213,8 @@ const state = {
   ],
 };
 
-let taskIdCounter = 10;
-let reviewIdCounter = 4;
+let taskIdCounter = 11;
+let reviewIdCounter = 5;
 let skillIdCounter = 10;
 let agentIdCounter = 10;
 let chatTimeout = null;
