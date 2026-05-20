@@ -444,6 +444,44 @@ function renderTabContent(task, tab) {
 }
 
 function getArtifacts(stageName) {
+  const task = getTask(state.activeTaskId);
+  if (task && task.pid === 'p5') {
+    const map = {
+      '需求分析': [
+        { icon: '&#128221;', name: '需求规格说明书.pdf', meta: '24KB · 15项合规检查全部通过' },
+        { icon: '&#128221;', name: '业务流程图.mmd', meta: '4KB · 阅件流转逻辑树' }
+      ],
+      '需求拆解': [
+        { icon: '&#9776;', name: '公文业务分解方案.html', meta: '8KB · 5个开发子任务' }
+      ],
+      '方案设计': [
+        { icon: '&#9671;', name: '阅件流转状态机设计.yaml', meta: '12KB · 状态转换强控制' },
+        { icon: '&#9671;', name: '用印审批流分级节点方案.html', meta: '18KB · 4级审批链模型' }
+      ],
+      '代码生成': [
+        { icon: '&#9745;', name: 'DocFlowStateMachine.java', meta: '8KB · 210行 · 状态强控模块' },
+        { icon: '&#9745;', name: 'TwoFactorAuthenticator.java', meta: '6KB · 145行 · 2FA安全核验' },
+        { icon: '&#9745;', name: 'DocumentImmutableRecord.java', meta: '4KB · 95行 · 登记信息防篡改' },
+        { icon: '&#9745;', name: 'DocumentStampApprovalChain.java', meta: '7KB · 180行 · 电子印章审批链' }
+      ],
+      '代码审查': [
+        { icon: '&#9745;', name: 'DocFlowStateMachine.java', meta: '8KB · 审计分析无异常' },
+        { icon: '&#9745;', name: '代码审查审计日志.json', meta: '5KB · 静态代码规约全绿' }
+      ],
+      '单元测试': [
+        { icon: '&#9881;', name: '测试用例证据报告.html', meta: '32KB · 5项安全核验用例全部通过' },
+        { icon: '&#9881;', name: 'DocFlowStateTest.java', meta: '12KB · 18个测试场景' }
+      ],
+      '质量检查': [
+        { icon: '&#9737;', name: '公文信创规范合规报告.pdf', meta: '22KB · 核心依赖国产适配率100%' }
+      ],
+      '验收确认': [
+        { icon: '&#10003;', name: '公文核心业务DoD确认单.html', meta: '8KB · 核心业务目标验收通过' }
+      ]
+    };
+    return map[stageName] || [{ icon: '&#128221;', name: '暂无产出物', meta: '等待阶段执行' }];
+  }
+
   const map = {
     '需求分析': [{ icon:'@{oriole}', name:'需求分析报告.html', meta:'12KB · 15项检查全部通过' },{ icon:'@{oriole}', name:'需求追溯矩阵.xlsx', meta:'8KB · 可追溯性验证通过' }],
     '需求拆解': [{ icon:'&#9776;', name:'任务拆解方案.html', meta:'6KB · 6个子任务' },{ icon:'&#9776;', name:'依赖关系图.mmd', meta:'2KB · 无环验证通过' }],
@@ -519,6 +557,83 @@ function previewArtifact(name) {
         </div>
       </div>
     </div>`;
+  } else if (name === '测试用例证据报告.html') {
+    preview.innerHTML = `
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;margin-bottom:12px;">
+          <div>
+            <div style="font-weight:700;font-size:14px;color:#065F46;">&#9745; 测试用例证据报告.html</div>
+            <div style="font-size:12px;color:#047857;margin-top:3px;">5项安全与合规自动化用例 100% 通过 · 国密及信创合规审计追溯完毕</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <span class="tag tag-green" style="font-weight:700;">PASSED</span>
+            <span class="tag tag-blue" style="font-weight:700;">100% 覆盖率</span>
+          </div>
+        </div>
+        
+        <div class="grid-70-30" style="grid-template-columns: 280px 1fr; gap:16px; min-height: 520px; background:var(--surface); border: 1px solid var(--border); border-radius:12px; overflow:hidden;">
+          <!-- Left Case List -->
+          <div style="background:#F8FAFC; border-right: 1px solid var(--border); padding: 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; margin-bottom:8px; padding-left:4px;">自动化核验用例列表 (5)</div>
+            
+            <div class="case-item active" id="case-btn-2fa" onclick="window.switchTestEvidence('2fa')" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid var(--primary); background:#EFF6FF; cursor:pointer; transition:var(--transition); user-select:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:700; color:var(--primary);">testDocDownload2FA</span>
+                <span style="color:var(--success); font-size:11px; font-weight:700;">● 通过</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">二次身份核验双因子下载</span>
+            </div>
+
+            <div class="case-item" id="case-btn-seq" onclick="window.switchTestEvidence('seq')" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:var(--transition); user-select:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:700; color:var(--text);">testStrictSequential</span>
+                <span style="color:var(--success); font-size:11px; font-weight:700;">● 通过</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">公文阅件流转顺序强控</span>
+            </div>
+
+            <div class="case-item" id="case-btn-immutable" onclick="window.switchTestEvidence('immutable')" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:var(--transition); user-select:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:700; color:var(--text);">testRegistrationImmutable</span>
+                <span style="color:var(--success); font-size:11px; font-weight:700;">● 通过</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">登记基本信息不可篡改</span>
+            </div>
+
+            <div class="case-item" id="case-btn-stamp" onclick="window.switchTestEvidence('stamp')" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:var(--transition); user-select:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:700; color:var(--text);">testCustomStampEChain</span>
+                <span style="color:var(--success); font-size:11px; font-weight:700;">● 通过</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">自定义印章审批及归档</span>
+            </div>
+
+            <div class="case-item" id="case-btn-version" onclick="window.switchTestEvidence('version')" style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:var(--transition); user-select:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:700; color:var(--text);">testArchiveVersionConflict</span>
+                <span style="color:var(--success); font-size:11px; font-weight:700;">● 通过</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">档案版本控制行政决策</span>
+            </div>
+
+            <div style="margin-top:auto; padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; display:flex; flex-direction:column; gap:4px;">
+              <div style="font-size:11px; color:var(--text-secondary); font-weight:600;">审计数字证书签名:</div>
+              <div style="font-family:var(--mono); font-size:10px; color:var(--success); word-break:break-all;">SM3-HASH: 8ae94fbcd8c102a9b3c4f701bc93901b89afc9e013</div>
+            </div>
+          </div>
+          
+          <!-- Right Case Content Panel -->
+          <div id="testEvidenceContent" style="padding: 20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; background:var(--surface);">
+            <!-- Will be dynamically loaded -->
+          </div>
+        </div>
+      </div>
+    `;
+    setTimeout(function() {
+      if (typeof window.switchTestEvidence === 'function') {
+        window.switchTestEvidence('2fa');
+      }
+    }, 50);
   } else {
     preview.innerHTML = `<div style="margin-top:12px;padding:16px;background:#FAFBFC;border-radius:var(--radius);font-size:13px;color:var(--text-secondary);">&#9745; ${name} — 预览（模拟内容）<br>该产出物由 Agent 自动生成，包含结构化数据和详细分析。</div>`;
   }
@@ -963,4 +1078,562 @@ function generateNodeDetail(stageName, nodeName) {
     </div>
   `;
 }
+
+window.switchTestEvidence = function(caseId) {
+  // 1. Update active styling in left menu case items
+  const items = document.querySelectorAll('.case-item');
+  items.forEach(el => {
+    el.classList.remove('active');
+    el.style.border = '1px solid var(--border)';
+    el.style.background = 'var(--surface)';
+    const span = el.querySelector('span:first-child');
+    if (span) span.style.color = 'var(--text)';
+  });
+  
+  const activeBtn = document.getElementById('case-btn-' + caseId);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.style.border = '1px solid var(--primary)';
+    activeBtn.style.background = '#EFF6FF';
+    const span = activeBtn.querySelector('span:first-child');
+    if (span) span.style.color = 'var(--primary)';
+  }
+  
+  const content = document.getElementById('testEvidenceContent');
+  if (!content) return;
+  
+  let title = '';
+  let desc = '';
+  let logs = '';
+  let mockupHtml = '';
+  
+  if (caseId === '2fa') {
+    title = 'testDocDownloadNeed2FA';
+    desc = '验证绝密公文下载时的 2FA 双因子身份核验拦截与安全通过状态。当非授权或会话超时下载时抛出 <code>TwoFactorAuthenticationException</code>，输入正确的 2FA 验证码才允许读取并生成 OFD 文件数据流。';
+    logs = `[INFO]  Running test testDocDownloadNeed2FA...
+[DEBUG] Intercepted download request for document ID: DOC-2026-9901 (绝密级)
+[WARN]  No valid 2FA session token found in HTTP request headers.
+[DEBUG] Dynamic challenge SMS OTP sent to employee phone: 138****5829
+[DEBUG] Presenting 2FA Verification Dialog to User...
+[INFO]  Simulating user verification input: [ 8 ] [ 4 ] [ 9 ] [ 3 ] [ 0 ] [ 1 ]
+[DEBUG] Comparing credentials with Redis OTP cache (TTL: 120s)...
+[INFO]  OTP verified successfully! Generated 2FA session token: 2FA-TOKEN-a2f9b8c7...
+[DEBUG] Authorization granted. Invoking OFDDocumentService.streamDownload(...)
+[INFO]  Stream size: 104,820 bytes. Status: 200 OK.
+[INFO]  Test testDocDownloadNeed2FA: SUCCESS!`;
+    
+    mockupHtml = `
+      <div style="background:#0F172A; border-radius:12px; padding:24px; color:#fff; display:flex; flex-direction:column; align-items:center; max-width:340px; margin:0 auto; box-shadow:var(--shadow-lg); border:1px solid #334155; position:relative;">
+        <div style="width:44px; height:44px; background:rgba(16,185,129,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#10B981; font-size:20px; margin-bottom:12px;">
+          🔒
+        </div>
+        <div style="font-size:14px; font-weight:700; margin-bottom:4px; color:#F8FAFC;">安全双因子核验 (2FA)</div>
+        <div style="font-size:11px; color:#94A3B8; text-align:center; margin-bottom:16px; line-height:1.5;">您正在下载绝密级公文《关于2026年度国家安全和保密规范的实施意见.ofd》</div>
+        
+        <div style="display:flex; gap:6px; margin-bottom:16px;">
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">8</div>
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">4</div>
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">9</div>
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">3</div>
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">0</div>
+          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">1</div>
+        </div>
+        
+        <div style="background:rgba(16,185,129,0.15); border:1px solid #10B981; border-radius:20px; padding:4px 12px; font-size:10px; color:#34D399; font-weight:700; display:flex; align-items:center; gap:4px;">
+          ✓ 安全证书比对一致
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'seq') {
+    title = 'testStrictSequentialWorkflow';
+    desc = '验证流转状态机（FSM）强控制拦截切面。阅件处理必须严格遵循“接收 ➔ 审批 ➔ 传阅 ➔ 归档”既定顺序，越权/越级跳转接口会被成功拦截并抛出 Exception，保证流程不可被篡改。';
+    logs = `[INFO]  Running test testStrictSequentialWorkflow...
+[DEBUG] Initializing Document Flow State Machine for DOC-2026-9902
+[INFO]  Current State: [RECEIVE] (已接收)
+[DEBUG] Attempting transition: [RECEIVE] -> [ARCHIVE] (归档) - ILLEGAL STEP!
+[ERROR] Workflow constraint violation! Cause: State RECEIVE cannot transition directly to ARCHIVE.
+[ERROR] org.factory.gov.exception.WorkflowOrderViolationException: Illegal transition. Flow must step strictly: RECEIVE -> APPROVE -> CIRCULATE -> ARCHIVE.
+[INFO]  State machine successfully intercepted the illegal operation and rolled back.
+[INFO]  Proceeding with legal steps...
+[INFO]  Transition: RECEIVE -> APPROVE. Status: OK.
+[INFO]  Transition: APPROVE -> CIRCULATE. Status: OK.
+[INFO]  Transition: CIRCULATE -> ARCHIVE. Status: OK.
+[INFO]  Test testStrictSequentialWorkflow: SUCCESS!`;
+    
+    mockupHtml = `
+      <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; align-items:center; position:relative;">
+        <div style="font-size:13px; font-weight:700; color:var(--text);">电子公文阅件流转状态机模型</div>
+        
+        <div style="display:flex; align-items:center; gap:6px; justify-content:center; width:100%; flex-wrap:wrap; position:relative; padding:10px 0;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div style="width:64px; height:30px; border-radius:6px; background:#EFF6FF; border:1px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--primary);">已接收</div>
+            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">RECEIVE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:14px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">已审批</div>
+            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">APPROVE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:14px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">传阅中</div>
+            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">CIRCULATE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:14px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">已归档</div>
+            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">ARCHIVE</span>
+          </div>
+        </div>
+        
+        <div style="width:100%; border:1px dashed var(--danger); border-radius:8px; padding:10px; background:var(--danger-light); display:flex; align-items:center; gap:8px;">
+          <div style="width:20px; height:20px; border-radius:50%; background:var(--danger); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:11px;">✖</div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:11px; font-weight:700; color:var(--danger);">非法越级已被成功拦截！</span>
+            <span style="font-size:10px; color:#B91C1C; line-height:1.3;">尝试直接从 [已接收] 跳转至 [已归档] 被状态机硬性防御。</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'immutable') {
+    title = 'testRegistrationImmutable';
+    desc = '验证电子公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、密级或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
+    logs = `[INFO]  Running test testImmutableRegistrationInfo...
+[DEBUG] Querying document metadata for ID: DOC-2026-9903
+[INFO]  Immutable Fields locked in Data Access Object (DAO) context.
+[DEBUG] Threat Actor 'Worker_Li' attempting to modify field 'origin_department' from '办公厅秘书处' to '综合管理部'.
+[WARN]  Write request rejected! File is locked and immutable.
+[ERROR] org.factory.gov.exception.DocumentImmutableRecordException: Mutation detected on read-only entity: field 'origin_department' cannot be directly updated.
+[INFO]  Verifying the formal amendment flow...
+[DEBUG] Received amendment approval document ID: REQ-AMEND-0849
+[DEBUG] Verified leader signature: APPROVED
+[INFO]  Admin credential authenticated. Successfully updated metadata via audit trail log!
+[INFO]  Test testImmutableRegistrationInfo: SUCCESS!`;
+    
+    mockupHtml = `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:12px; position:relative; box-shadow:var(--shadow-sm);">
+        <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          <span style="font-size:13px; font-weight:700; color:var(--text);">公文登记基本信息表 (只读锁)</span>
+          <span class="tag tag-slate" style="font-size:10px; color:var(--danger); background:var(--danger-light); border:1px solid rgba(239,68,68,0.2);">🔒 核心字段已加锁</span>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">发件部门</label>
+            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span>办公厅秘书处</span>
+              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">公文级别</label>
+            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--danger); font-weight:700;">绝密 (LEVEL P0)</span>
+              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">公文标题</label>
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+            <span>关于推进智能化公文工厂建设的指导意见</span>
+            <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+          </div>
+        </div>
+        
+        <div style="border:1px solid rgba(245,158,11,0.3); background:var(--warning-light); border-radius:6px; padding:10px; font-size:11px; color:#B45309; line-height:1.4;">
+          <strong>⚠️ 篡改告警：</strong>检测到非授权试图直接修改接口，已被持久层硬性打回。更正需正式审批。
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'stamp') {
+    title = 'testCustomStampEChain';
+    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称密钥对生成数字证书进行电子签名，并自动加盖中国政府机关标准样式的红色“电子印章专用章”，分配唯一档案归档编号。';
+    logs = `[INFO]  Running test testCustomStampApprovalEChain...
+[DEBUG] Generating multi-level approval nodes for Secret-level Document DOC-2026-9904
+[INFO]  Node 1: Division Chief Approval... APPROVED.
+[INFO]  Node 2: Department Director Approval... APPROVED.
+[INFO]  Node 3: Executive Leadership Approval... APPROVED.
+[DEBUG] Commencing electronic sealing sequence...
+[DEBUG] Generating SM2 asymmetric digital signature keypair...
+[INFO]  Asymmetric digital signature successfully created using national cryptography algorithm SM2!
+[INFO]  Affixing Official Seal: 智能软件工厂电子公文专用章
+[DEBUG] Cryptographic hash (SM3): 8ae94fbcd8c102a9b3c4f7...
+[INFO]  Generated Archive ID: SEAL-2026-0038491
+[INFO]  Test testCustomStampApprovalEChain: SUCCESS!`;
+    
+    mockupHtml = `
+      <div style="background:#fff; border:1px solid #D1D5DB; border-radius:8px; padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; position:relative; min-height:280px; max-width:440px; margin:0 auto;">
+        <div style="border-bottom:2px solid #EF4444; padding-bottom:6px; text-align:center;">
+          <div style="font-size:16px; font-weight:800; color:#EF4444; letter-spacing:3px; font-family:'SimSun', 'STSong', serif;">智能软件工厂红头文件</div>
+          <div style="font-size:8px; color:#EF4444; margin-top:2px;">[ 2026 ] 第 0038491 号</div>
+        </div>
+        
+        <div style="font-size:11px; color:var(--text); line-height:1.6; font-family:'SimSun', serif;">
+          <h4 style="text-align:center; font-size:12px; margin-bottom:8px; font-weight:bold;">关于电子公文管理系统上线试运行的通知</h4>
+          各科室、下属分厂：<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“电子公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
+          特此通知。
+        </div>
+        
+        <div style="margin-top:auto; display:flex; justify-content:flex-end; align-items:center; height:80px; position:relative; padding-right:10px;">
+          <div style="font-size:9px; text-align:right; z-index:2; font-family:'SimSun', serif; margin-right:10px; margin-top:20px; line-height:1.4;">
+            智能软件工厂<br>
+            2026年5月20日
+          </div>
+          
+          <div style="position:absolute; right:10px; bottom:5px; z-index:1; opacity:0.85; pointer-events:none;">
+            <svg width="80" height="80" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="46" stroke="#EF4444" stroke-width="3" fill="none" />
+              <circle cx="50" cy="50" r="43" stroke="#EF4444" stroke-width="1" fill="none" stroke-dasharray="2 1" />
+              <path d="M 50 25 L 53 35 L 63 35 L 55 41 L 58 51 L 50 45 L 42 51 L 45 41 L 37 35 L 47 35 Z" fill="#EF4444" />
+              <path id="seal-text-path" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" stroke="none" />
+              <text font-size="7.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" letter-spacing="1">
+                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂电子公文</textPath>
+              </text>
+              <text x="50" y="68" font-size="8.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" text-anchor="middle">专用印章</text>
+            </svg>
+          </div>
+        </div>
+        
+        <div style="border-top:1px dashed var(--border); padding-top:6px; display:flex; justify-content:space-between; align-items:center; font-size:9px;">
+          <span style="color:var(--text-muted); font-family:var(--mono);">ID: SEAL-2026-0038491</span>
+          <span style="background:rgba(16,185,129,0.1); border:1px solid #10B981; border-radius:3px; padding:2px 6px; color:#059669; font-weight:700;">
+            ✓ SM2 电子证书签名验证有效
+          </span>
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'version') {
+    title = 'testArchiveVersionConflict';
+    desc = '验证档案版本一致性规则。当项目负责人行政干预选择方案 A (保留完整历史版本，满足审计合规性) 时，系统将成功断言数据库：对已有电子档案的所有修改将全部保留在树状子版本目录中，100% 杜绝覆盖历史审计轨迹。';
+    logs = `[INFO]  Running test testDocArchiveVersionConflict...
+[DEBUG] System administrative strategy detected: STRATEGY_A_KEEP_HISTORY (方案八已生效)
+[INFO]  Reading existing file record: v1.0 (Hash: 3c8e71b2) - Read Only.
+[DEBUG] Modifying document entity...
+[INFO]  Instead of overwrite, cloning record to create v2.0 (Hash: f9a812bc)
+[INFO]  Executing assertions:
+[DEBUG] Assert: DB contains record v1.0... TRUE.
+[DEBUG] Assert: DB contains record v2.0... TRUE.
+[DEBUG] Assert: v1.0 hash remains identical (no mutation)... TRUE.
+[DEBUG] Assert: Version history tree integrity is 100% verified... TRUE.
+[INFO]  Test testDocArchiveVersionConflict: SUCCESS!`;
+    
+    mockupHtml = `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:12px; font-weight:700; color:var(--text);">电子档案版本树与可追溯关系 (策略 A 方案八生效)</div>
+        
+        <div style="background:#F8FAFC; border-radius:8px; border:1px solid var(--border); padding:12px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:14px; color:var(--text-muted); margin-top:2px;">📄</span>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:11px; font-weight:700; color:var(--text);">公文档案 v1.0</span>
+                <span class="tag tag-slate" style="font-size:9px; padding:1px 4px; background:#E2E8F0; color:var(--text-secondary);">🔒 只读归档已锁定</span>
+              </div>
+              <span style="font-size:10px; color:var(--text-secondary);">提交时间: 2026-05-18 10:00 | 操作人: 张经理 (创建者)</span>
+              <span style="font-family:mono; font-size:9px; color:var(--text-muted);">SHA-256 Hash: 3c8e71b29a8fbc8d8e90a...</span>
+            </div>
+          </div>
+          
+          <div style="border-left: 2px dashed #CBD5E1; margin-left: 6px; height: 16px;"></div>
+          
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:14px; color:var(--primary); margin-top:2px;">📄</span>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:11px; font-weight:700; color:var(--primary);">公文档案 v2.0 (最新版)</span>
+                <span class="tag tag-green" style="font-size:9px; padding:1px 4px; font-weight:700; background:#ECFDF5; color:#065F46;">✓ 活跃中</span>
+              </div>
+              <span style="font-size:10px; color:var(--text-secondary);">修改时间: 2026-05-20 15:30 | 操作人: 李工 (开发负责人)</span>
+              <span style="font-family:mono; font-size:9px; color:var(--text-muted);">SHA-256 Hash: f9a812bc8df1e0a89d7b3...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid rgba(16,185,129,0.3); background:var(--success-light); border-radius:6px; font-size:10px; color:#065F46; font-weight:600;">
+          ✓ 策略一致性断言通过：保留完整历史版本，满足审计合规要求。
+        </div>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = `
+    <div>
+      <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <span style="color:var(--success); font-size:16px;">✓</span> ${title}
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); line-height:1.6;">${desc}</div>
+    </div>
+    
+    <div>
+      <div style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; margin-bottom:6px;">自动化测试执行日志 (Stdout)</div>
+      <div style="background:#0F172A; color:#38BDF8; font-family:var(--mono); padding:14px; border-radius:8px; line-height:1.5; overflow-x:auto; font-size:11px; border:1px solid #1E293B;">${logs}</div>
+    </div>
+    
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">可视化高保真证据截图</div>
+        <button class="btn btn-outline btn-xs" onclick="window.showEvidenceLightbox('${caseId}')" style="display:flex; align-items:center; gap:4px; padding:2px 8px; user-select:none;">
+          🔍 点击放大观察细节
+        </button>
+      </div>
+      <div style="border:1px solid var(--border); border-radius:8px; padding:16px; background:#FAFBFC; overflow:hidden;">
+        ${mockupHtml}
+      </div>
+    </div>
+  `;
+};
+
+window.showEvidenceLightbox = function(caseId) {
+  // Check if lightbox overlay already exists
+  let overlay = document.getElementById('evidenceLightboxOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'evidenceLightboxOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.zIndex = '99999';
+    overlay.style.background = 'rgba(15, 23, 42, 0.85)';
+    overlay.style.backdropFilter = 'blur(10px)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.25s ease';
+    
+    overlay.onclick = function(e) {
+      if (e.target === overlay || e.target.id === 'lightbox-close-btn') {
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.remove(); }, 250);
+      }
+    };
+    
+    document.body.appendChild(overlay);
+  }
+  
+  let mockupHtml = '';
+  let caseTitle = '';
+  if (caseId === '2fa') {
+    caseTitle = '二次身份安全核验 - 证据截图';
+    mockupHtml = `
+      <div style="background:#0F172A; border-radius:16px; padding:32px; color:#fff; display:flex; flex-direction:column; align-items:center; width:360px; box-shadow:var(--shadow-lg); border:1px solid #334155;">
+        <div style="width:56px; height:56px; background:rgba(16,185,129,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#10B981; font-size:24px; margin-bottom:20px;">
+          🔒
+        </div>
+        <div style="font-size:16px; font-weight:700; margin-bottom:8px; color:#F8FAFC;">安全双因子核验 (2FA)</div>
+        <div style="font-size:12px; color:#94A3B8; text-align:center; margin-bottom:24px; line-height:1.6;">您正在下载绝密级公文《关于2026年度国家安全和保密规范的实施意见.ofd》</div>
+        
+        <div style="display:flex; gap:8px; margin-bottom:24px;">
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">8</div>
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">4</div>
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">9</div>
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">3</div>
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">0</div>
+          <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">1</div>
+        </div>
+        
+        <div style="background:rgba(16,185,129,0.15); border:1px solid #10B981; border-radius:20px; padding:6px 18px; font-size:11px; color:#34D399; font-weight:700; display:flex; align-items:center; gap:6px;">
+          ✓ 安全证书比对一致
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'seq') {
+    caseTitle = '阅件流转顺序强控 - 证据截图';
+    mockupHtml = `
+      <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:16px; padding:30px; display:flex; flex-direction:column; gap:24px; align-items:center; width:520px;">
+        <div style="font-size:14px; font-weight:700; color:var(--text);">电子公文阅件流转状态机模型</div>
+        
+        <div style="display:flex; align-items:center; gap:8px; justify-content:center; width:100%; flex-wrap:wrap; position:relative; padding:20px 0;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:72px; height:34px; border-radius:6px; background:#EFF6FF; border:1px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--primary);">已接收</div>
+            <span style="font-size:10px; font-family:var(--mono); color:var(--text-muted);">RECEIVE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:18px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:72px; height:34px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#10B981;">已审批</div>
+            <span style="font-size:10px; font-family:var(--mono); color:var(--text-muted);">APPROVE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:18px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:72px; height:34px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#10B981;">传阅中</div>
+            <span style="font-size:10px; font-family:var(--mono); color:var(--text-muted);">CIRCULATE</span>
+          </div>
+          
+          <span style="color:var(--primary); font-size:18px;">➔</span>
+          
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:72px; height:34px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#10B981;">已归档</div>
+            <span style="font-size:10px; font-family:var(--mono); color:var(--text-muted);">ARCHIVE</span>
+          </div>
+        </div>
+        
+        <div style="width:100%; border:1px dashed var(--danger); border-radius:8px; padding:12px; background:var(--danger-light); display:flex; align-items:center; gap:10px;">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--danger); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px;">✖</div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:12px; font-weight:700; color:var(--danger);">非法越级已被成功拦截！</span>
+            <span style="font-size:11px; color:#B91C1C; line-height:1.4;">试图直接从 [已接收] 跳转至 [已归档] 被状态机硬性拦截并拒绝。</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'immutable') {
+    caseTitle = '登记基本信息不可篡改 - 证据截图';
+    mockupHtml = `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:30px; display:flex; flex-direction:column; gap:16px; width:480px; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:10px;">
+          <span style="font-size:14px; font-weight:700; color:var(--text);">公文登记基本信息表 (只读锁)</span>
+          <span class="tag tag-slate" style="font-size:10px; color:var(--danger); background:var(--danger-light); border:1px solid rgba(239,68,68,0.2);">🔒 核心字段已加锁</span>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:6px;">发件部门</label>
+            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+              <span>办公厅秘书处</span>
+              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:6px;">公文级别</label>
+            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--danger); font-weight:700;">绝密 (LEVEL P0)</span>
+              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:6px;">公文标题</label>
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+            <span>关于推进智能化公文工厂建设的指导意见</span>
+            <span style="color:var(--text-muted); font-size:12px;">🔒</span>
+          </div>
+        </div>
+        
+        <div style="border:1px solid rgba(245,158,11,0.3); background:var(--warning-light); border-radius:8px; padding:12px; font-size:11px; color:#B45309; line-height:1.5;">
+          <strong>⚠️ 篡改告警：</strong>检测到非授权试图直接修改接口，已被持久层硬性拦截。更正需正式审批。
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'stamp') {
+    caseTitle = '电子公章印章用印与归档 - 证据截图';
+    mockupHtml = `
+      <div style="background:#fff; border:1px solid #D1D5DB; border-radius:8px; padding:30px; box-shadow:var(--shadow-lg); display:flex; flex-direction:column; gap:16px; min-height:360px; width:480px;">
+        <div style="border-bottom:2px solid #EF4444; padding-bottom:8px; text-align:center;">
+          <div style="font-size:20px; font-weight:800; color:#EF4444; letter-spacing:4px; font-family:'SimSun', 'STSong', serif;">智能软件工厂红头文件</div>
+          <div style="font-size:9px; color:#EF4444; margin-top:2px;">[ 2026 ] 第 0038491 号</div>
+        </div>
+        
+        <div style="font-size:12px; color:var(--text); line-height:1.7; font-family:'SimSun', serif;">
+          <h4 style="text-align:center; font-size:14px; margin-bottom:12px; font-weight:bold;">关于电子公文管理系统上线试运行的通知</h4>
+          各科室、下属分厂：<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“电子公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
+          特此通知。
+        </div>
+        
+        <div style="margin-top:auto; display:flex; justify-content:flex-end; align-items:center; height:100px; position:relative; padding-right:20px;">
+          <div style="font-size:11px; text-align:right; z-index:2; font-family:'SimSun', serif; margin-right:15px; margin-top:30px; line-height:1.4;">
+            智能软件工厂<br>
+            2026年5月20日
+          </div>
+          
+          <div style="position:absolute; right:20px; bottom:10px; z-index:1; opacity:0.85; pointer-events:none;">
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="46" stroke="#EF4444" stroke-width="3" fill="none" />
+              <circle cx="50" cy="50" r="43" stroke="#EF4444" stroke-width="1" fill="none" stroke-dasharray="2 1" />
+              <path d="M 50 25 L 53 35 L 63 35 L 55 41 L 58 51 L 50 45 L 42 51 L 45 41 L 37 35 L 47 35 Z" fill="#EF4444" />
+              <path id="seal-text-path" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" stroke="none" />
+              <text font-size="7.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" letter-spacing="1">
+                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂电子公文</textPath>
+              </text>
+              <text x="50" y="68" font-size="8.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" text-anchor="middle">专用印章</text>
+            </svg>
+          </div>
+        </div>
+        
+        <div style="border-top:1px dashed var(--border); padding-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:10px;">
+          <span style="color:var(--text-muted); font-family:var(--mono);">ID: SEAL-2026-0038491</span>
+          <span style="background:rgba(16,185,129,0.1); border:1px solid #10B981; border-radius:4px; padding:3px 8px; color:#059669; font-weight:700; display:flex; align-items:center; gap:4px;">
+            ✓ SM2 电子证书签名验证有效
+          </span>
+        </div>
+      </div>
+    `;
+  } else if (caseId === 'version') {
+    caseTitle = '档案版本历史树状回溯 - 证据截图';
+    mockupHtml = `
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:16px; width:480px; box-shadow:var(--shadow-lg);">
+        <div style="font-size:13px; font-weight:700; color:var(--text);">电子档案版本树与可追溯关系 (策略 A 方案八生效)</div>
+        
+        <div style="background:#F8FAFC; border-radius:8px; border:1px solid var(--border); padding:16px; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:18px; color:var(--text-muted); margin-top:2px;">📄</span>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--text);">公文档案 v1.0</span>
+                <span class="tag tag-slate" style="font-size:9px; padding:1px 6px; background:#E2E8F0; color:var(--text-secondary);">🔒 只读归档已锁定</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">提交时间: 2026-05-18 10:00 | 操作人: 张经理 (创建者)</span>
+              <span style="font-family:mono; font-size:10px; color:var(--text-muted);">SHA-256 Hash: 3c8e71b29a8fbc8d8e90a...</span>
+            </div>
+          </div>
+          
+          <div style="border-left: 2px dashed #CBD5E1; margin-left: 8px; height: 20px;"></div>
+          
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:18px; color:var(--primary); margin-top:2px;">📄</span>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--primary);">公文档案 v2.0 (最新版)</span>
+                <span class="tag tag-green" style="font-size:9px; padding:1px 6px; font-weight:700; background:#ECFDF5; color:#065F46;">✓ 活跃中</span>
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">修改时间: 2026-05-20 15:30 | 操作人: 李工 (开发负责人)</span>
+              <span style="font-family:mono; font-size:10px; color:var(--text-muted);">SHA-256 Hash: f9a812bc8df1e0a89d7b3...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid rgba(16,185,129,0.3); background:var(--success-light); border-radius:8px; font-size:11px; color:#065F46; font-weight:600;">
+          ✓ 一致性校验断言通过：保留完整历史版本，满足审计合规要求。
+        </div>
+      </div>
+    `;
+  }
+  
+  overlay.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:14px; align-items:center; position:relative; animation: zoomIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);">
+      <style>
+        @keyframes zoomIn {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      </style>
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%; max-width:540px; color:#fff; padding:0 10px;">
+        <span style="font-size:15px; font-weight:700; letter-spacing:0.5px;">${caseTitle}</span>
+        <button id="lightbox-close-btn" style="background:transparent; border:none; color:#94A3B8; font-size:24px; cursor:pointer; font-weight:bold; transition:var(--transition); line-height:1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94A3B8'">×</button>
+      </div>
+      <div style="background:#fff; padding:24px; border-radius:16px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); pointer-events: auto;">
+        ${mockupHtml}
+      </div>
+      <div style="color:#94A3B8; font-size:12px; margin-top:6px;">点击周围任何背景区域即可关闭预览窗口</div>
+    </div>
+  `;
+  
+  overlay.style.opacity = '1';
+};
 

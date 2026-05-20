@@ -40,7 +40,7 @@ function showNewProjectModal() {
       <h3>新建项目空间</h3>
       <div class="form-group"><label>项目名称</label><input type="text" id="npName" placeholder="输入项目名称"></div>
       <div class="form-group"><label>项目描述</label><textarea id="npDesc" rows="2" placeholder="简要描述项目目标与范围"></textarea></div>
-      <div class="form-group"><label>关联代码仓库</label><input type="text" id="npRepo" placeholder="https://github.com/org/repo.git"></div>
+      <div class="form-group"><label>关联代码仓库</label><input type="text" id="npRepo" placeholder="https://gitlab.com/org/repo.git"></div>
       <div class="form-group"><label>添加成员</label><input type="text" id="npMembers" placeholder="搜索用户或输入邮箱（逗号分隔）..."></div>
       <div class="form-actions">
         <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">取消</button>
