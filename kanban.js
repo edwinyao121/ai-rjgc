@@ -12,7 +12,7 @@ function renderKanban(container) {
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">任务看板</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">项目: ${project.name} &nbsp;|&nbsp; ${project.desc}</div></div>
+      <div style="font-size:13px;color:var(--text-muted);">项目: ${project.name} &nbsp;|&nbsp; ${project.desc}</div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-outline btn-sm" onclick="navigate('projects')">&#9664; 切换项目</button>
         <button class="btn btn-primary btn-sm" onclick="showNewTaskModal()">+ 新建任务</button>

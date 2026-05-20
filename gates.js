@@ -328,11 +328,10 @@ function renderGates(container) {
       ${statsHtml}
       ${projectCards || '<div class="card"><div class="empty-state"><div>暂无任务数据</div></div></div>'}`;
   } else {
-    // 项目模式：保持原有行为
+    // 项目模式
     container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:22px;font-weight:700;">${pageTitle}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${pageSubtitle}</div></div>
+        <div style="font-size:13px;color:var(--text-muted);">${pageSubtitle}</div>
         <button class="btn btn-primary btn-sm" onclick="refreshAllGates()">&#8635; 全部重新检查</button>
       </div>
       ${statsHtml}

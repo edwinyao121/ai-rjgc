@@ -93,7 +93,107 @@ function autoFixGates(tid, stageIdx) {
   }, 800);
 }
 
+function getStageGateResults(task, stageName, gateDefs) {
+  if (task.perfectDemo) return gateDefs.map(() => 1);
+
+  const newGates = gateDefs.map((g) => {
+    if (g.type === 'fail' && Math.random() > 0.5) return 0;
+    return 1;
+  });
+  if (stageName === '代码审查') newGates[2] = 0;
+  if (stageName === '单元测试') newGates[0] = 0;
+  return newGates;
+}
+
+const PERFECT_DEMO_STAGE_DELAY = 1800;
+
+function getPerfectDemoActivityDetails(stageName) {
+  const details = {
+    '需求分析': ['读取 OFD 正文与附件元数据，生成公文摘要、办理事项和保密等级识别结果'],
+    '需求拆解': ['拆解接收、审批、传阅、归档的既定流转顺序，并标记禁止逆向/越级流转约束'],
+    '方案设计': ['确认双重身份核验方案：安全口令 + 动态验证码，并接入用印审批状态机'],
+    '代码生成': ['生成流转状态机、用印审批单、电子签名确认和档案编号自动归档接口'],
+    '代码审查': ['审查登记防篡改、历史版本保留、审批记录不可抵赖和敏感信息脱敏实现'],
+    '单元测试': ['执行流转顺序、双重身份核验、用印后归档和历史版本回溯测试用例'],
+    'UI测试': ['验证待用印文件在线预览、电子签名确认、下载二次核验和审批轨迹展示'],
+    '生成制品': ['生成档案编号 DOC-2026-ARCHIVE-001，并归档申请单、审批记录、前后文件和审计报告'],
+  };
+  return details[stageName] || [`完成「${stageName}」业务校验与产出物确认`];
+}
+
+function runPerfectDemoTask(task) {
+  if (!task.perfectDemo) return false;
+  if (task._perfectDemoRunning) {
+    toast('完美任务示例正在执行中');
+    return true;
+  }
+  if (task.status === 'done') {
+    toast('完美任务示例已通过全部阶段');
+    return true;
+  }
+
+  const wasDone = task.status === 'done';
+  task.status = 'executing';
+  task.stageCurrent = 0;
+  task.stages = task.stageNames.map(() => 0);
+  task._perfectDemoRunning = true;
+  addActivityLog(task.id, 'agent-work', '▶', 'agent', '启动公文管理系统完美任务演示：按阶段模拟摘要、流转、核验、用印、归档和审计闭环');
+
+  task.stageNames.forEach((stageName, i) => {
+    const delay = PERFECT_DEMO_STAGE_DELAY * (i + 1);
+    setTimeout(() => {
+      const gateDefs = state.gateDefs[stageName] || [];
+      task.stageCurrent = i;
+      task.stages[i] = 2;
+      task.stageGates[i] = getStageGateResults(task, stageName, gateDefs);
+
+      const agent = stageAgents[stageName] || { name: '未知 Agent', avatar: '🤖' };
+      addActivityLog(task.id, 'agent-work', agent.avatar || '🤖', 'agent', `<strong>${agent.name}</strong> 执行「${stageName}」阶段`);
+      getPerfectDemoActivityDetails(stageName).forEach(detail => {
+        addActivityLog(task.id, 'agent-work', '•', 'agent', detail);
+      });
+      task.stageGates[i].forEach((g, gi) => {
+        const gateName = gateDefs[gi]?.name || '检查';
+        if (g === 1) addActivityLog(task.id, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`);
+      });
+      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${agent.name}</strong> 完成「${stageName}」阶段`);
+
+      if (i < task.stageNames.length - 1) {
+        const nextName = task.stageNames[i + 1];
+        const nextAgent = stageAgents[nextName] || { name: '未知 Agent' };
+        const commKey = `${stageName}→${nextName}`;
+        addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${agent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`);
+      } else {
+        task.status = 'done';
+        task._perfectDemoRunning = false;
+
+        const project = getProject(task.pid);
+        if (!wasDone && project && project.stagesDone < project.stagesTotal) project.stagesDone++;
+
+        addActivityLog(task.id, 'agent-work', '✓', 'agent', '公文流转、用印审批、双重身份核验、归档审计闭环全部通过');
+        state.timeline.unshift({ time: m(0), text: `任务 <strong>${task.title}</strong> 已通过全部阶段与门禁` });
+        toast('完美任务示例已通过全部阶段');
+      }
+
+      const container = document.getElementById('mainContent');
+      renderPipeline(container, { tid: task.id });
+      updateBadges();
+    }, delay);
+  });
+
+  const firstStageName = task.stageNames[0];
+  const firstAgent = stageAgents[firstStageName] || { name: '未知 Agent', avatar: '🤖' };
+  addActivityLog(task.id, 'agent-work', firstAgent.avatar || '🤖', 'agent', `<strong>${firstAgent.name}</strong> 开始执行「${firstStageName}」阶段`);
+
+  const container = document.getElementById('mainContent');
+  renderPipeline(container, { tid: task.id });
+  updateBadges();
+  return true;
+}
+
 function advanceStage(task) {
+  if (runPerfectDemoTask(task)) return;
+
   if (task.stageCurrent >= task.stageNames.length - 1) {
     toast('已是最后一个阶段', true); return;
   }
@@ -113,6 +213,7 @@ function advanceStage(task) {
     }
   }
   task.stageCurrent++;
+  if (task.status === 'planning') task.status = 'executing';
   task.stages[task.stageCurrent] = 0;
 
   const stageName = task.stageNames[task.stageCurrent];
@@ -121,12 +222,7 @@ function advanceStage(task) {
   if (!task.stageGates[task.stageCurrent] || task.stageGates[task.stageCurrent].length === 0) {
     task.stageGates[task.stageCurrent] = gateDefs.map(() => 0);
   }
-  const newGates = gateDefs.map((g, i) => {
-    if (g.type === 'fail' && Math.random() > 0.5) return 0;
-    return 1;
-  });
-  if (stageName === '代码审查') newGates[2] = 0;
-  if (stageName === '单元测试') newGates[0] = 0;
+  const newGates = getStageGateResults(task, stageName, gateDefs);
   task.stageGates[task.stageCurrent] = newGates;
 
   // Log agent-to-agent communication
@@ -147,7 +243,7 @@ function advanceStage(task) {
     }
   });
 
-  if (['方案设计','代码审查'].includes(stageName) && !state.reviews.find(r => r.tid === task.id && r.stage === task.stageCurrent)) {
+  if (!task.perfectDemo && ['方案设计','代码审查'].includes(stageName) && !state.reviews.find(r => r.tid === task.id && r.stage === task.stageCurrent)) {
     const reviewers = ['王工','李工','赵工','刘工'];
     const rv = { id:'r'+(reviewIdCounter++), tid:task.id, stage:task.stageCurrent, stageName, reviewer:reviewers[Math.floor(Math.random()*reviewers.length)], status:'pending', desc:`${stageName}阶段产出物需要人工评审确认` };
     state.reviews.push(rv);

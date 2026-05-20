@@ -181,8 +181,8 @@ function renderSidebar() {
     sidebar.innerHTML = `
       <div class="logo" onclick="navigate('dashboard')" style="cursor:pointer;" title="返回工作台"><div class="icon">&#9670;</div>智能软件工厂</div>
       <div class="nav-section">任务与评审</div>
-      <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板<span class="badge" id="badgeTasks">0</span></div>
-      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审<span class="badge" id="badgeProjectReviews">0</span></div>
+      <div class="nav-item" data-page="kanban" onclick="navigate('kanban')">&#9776; 任务看板</div>
+      <div class="nav-item" data-page="project-reviews" onclick="navigate('project-reviews')">&#9737; 项目评审</div>
       <div class="nav-section">项目智能</div>
       <div class="nav-item" data-page="project-guidelines" onclick="navigate('project-guidelines')">&#9881; 项目规范</div>
       <div class="nav-item" data-page="project-agents" onclick="navigate('project-agents')">&#129302; 项目智能体</div>
