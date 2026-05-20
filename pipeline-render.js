@@ -1089,7 +1089,7 @@ window.switchTestEvidence = function(caseId) {
     const span = el.querySelector('span:first-child');
     if (span) span.style.color = 'var(--text)';
   });
-  
+
   const activeBtn = document.getElementById('case-btn-' + caseId);
   if (activeBtn) {
     activeBtn.classList.add('active');
@@ -1098,15 +1098,15 @@ window.switchTestEvidence = function(caseId) {
     const span = activeBtn.querySelector('span:first-child');
     if (span) span.style.color = 'var(--primary)';
   }
-  
+
   const content = document.getElementById('testEvidenceContent');
   if (!content) return;
-  
+
   let title = '';
   let desc = '';
   let logs = '';
   let mockupHtml = '';
-  
+
   if (caseId === '2fa') {
     title = 'testDocDownloadNeed2FA';
     desc = '验证公开公文下载时的 2FA 双因子身份核验拦截与安全通过状态。当非授权或会话超时下载时抛出 <code>TwoFactorAuthenticationException</code>，输入正确的 2FA 验证码才允许读取并生成 OFD 文件数据流。';
@@ -1121,32 +1121,11 @@ window.switchTestEvidence = function(caseId) {
 [DEBUG] Authorization granted. Invoking OFDDocumentService.streamDownload(...)
 [INFO]  Stream size: 104,820 bytes. Status: 200 OK.
 [INFO]  Test testDocDownloadNeed2FA: SUCCESS!`;
-    
-    mockupHtml = `
-      <div style="background:#0F172A; border-radius:12px; padding:24px; color:#fff; display:flex; flex-direction:column; align-items:center; max-width:340px; margin:0 auto; box-shadow:var(--shadow-lg); border:1px solid #334155; position:relative;">
-        <div style="width:44px; height:44px; background:rgba(16,185,129,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#10B981; font-size:20px; margin-bottom:12px;">
-          🔒
-        </div>
-        <div style="font-size:14px; font-weight:700; margin-bottom:4px; color:#F8FAFC;">安全双因子核验 (2FA)</div>
-        <div style="font-size:11px; color:#94A3B8; text-align:center; margin-bottom:16px; line-height:1.5;">您正在下载公开级公文《关于2026年度国家安全和公开规范的实施意见.ofd》</div>
-        
-        <div style="display:flex; gap:6px; margin-bottom:16px;">
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">8</div>
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">4</div>
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">9</div>
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">3</div>
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">0</div>
-          <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">1</div>
-        </div>
-        
-        <div style="background:rgba(16,185,129,0.15); border:1px solid #10B981; border-radius:20px; padding:4px 12px; font-size:10px; color:#34D399; font-weight:700; display:flex; align-items:center; gap:4px;">
-          ✓ 安全证书比对一致
-        </div>
-      </div>
-    `;
+
+    mockupHtml = `<img src="docs/screenshot/截图 2026-05-20 16-33-09.png" style="width:100%; border-radius:8px; display:block;" alt="二次身份核验截图">`;
   } else if (caseId === 'seq') {
     title = 'testStrictSequentialWorkflow';
-    desc = '验证流转状态机（FSM）强控制拦截切面。阅件处理必须严格遵循“接收 ➔ 审批 ➔ 传阅 ➔ 归档”既定顺序，越权/越级跳转接口会被成功拦截并抛出 Exception，保证流程不可被篡改。';
+    desc = '验证流转状态机（FSM）强控制拦截切面。阅件处理必须严格遵循"接收 ➔ 审批 ➔ 传阅 ➔ 归档"既定顺序，越权/越级跳转接口会被成功拦截并抛出 Exception，保证流程不可被篡改。';
     logs = `[INFO]  Running test testStrictSequentialWorkflow...
 [DEBUG] Initializing Document Flow State Machine for DOC-2026-9902
 [INFO]  Current State: [RECEIVE] (已接收)
@@ -1159,48 +1138,8 @@ window.switchTestEvidence = function(caseId) {
 [INFO]  Transition: APPROVE -> CIRCULATE. Status: OK.
 [INFO]  Transition: CIRCULATE -> ARCHIVE. Status: OK.
 [INFO]  Test testStrictSequentialWorkflow: SUCCESS!`;
-    
-    mockupHtml = `
-      <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; align-items:center; position:relative;">
-        <div style="font-size:13px; font-weight:700; color:var(--text);">公文阅件流转状态机模型</div>
-        
-        <div style="display:flex; align-items:center; gap:6px; justify-content:center; width:100%; flex-wrap:wrap; position:relative; padding:10px 0;">
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div style="width:64px; height:30px; border-radius:6px; background:#EFF6FF; border:1px solid var(--primary); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--primary);">已接收</div>
-            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">RECEIVE</span>
-          </div>
-          
-          <span style="color:var(--primary); font-size:14px;">➔</span>
-          
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">已审批</div>
-            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">APPROVE</span>
-          </div>
-          
-          <span style="color:var(--primary); font-size:14px;">➔</span>
-          
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">传阅中</div>
-            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">CIRCULATE</span>
-          </div>
-          
-          <span style="color:var(--primary); font-size:14px;">➔</span>
-          
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div style="width:64px; height:30px; border-radius:6px; background:#ECFDF5; border:1px solid #10B981; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#10B981;">已归档</div>
-            <span style="font-size:9px; font-family:var(--mono); color:var(--text-muted);">ARCHIVE</span>
-          </div>
-        </div>
-        
-        <div style="width:100%; border:1px dashed var(--danger); border-radius:8px; padding:10px; background:var(--danger-light); display:flex; align-items:center; gap:8px;">
-          <div style="width:20px; height:20px; border-radius:50%; background:var(--danger); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:11px;">✖</div>
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <span style="font-size:11px; font-weight:700; color:var(--danger);">非法越级已被成功拦截！</span>
-            <span style="font-size:10px; color:#B91C1C; line-height:1.3;">尝试直接从 [已接收] 跳转至 [已归档] 被状态机硬性防御。</span>
-          </div>
-        </div>
-      </div>
-    `;
+
+    mockupHtml = `<img src="docs/screenshot/截图 2026-05-20 16-33-16.png" style="width:100%; border-radius:8px; display:block;" alt="阅件流转顺序强控截图">`;
   } else if (caseId === 'immutable') {
     title = 'testRegistrationImmutable';
     desc = '验证公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、公文级别或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
@@ -1215,47 +1154,11 @@ window.switchTestEvidence = function(caseId) {
 [DEBUG] Verified leader signature: APPROVED
 [INFO]  Admin credential authenticated. Successfully updated metadata via audit trail log!
 [INFO]  Test testImmutableRegistrationInfo: SUCCESS!`;
-    
-    mockupHtml = `
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:12px; position:relative; box-shadow:var(--shadow-sm);">
-        <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-          <span style="font-size:13px; font-weight:700; color:var(--text);">公文登记基本信息表 (只读锁)</span>
-          <span class="tag tag-slate" style="font-size:10px; color:var(--danger); background:var(--danger-light); border:1px solid rgba(239,68,68,0.2);">🔒 核心字段已加锁</span>
-        </div>
-        
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div>
-            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">发件部门</label>
-            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-              <span>办公厅秘书处</span>
-              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
-            </div>
-          </div>
-          <div>
-            <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">公文级别</label>
-            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:var(--danger); font-weight:700;">公开 (LEVEL P0)</span>
-              <span style="color:var(--text-muted); font-size:12px;">🔒</span>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">公文标题</label>
-          <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-            <span>关于推进智能化公文工厂建设的指导意见</span>
-            <span style="color:var(--text-muted); font-size:12px;">🔒</span>
-          </div>
-        </div>
-        
-        <div style="border:1px solid rgba(245,158,11,0.3); background:var(--warning-light); border-radius:6px; padding:10px; font-size:11px; color:#B45309; line-height:1.4;">
-          <strong>⚠️ 篡改告警：</strong>检测到非授权试图直接修改接口，已被持久层硬性打回。更正需正式审批。
-        </div>
-      </div>
-    `;
+
+    mockupHtml = `<img src="docs/screenshot/截图 2026-05-20 16-33-22.png" style="width:100%; border-radius:8px; display:block;" alt="信件登记防篡改截图">`;
   } else if (caseId === 'stamp') {
     title = 'testCustomStampEChain';
-    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称算法与数字证书生成进行电子签名，并自动加盖标准企业样式的红色“电子印章专用章”，分配唯一档案归档编号。';
+    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称算法与数字证书生成进行电子签名，并自动加盖标准企业样式的红色"电子印章专用章"，分配唯一档案归档编号。';
     logs = `[INFO]  Running test testCustomStampApprovalEChain...
 [DEBUG] Generating multi-level approval nodes for Public-level Document DOC-2026-9904
 [INFO]  Node 1: Division Chief Approval... APPROVED.
@@ -1268,49 +1171,8 @@ window.switchTestEvidence = function(caseId) {
 [DEBUG] Cryptographic hash (SM3): 8ae94fbcd8c102a9b3c4f7...
 [INFO]  Generated Archive ID: SEAL-2026-0038491
 [INFO]  Test testCustomStampApprovalEChain: SUCCESS!`;
-    
-    mockupHtml = `
-      <div style="background:#fff; border:1px solid #D1D5DB; border-radius:8px; padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; position:relative; min-height:280px; max-width:440px; margin:0 auto;">
-        <div style="border-bottom:2px solid var(--primary); padding-bottom:6px; text-align:center;">
-          <div style="font-size:16px; font-weight:800; color:var(--primary); letter-spacing:3px; font-family:'SimSun', 'STSong', serif;">智能软件工厂电子发文</div>
-          <div style="font-size:8px; color:var(--text-muted); margin-top:2px;">[ 2026 ] 第 0038491 号</div>
-        </div>
-        
-        <div style="font-size:11px; color:var(--text); line-height:1.6; font-family:'SimSun', serif;">
-          <h4 style="text-align:center; font-size:12px; margin-bottom:8px; font-weight:bold;">关于公文管理系统上线试运行的通知</h4>
-          各科室、下属分厂：<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;由智能软件工厂自主研发的“公文管理系统”圆满完成全流程AI开发，并通过安全核验，现批准于2026年5月20日启动上线试运行。<br>
-          特此通知。
-        </div>
-        
-        <div style="margin-top:auto; display:flex; justify-content:flex-end; align-items:center; height:80px; position:relative; padding-right:10px;">
-          <div style="font-size:9px; text-align:right; z-index:2; font-family:'SimSun', serif; margin-right:10px; margin-top:20px; line-height:1.4;">
-            智能软件工厂<br>
-            2026年5月20日
-          </div>
-          
-          <div style="position:absolute; right:10px; bottom:5px; z-index:1; opacity:0.85; pointer-events:none;">
-            <svg width="80" height="80" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="46" stroke="#EF4444" stroke-width="3" fill="none" />
-              <circle cx="50" cy="50" r="43" stroke="#EF4444" stroke-width="1" fill="none" stroke-dasharray="2 1" />
-              <path d="M 50 25 L 53 35 L 63 35 L 55 41 L 58 51 L 50 45 L 42 51 L 45 41 L 37 35 L 47 35 Z" fill="#EF4444" />
-              <path id="seal-text-path" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" stroke="none" />
-              <text font-size="7.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" letter-spacing="1">
-                <textPath href="#seal-text-path" startOffset="50%" text-anchor="middle">智能软件工厂公文</textPath>
-              </text>
-              <text x="50" y="68" font-size="8.5" font-family="'SimSun', serif" font-weight="bold" fill="#EF4444" text-anchor="middle">专用印章</text>
-            </svg>
-          </div>
-        </div>
-        
-        <div style="border-top:1px dashed var(--border); padding-top:6px; display:flex; justify-content:space-between; align-items:center; font-size:9px;">
-          <span style="color:var(--text-muted); font-family:var(--mono);">ID: SEAL-2026-0038491</span>
-          <span style="background:rgba(16,185,129,0.1); border:1px solid #10B981; border-radius:3px; padding:2px 6px; color:#059669; font-weight:700;">
-            ✓ SM2 电子证书签名验证有效
-          </span>
-        </div>
-      </div>
-    `;
+
+    mockupHtml = `<img src="docs/screenshot/截图 2026-05-20 16-33-34.png" style="width:100%; border-radius:8px; display:block;" alt="用印审批截图">`;
   } else if (caseId === 'version') {
     title = 'testArchiveVersionConflict';
     desc = '验证档案版本一致性规则。当项目负责人行政干预选择方案 A (保留完整历史版本，满足审计合规性) 时，系统将成功断言数据库：对已有电子档案的所有修改将全部保留在树状子版本目录中，100% 杜绝覆盖历史审计轨迹。';
@@ -1325,46 +1187,10 @@ window.switchTestEvidence = function(caseId) {
 [DEBUG] Assert: v1.0 hash remains identical (no mutation)... TRUE.
 [DEBUG] Assert: Version history tree integrity is 100% verified... TRUE.
 [INFO]  Test testDocArchiveVersionConflict: SUCCESS!`;
-    
-    mockupHtml = `
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px;">
-        <div style="font-size:12px; font-weight:700; color:var(--text);">电子档案版本树与可追溯关系 (策略 A 方案八生效)</div>
-        
-        <div style="background:#F8FAFC; border-radius:8px; border:1px solid var(--border); padding:12px; display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:14px; color:var(--text-muted); margin-top:2px;">📄</span>
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:11px; font-weight:700; color:var(--text);">公文档案 v1.0</span>
-                <span class="tag tag-slate" style="font-size:9px; padding:1px 4px; background:#E2E8F0; color:var(--text-secondary);">🔒 只读归档已锁定</span>
-              </div>
-              <span style="font-size:10px; color:var(--text-secondary);">提交时间: 2026-05-18 10:00 | 操作人: 张经理 (创建者)</span>
-              <span style="font-family:mono; font-size:9px; color:var(--text-muted);">SHA-256 Hash: 3c8e71b29a8fbc8d8e90a...</span>
-            </div>
-          </div>
-          
-          <div style="border-left: 2px dashed #CBD5E1; margin-left: 6px; height: 16px;"></div>
-          
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:14px; color:var(--primary); margin-top:2px;">📄</span>
-            <div style="display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:11px; font-weight:700; color:var(--primary);">公文档案 v2.0 (最新版)</span>
-                <span class="tag tag-green" style="font-size:9px; padding:1px 4px; font-weight:700; background:#ECFDF5; color:#065F46;">✓ 活跃中</span>
-              </div>
-              <span style="font-size:10px; color:var(--text-secondary);">修改时间: 2026-05-20 15:30 | 操作人: 李工 (开发负责人)</span>
-              <span style="font-family:mono; font-size:9px; color:var(--text-muted);">SHA-256 Hash: f9a812bc8df1e0a89d7b3...</span>
-            </div>
-          </div>
-        </div>
-        
-        <div style="display:flex; align-items:center; gap:6px; padding:8px 12px; border:1px solid rgba(16,185,129,0.3); background:var(--success-light); border-radius:6px; font-size:10px; color:#065F46; font-weight:600;">
-          ✓ 策略一致性断言通过：保留完整历史版本，满足审计合规要求。
-        </div>
-      </div>
-    `;
+
+    mockupHtml = `<img src="docs/screenshot/截图 2026-05-20 16-33-40.png" style="width:100%; border-radius:8px; display:block;" alt="档案版本控制截图">`;
   }
-  
+
   content.innerHTML = `
     <div>
       <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">

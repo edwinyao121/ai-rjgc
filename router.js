@@ -173,6 +173,7 @@ function renderSidebar() {
       <div class="nav-item" data-page="agents" onclick="navigate('agents')">&#129302; 智能体</div>
       <div class="nav-item" data-page="skills" onclick="navigate('skills')">&#9730; 技能市场</div>
       <div class="nav-item" data-page="rules-config" onclick="navigate('rules-config')">&#9881; 门禁配置</div>
+      <div class="nav-item" data-page="guidelines" onclick="navigate('guidelines')">&#128220; 通用规范</div>
     `;
   } else {
     const p = getProject(state.activeProjectId);
@@ -197,7 +198,7 @@ function renderSidebar() {
 function navigate(page, data) {
   state.activePage = page;
   
-  const globalPages = ['dashboard', 'projects', 'reviews', 'agents', 'skills', 'rules-config'];
+  const globalPages = ['dashboard', 'projects', 'reviews', 'agents', 'skills', 'rules-config', 'guidelines'];
   const projectPages = ['kanban', 'pipeline-view', 'project-gates', 'project-reviews', 'project-agents', 'project-skills', 'project-rules-config', 'project-summary', 'project-guidelines'];
   
   if (globalPages.includes(page)) {
@@ -265,6 +266,7 @@ function renderPage(page, data) {
     case 'skills': renderSkills(container); break;
     case 'project-skills': renderProjectSkills(container); break;
     case 'project-guidelines': renderProjectGuidelines(container); break;
+    case 'guidelines': renderGuidelines(container); break;
   }
 }
 
