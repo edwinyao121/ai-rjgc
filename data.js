@@ -11,6 +11,17 @@ const state = {
   activeTaskId: 't1',
   projects: [
     { 
+      id:'p5', name:'公文管理系统', desc:'支持大模型文档摘要、既定流转顺序、双核验下载及印章审计的公文管理系统', repo:'gitlab.com/gov/doc-management', members:6, status:'blocked', stagesDone:0, stagesTotal:8,
+      guidelines: {
+        dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
+        collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
+        stack: 'Spring Boot 3.2, Vue 3, PostgreSQL 15, OFD Reader, Gemini API, Redis 7',
+        coding: '1. 命名规范：后端遵循中国信创开源规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
+        domain: '1. 文档摘要：对接大模型 API 生成文档摘要，长文本需流式读取分块处理。\n2. 流转顺序：阅件处理必须严格遵循“接收、审批、传阅、归档”既定顺序，由流转状态机进行强控，严禁逆向或越级。\n3. 登记防篡改：信件登记信息一经录入系统，任何员工均无权直接修改。若需更正必须提交“信息更正申请单”，经部门领导审批通过后方可由系统管理员操作。\n4. 用印审批：用印流程支持根据文件类型、次数、印章类型自定义多级审批，支持在线待用印文件预览、电子签名确认及用印后文件自动归档。\n5. 版本管理：档案修改后生成独立版本，历史版本需完整保留并随时回溯查看。',
+        quality: '1. 安全下载：阅件下载必须实施双重身份核验（安全口令 + 短信/动态验证码 2FA）。\n2. 审计追溯：每次用印完成后自动归档申请单、审批记录、前后文件，生成唯一的档案编号。'
+      }
+    },
+    { 
       id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'gitlab.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8,
       guidelines: {
         dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
@@ -54,17 +65,6 @@ const state = {
         quality: '1. 变更验证：部署脚本变更必须先通过 Terraform plan 验证并 Review。\n2. 镜像规范：线上环境 Kubernetes 部署严禁使用 latest 镜像标签，必须固定版本号。'
       }
     },
-    { 
-      id:'p5', name:'公文管理系统', desc:'支持大模型文档摘要、既定流转顺序、双核验下载及印章审计的公文管理系统', repo:'gitlab.com/gov/doc-management', members:6, status:'blocked', stagesDone:0, stagesTotal:8,
-      guidelines: {
-        dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
-        collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
-        stack: 'Spring Boot 3.2, Vue 3, PostgreSQL 15, OFD Reader, Gemini API, Redis 7',
-        coding: '1. 命名规范：后端遵循中国信创开源规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
-        domain: '1. 文档摘要：对接大模型 API 生成文档摘要，长文本需流式读取分块处理。\n2. 流转顺序：阅件处理必须严格遵循“接收、审批、传阅、归档”既定顺序，由流转状态机进行强控，严禁逆向或越级。\n3. 登记防篡改：信件登记信息一经录入系统，任何员工均无权直接修改。若需更正必须提交“信息更正申请单”，经部门领导审批通过后方可由系统管理员操作。\n4. 用印审批：用印流程支持根据文件类型、次数、印章类型自定义多级审批，支持在线待用印文件预览、电子签名确认及用印后文件自动归档。\n5. 版本管理：档案修改后生成独立版本，历史版本需完整保留并随时回溯查看。',
-        quality: '1. 安全下载：阅件下载必须实施双重身份核验（安全口令 + 短信/动态验证码 2FA）。\n2. 审计追溯：每次用印完成后自动归档申请单、审批记录、前后文件，生成唯一的档案编号。'
-      }
-    }
   ],
   tasks: [
     { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },

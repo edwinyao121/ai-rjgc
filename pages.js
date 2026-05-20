@@ -419,28 +419,28 @@ function deleteSkill(skillId) {
 // ============================================================
 function renderProjectAgents(container) {
   const project = getProject(state.activeProjectId);
-  // Pick a subset of agents for this project
-  const allAgents = Object.entries(stageAgents).filter(([k]) => k !== '测试').map(([stage, a]) => ({ stage, ...a }));
-  // Just for demo, take first 5 agents
-  const agents = allAgents.slice(0, 5);
-  
+  const agents = state.agents;
+
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">项目智能体</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">本项目启用的研发智能体实例</div></div>
-      <button class="btn btn-primary btn-sm" onclick="showAddProjectAgentModal()">+ 添加智能体</button>
+      <div><div style="font-size:13px;color:var(--text-muted);">项目「${project.name}」的研发智能体实例</div></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${agents.length} 个智能体</span>
+        <button class="btn btn-primary btn-sm" onclick="showAddProjectAgentModal()">+ 添加智能体</button>
+      </div>
     </div>
-    <div class="grid-3" style="margin-top:16px;">${agents.map(a => `
+    <div class="grid-3">${agents.map(a => `
       <div class="card card-hover">
         <div class="card-header">
           <div><div class="card-title">${a.avatar} ${a.name}</div>
-          <div class="card-subtitle">负责阶段: ${a.stage}</div></div>
+          <div class="card-subtitle">阶段: ${a.stage}</div></div>
           <span class="tag tag-green">运行中</span>
         </div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
-        <div style="margin-top:12px;display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:10px;">
-          <span style="font-size:12px;color:var(--text-muted);">&#9730; 已挂载 2 个专属技能</span>
-          <button class="btn btn-outline btn-xs" onclick="toast('正在打开实例配置面板...')">&#9881; 参数配置</button>
+        ${a.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${a.packageFile.name} <span style="color:var(--text-muted);">(${(a.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}
     </div>`;
