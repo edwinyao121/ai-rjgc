@@ -1,2 +1,3 @@
 # 忽略 antigravitycli 目录
 .antigravitycli/
+.worktrees/
