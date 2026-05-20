@@ -39,7 +39,7 @@ const state = {
         collaboration: '1. 提交说明：详细描述重构修改的模块 and 影响范围。\n2. 分支规范：refactor/feature 分支按模块隔离。',
         stack: 'Node.js 18, NestJS, TypeScript, PostgreSQL, Keycloak',
         coding: '遵循 NestJS 推荐的项目结构 and 编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
-        domain: '1. 密码安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
+        domain: '1. 口令安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
         quality: '1. ORM 规范：数据库查询必须使用 TypeORM QueryBuilder，防范 SQL 注入风险。\n2. 文档同步：所有 Controller 接口变更必须同步更新 Swagger 装饰器。'
       }
     },
@@ -62,7 +62,7 @@ const state = {
         stack: 'Spring Boot 3.2, Vue 3, PostgreSQL 15, OFD Reader, Gemini API, Redis 7',
         coding: '1. 命名规范：后端遵循中国信创开源规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
         domain: '1. 文档摘要：对接大模型 API 生成文档摘要，长文本需流式读取分块处理。\n2. 流转顺序：阅件处理必须严格遵循“接收、审批、传阅、归档”既定顺序，由流转状态机进行强控，严禁逆向或越级。\n3. 登记防篡改：信件登记信息一经录入系统，任何员工均无权直接修改。若需更正必须提交“信息更正申请单”，经部门领导审批通过后方可由系统管理员操作。\n4. 用印审批：用印流程支持根据文件类型、次数、印章类型自定义多级审批，支持在线待用印文件预览、电子签名确认及用印后文件自动归档。\n5. 版本管理：档案修改后生成独立版本，历史版本需完整保留并随时回溯查看。',
-        quality: '1. 安全下载：阅件下载必须实施双重身份核验（密码 + 短信/动态验证码 2FA）。\n2. 审计追溯：每次用印完成后自动归档申请单、审批记录、前后文件，生成唯一的档案编号。'
+        quality: '1. 安全下载：阅件下载必须实施双重身份核验（安全口令 + 短信/动态验证码 2FA）。\n2. 审计追溯：每次用印完成后自动归档申请单、审批记录、前后文件，生成唯一的档案编号。'
       }
     }
   ],
@@ -72,7 +72,7 @@ const state = {
     { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'王工' },
     { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
     { id:'t5', pid:'p5', title:'公文阅件流转与用印审批核心功能研制', type:'Feature', priority:'P0', estimate:'25d', status:'executing', stageCurrent:0, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[1,0,1],[0,0],[0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['张经理','李工','王工','赵工','刘工','李工','王工','张经理'], aiCreated:false, assignee:'张经理' },
-    { id:'t6', pid:'p5', title:'基于大模型的绝密级公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'李工' },
+    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:true, assignee:'李工' },
     { id:'t7', pid:'p5', title:'阅件二次身份核验双因子(2FA)下载模块开发', type:'Feature', priority:'P1', estimate:'8d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
     { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'刘工' },
     { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'王工' }
@@ -134,11 +134,11 @@ const state = {
     ],
     't2-3': [
       { role:'user', text:'参考需求分析报告，我要新增一个人事管理模块。', time:m(1800) },
-      { role:'agent', text:'已读取需求分析报告。主要功能包括：<br>• P0：员工花名册管理、入职流程、转正管理、离职管理<br>• P1：岗位调动、人事报表<br><br>技术要求：查询响应≤500ms，批量导入1000条≤10s，敏感数据加密存储。<br><br>先创建项目结构和数据库模型，可以吗？', time:m(1740) },
+      { role:'agent', text:'已读取需求分析报告。主要功能包括：<br>• P0：员工花名册管理、入职流程、转正管理、离职管理<br>• P1：岗位调动、人事报表<br><br>技术要求：查询响应≤500ms，批量导入1000条≤10s，敏感数据脱敏存储。<br><br>先创建项目结构和数据库模型，可以吗？', time:m(1740) },
       { role:'user', text:'张经理：可以。', time:m(1680) },
       { role:'agent', text:'正在创建项目结构...<br><br><pre style="background:#F8FAFC;padding:10px;border-radius:6px;font-size:12px;">src/modules/hr/\n├── employee/      # 员工花名册\n├── onboarding/    # 入职流程\n├── confirmation/  # 转正管理\n├── transfer/      # 岗位调动\n├── resignation/   # 离职管理\n└── report/        # 人事报表</pre><br>数据库设计完成：<br>• ✅ employees 表 - 花名册主数据<br>• ✅ employee_events 表 - 入转调离事件流水<br>• ✅ approval_flows 表 - 审批流程配置', time:m(1620) },
       { role:'user', text:'先做员工花名册管理。', time:m(1560) },
-      { role:'agent', text:'正在实现员工花名册管理...<br><br>• ✅ model: Employee, EmployeeEvent<br>• ✅ API: POST/GET/PUT/DELETE /api/hr/employees<br>• ✅ 敏感字段（身份证、薪资）加密存储<br>• ✅ 支持批量导入/导出，Excel模板下载<br><br>需要实现入职流程模块吗？', time:m(1500) },
+      { role:'agent', text:'正在实现员工花名册管理...<br><br>• ✅ model: Employee, EmployeeEvent<br>• ✅ API: POST/GET/PUT/DELETE /api/hr/employees<br>• ✅ 敏感字段（身份证、薪资）脱敏存储<br>• ✅ 支持批量导入/导出，Excel模板下载<br><br>需要实现入职流程模块吗？', time:m(1500) },
       { role:'user', text:'接下来做入职流程。', time:m(1440) },
       { role:'agent', text:'正在实现入职流程...<br><br>• ✅ workflow: 发起申请 → 部门审批 → HR确认 → 自动建账<br>• ✅ 消息通知集成（邮件/站内信）<br>• ✅ 状态机：pending → department_approved → hr_approved → active<br><br>需要实现转正管理吗？', time:m(1380) },
       { role:'user', text:'接下来做转正管理。', time:m(1320) },

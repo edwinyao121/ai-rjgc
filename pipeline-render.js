@@ -553,7 +553,7 @@ function previewArtifact(name) {
         <div style="font-size:12px;color:#475569;line-height:1.7;">
           <strong>业务背景：</strong>随着公司规模扩大，现有人事管理方式已无法满足需求，拟建设人事管理模块集成至OA系统...<br>
           <strong>功能需求：</strong>员工花名册管理、入职流程、转正管理、岗位调动、离职管理、人事报表 共6项<br>
-          <strong>非功能需求：</strong>性能(响应≤500ms)、安全(敏感信息加密)、可靠性(可用性≥99.5%)
+          <strong>非功能需求：</strong>性能(响应≤500ms)、安全(敏感信息安全防护)、可靠性(可用性≥99.5%)
         </div>
       </div>
     </div>`;
@@ -563,7 +563,7 @@ function previewArtifact(name) {
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;margin-bottom:12px;">
           <div>
             <div style="font-weight:700;font-size:14px;color:#065F46;">&#9745; 测试用例证据报告.html</div>
-            <div style="font-size:12px;color:#047857;margin-top:3px;">5项安全与合规自动化用例 100% 通过 · 国密及信创合规审计追溯完毕</div>
+            <div style="font-size:12px;color:#047857;margin-top:3px;">5项安全与合规自动化用例 100% 通过 · 电子印章与信创合规审计追溯完毕</div>
           </div>
           <div style="display:flex;gap:8px;">
             <span class="tag tag-green" style="font-weight:700;">PASSED</span>
@@ -1109,9 +1109,9 @@ window.switchTestEvidence = function(caseId) {
   
   if (caseId === '2fa') {
     title = 'testDocDownloadNeed2FA';
-    desc = '验证绝密公文下载时的 2FA 双因子身份核验拦截与安全通过状态。当非授权或会话超时下载时抛出 <code>TwoFactorAuthenticationException</code>，输入正确的 2FA 验证码才允许读取并生成 OFD 文件数据流。';
+    desc = '验证公开公文下载时的 2FA 双因子身份核验拦截与安全通过状态。当非授权或会话超时下载时抛出 <code>TwoFactorAuthenticationException</code>，输入正确的 2FA 验证码才允许读取并生成 OFD 文件数据流。';
     logs = `[INFO]  Running test testDocDownloadNeed2FA...
-[DEBUG] Intercepted download request for document ID: DOC-2026-9901 (绝密级)
+[DEBUG] Intercepted download request for document ID: DOC-2026-9901 (公开级)
 [WARN]  No valid 2FA session token found in HTTP request headers.
 [DEBUG] Dynamic challenge SMS OTP sent to employee phone: 138****5829
 [DEBUG] Presenting 2FA Verification Dialog to User...
@@ -1128,7 +1128,7 @@ window.switchTestEvidence = function(caseId) {
           🔒
         </div>
         <div style="font-size:14px; font-weight:700; margin-bottom:4px; color:#F8FAFC;">安全双因子核验 (2FA)</div>
-        <div style="font-size:11px; color:#94A3B8; text-align:center; margin-bottom:16px; line-height:1.5;">您正在下载绝密级公文《关于2026年度国家安全和保密规范的实施意见.ofd》</div>
+        <div style="font-size:11px; color:#94A3B8; text-align:center; margin-bottom:16px; line-height:1.5;">您正在下载公开级公文《关于2026年度国家安全和公开规范的实施意见.ofd》</div>
         
         <div style="display:flex; gap:6px; margin-bottom:16px;">
           <div style="width:32px; height:40px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#10B981;">8</div>
@@ -1203,7 +1203,7 @@ window.switchTestEvidence = function(caseId) {
     `;
   } else if (caseId === 'immutable') {
     title = 'testRegistrationImmutable';
-    desc = '验证电子公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、密级或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
+    desc = '验证电子公文登记表不可篡改属性。任何非超级管理员员工尝试直接使用写/更正请求修改发件单位、公文级别或正文，都会被数据持久层拦截并打回，必须走严格的更正申请及管理员受审修改链。';
     logs = `[INFO]  Running test testImmutableRegistrationInfo...
 [DEBUG] Querying document metadata for ID: DOC-2026-9903
 [INFO]  Immutable Fields locked in Data Access Object (DAO) context.
@@ -1234,7 +1234,7 @@ window.switchTestEvidence = function(caseId) {
           <div>
             <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">公文级别</label>
             <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:var(--danger); font-weight:700;">绝密 (LEVEL P0)</span>
+              <span style="color:var(--danger); font-weight:700;">公开 (LEVEL P0)</span>
               <span style="color:var(--text-muted); font-size:12px;">🔒</span>
             </div>
           </div>
@@ -1255,15 +1255,15 @@ window.switchTestEvidence = function(caseId) {
     `;
   } else if (caseId === 'stamp') {
     title = 'testCustomStampEChain';
-    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称密钥对生成数字证书进行电子签名，并自动加盖中国政府机关标准样式的红色“电子印章专用章”，分配唯一档案归档编号。';
+    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称算法与数字证书生成进行电子签名，并自动加盖中国政府机关标准样式的红色“电子印章专用章”，分配唯一档案归档编号。';
     logs = `[INFO]  Running test testCustomStampApprovalEChain...
-[DEBUG] Generating multi-level approval nodes for Secret-level Document DOC-2026-9904
+[DEBUG] Generating multi-level approval nodes for Public-level Document DOC-2026-9904
 [INFO]  Node 1: Division Chief Approval... APPROVED.
 [INFO]  Node 2: Department Director Approval... APPROVED.
 [INFO]  Node 3: Executive Leadership Approval... APPROVED.
 [DEBUG] Commencing electronic sealing sequence...
-[DEBUG] Generating SM2 asymmetric digital signature keypair...
-[INFO]  Asymmetric digital signature successfully created using national cryptography algorithm SM2!
+[DEBUG] Generating SM2 asymmetric digital signature key...
+[INFO]  Asymmetric digital signature successfully created using standard algorithm SM2!
 [INFO]  Affixing Official Seal: 智能软件工厂电子公文专用章
 [DEBUG] Cryptographic hash (SM3): 8ae94fbcd8c102a9b3c4f7...
 [INFO]  Generated Archive ID: SEAL-2026-0038491
@@ -1432,7 +1432,7 @@ window.showEvidenceLightbox = function(caseId) {
           🔒
         </div>
         <div style="font-size:16px; font-weight:700; margin-bottom:8px; color:#F8FAFC;">安全双因子核验 (2FA)</div>
-        <div style="font-size:12px; color:#94A3B8; text-align:center; margin-bottom:24px; line-height:1.6;">您正在下载绝密级公文《关于2026年度国家安全和保密规范的实施意见.ofd》</div>
+        <div style="font-size:12px; color:#94A3B8; text-align:center; margin-bottom:24px; line-height:1.6;">您正在下载公开级公文《关于2026年度国家安全和公开规范的实施意见.ofd》</div>
         
         <div style="display:flex; gap:8px; margin-bottom:24px;">
           <div style="width:38px; height:48px; border:2px solid #10B981; border-radius:6px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#10B981;">8</div>
@@ -1511,7 +1511,7 @@ window.showEvidenceLightbox = function(caseId) {
           <div>
             <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:6px;">公文级别</label>
             <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:var(--danger); font-weight:700;">绝密 (LEVEL P0)</span>
+              <span style="color:var(--danger); font-weight:700;">公开 (LEVEL P0)</span>
               <span style="color:var(--text-muted); font-size:12px;">🔒</span>
             </div>
           </div>
