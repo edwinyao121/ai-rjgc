@@ -661,24 +661,23 @@ function renderProjectSkills(container) {
     { name:'代码审查技能', ver:'v2.8', agent:'代码审查 Agent', status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测。', tags:['代码审查阶段','安全'] },
     { name:'任务拆解技能', ver:'v2.0', agent:'任务拆解 Agent', status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，生成看板 Backlog。', tags:['需求拆解阶段'] }
   ];
-  
+
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">项目技能库</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">已从全局市场下载，并分配给本项目的技能</div></div>
-      <button class="btn btn-primary btn-sm" onclick="navigate('skills')">+ 去市场获取技能</button>
+      <div><div style="font-size:13px;color:var(--text-muted);">已从全局市场下载并分配给本项目的技能</div></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${skills.filter(s=>s.status==='enabled').length} 个技能可用</span>
+        <button class="btn btn-primary btn-sm" onclick="navigate('skills')">+ 去市场获取技能</button>
+      </div>
     </div>
-    <div class="grid-3" style="margin-top:16px;">${skills.map(s => `
+    <div class="grid-3">${skills.map(s => `
       <div class="card card-hover">
-        <div class="card-header">
-          <div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver}</div></div>
-          <span class="tag tag-blue" style="background:#E0E7FF;color:#3730A3;">已绑定: ${s.agent}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${s.desc}</div>
+        <div class="card-header"><div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver} · 绑定: ${s.agent}</div></div><span class="tag ${s.status==='enabled'?'tag-green':'tag-slate'}">${s.status==='enabled'?'启用':'禁用'}</span></div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${s.desc}</div>
         <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="toast('打开技能参数配置...')">&#9881; 实例参数</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="toast('技能已解绑', true)">解除绑定</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="toast('打开技能参数配置...')">&#9881; 实例参数</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="toast('技能已解绑', true)">解除绑定</button>
         </div>
       </div>`).join('')}
 
