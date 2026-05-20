@@ -13,37 +13,45 @@ const state = {
     { 
       id:'p1', name:'OA办公系统', desc:'企业办公自动化系统', repo:'github.com/company/oa-system', members:8, status:'running', stagesDone:6, stagesTotal:8,
       guidelines: {
+        dependency: '1. 依赖管理：统一使用 Maven 进行依赖引入，严禁直接导入本地 JAR 包。\n2. 选型黑名单：严禁使用 Fastjson（存在安全高危漏洞），统一使用 Jackson 作为 JSON 解析器。\n3. 版本管理：线上依赖包必须固定 RELEASE 版本号，禁止使用 LATEST 或带有 SNAPSHOT 的不确定版本。',
+        collaboration: '1. 分支命名：功能分支命名为 feature/issue-{id}-{title}，修复分支为 hotfix/{id}-{title}。\n2. 提交规范：Commit 提交信息格式统一为 <type>(<scope>): <subject>，例如 feat(approval): 增加三级流转流程审批功能。\n3. 合并规则：合并至 main 必须经过 PR 并获得至少 1 名核心开发者的 Review 通过。',
         stack: 'Java 17, Spring Boot 3.0, Vue 3, Element Plus, MySQL 8.0, Redis 6.2',
         coding: '1. 命名规范：后端遵循阿里巴巴Java开发规范，前端遵循 Vue 官方风格指南。\n2. 接口规范：使用 RESTful 风格，返回格式统一为 {code, data, msg}。\n3. 注释规范：核心业务逻辑必须包含 Javadoc 或 TSDoc 注释。',
-        businessRules: '1. 金额计算统一使用 BigDecimal，严禁使用 Double。\n2. 数据删除统一采用逻辑删除（更新 is_deleted = 1），禁止物理删除。\n3. 审批流状态机严格遵循：草稿 -> 审批中 -> 已通过/已驳回，不可跳级。',
-        bestPractices: '1. JSON 解析统一使用 Jackson，禁止引入 Fastjson。\n2. 异常处理：严禁 catch 后吞掉异常，必须打印 ERROR 日志并抛出自定义业务异常。\n3. 测试：单测必须使用 Mockito 隔离外部 DB 和第三方接口调用。'
+        domain: '1. 金额计算：金额计算统一使用 BigDecimal，严禁使用 float/double 浮点数，防范精度丢失。\n2. 逻辑删除：数据删除统一采用逻辑删除（更新 is_deleted = 1），禁止在业务表中执行物理物理删除。\n3. 审批流状态机：状态转移严格遵循草稿 -> 审批中 -> 已通过/已驳回，禁止逆向跳跃流转。',
+        quality: '1. 单元测试：核心逻辑单元测试行覆盖率必须达到 80% 以上，并使用 Mockito 隔离外部 DB 和第三方 API 调用。\n2. 静态检查：SonarQube 扫描中不能有 Blocker 级别错误，圈复杂度单个函数严禁超过 15。\n3. 接口性能：核心 API 在并发 50 下平均响应时间必须控制在 200ms 以内。'
       }
     },
     { 
       id:'p2', name:'智能网关 2.0', desc:'API 网关升级与限流优化', repo:'github.com/stars/smart-gateway', members:5, status:'reviewing', stagesDone:4, stagesTotal:8,
       guidelines: {
+        dependency: '1. 包管理：统一使用 Go Modules 进行依赖管理，Go.sum 必须随代码库提交。\n2. 依赖原则：严禁引入未经安全评估的第三方组件，优先使用官方原生标准库。',
+        collaboration: '1. 分支管理：主分支保持稳定，开发在 dev 分支进行，发布分支遵循 release/v* 命名。\n2. 提交约定：符合 Conventional Commits 格式规则。',
         stack: 'Go 1.20, Gin, gRPC, Etcd, Prometheus',
         coding: '遵循 Uber Go Style Guide；使用 Uber-fx 进行依赖注入；Prometheus 指标命名需符合规范。',
-        businessRules: '1. 路由匹配规则：优先精确匹配，兜底通配符匹配。\n2. 限流阈值动态下发：本地缓存有效期最大 10s，失效必须 fallback 到全局配置。',
-        bestPractices: '1. 并发处理：必须 handle ctx.Done()，严防 Goroutine 泄漏。\n2. 日志打印：所有 ERROR 级别日志必须携带 trace_id 方便全链路追踪。'
+        domain: '1. 路由匹配规则：优先精确匹配，兜底通配符匹配。\n2. 限流阈值动态下发：本地缓存有效期最大 10s，失效必须 fallback 到全局配置。',
+        quality: '1. 并发处理：必须 handle ctx.Done()，严防 Goroutine 泄漏。\n2. 日志打印：所有 ERROR 级别日志必须携带 trace_id 方便全链路追踪。'
       }
     },
     { 
       id:'p3', name:'用户中心重构', desc:'统一认证与权限中心', repo:'github.com/stars/user-center', members:4, status:'blocked', stagesDone:2, stagesTotal:6,
       guidelines: {
+        dependency: '1. 包管理：统一使用 npm/yarn 进行依赖导入，lockfile 必须保证提交。\n2. 安全扫描：引入包必须经过 npm audit 安全漏洞扫描。',
+        collaboration: '1. 提交说明：详细描述重构修改的模块和影响范围。\n2. 分支规范：refactor/feature 分支按模块隔离。',
         stack: 'Node.js 18, NestJS, TypeScript, PostgreSQL, Keycloak',
         coding: '遵循 NestJS 推荐的项目结构 and 编码模式；所有 API 必须定义 DTO 并在 Swagger 中声明。',
-        businessRules: '1. 密码安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
-        bestPractices: '1. ORM 规范：数据库查询必须使用 TypeORM QueryBuilder，防范 SQL 注入风险。\n2. 文档同步：所有 Controller 接口变更必须同步更新 Swagger 装饰器。'
+        domain: '1. 密码安全：必须加盐 Hash 存储 (Bcrypt)，严禁明文。\n2. Token 策略：访问 Token 签发默认有效期 2 小时，刷新 Token 有效期 7 天。\n3. 租户隔离：跨租户数据访问必须经过严格权限校验拦截器。',
+        quality: '1. ORM 规范：数据库查询必须使用 TypeORM QueryBuilder，防范 SQL 注入风险。\n2. 文档同步：所有 Controller 接口变更必须同步更新 Swagger 装饰器。'
       }
     },
     { 
       id:'p4', name:'消息中间件升级', desc:'Kafka 集群升级与监控', repo:'github.com/stars/msg-bus', members:3, status:'done', stagesDone:7, stagesTotal:7,
       guidelines: {
+        dependency: '1. 镜像管理：严禁使用 latest 标签，必须指定具体的 Docker 镜像 tag。\n2. 依赖校验：Terraform 模块统一使用私有 Registry 版本。',
+        collaboration: '1. 变更评审：所有部署脚本与 IaC 变更必须至少有 2 人联合 Review 后方能合并。',
         stack: 'Kafka 3.4, Kubernetes, Terraform, Grafana',
         coding: '基础设施即代码 (IaC)；所有部署脚本必须经过 dry-run 验证。',
-        businessRules: '1. 核心交易 Topic 配置：必须设置 replicas=3, min.insync.replicas=2 保证高可用。\n2. 消费端约定：所有接入的业务消费端必须实现幂等处理。',
-        bestPractices: '1. 变更验证：部署脚本变更必须先通过 Terraform plan 验证并 Review。\n2. 镜像规范：线上环境 Kubernetes 部署严禁使用 latest 镜像标签，必须固定版本号。'
+        domain: '1. 核心交易 Topic 配置：必须设置 replicas=3, min.insync.replicas=2 保证高可用。\n2. 消费端约定：所有接入的业务消费端必须实现幂等处理。',
+        quality: '1. 变更验证：部署脚本变更必须先通过 Terraform plan 验证并 Review。\n2. 镜像规范：线上环境 Kubernetes 部署严禁使用 latest 镜像标签，必须固定版本号。'
       }
     },
   ],
