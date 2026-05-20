@@ -18,9 +18,9 @@ function renderAgents(container) {
         </div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
         ${a.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${a.packageFile.name} <span style="color:var(--text-muted);">(${(a.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}</div>`;
 }
@@ -296,35 +296,12 @@ function renderSkills(container) {
         <div class="card-header"><div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver} · 调用 ${s.calls.toLocaleString()} 次</div></div><span class="tag ${s.status==='enabled'?'tag-green':'tag-slate'}">${s.status==='enabled'?'启用':'禁用'}</span></div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${s.desc}</div>
         <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
-        ${s.status==='enabled'?`<button class="btn btn-outline btn-sm" style="margin-top:10px;width:100%;" onclick="runSkillDemo('${s.name}')">&#9654; 演示调用</button>`:''}
         ${s.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${s.packageFile.name} <span style="color:var(--text-muted);">(${(s.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showSkillModal('${s.id}')">&#9998; 编辑</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteSkill('${s.id}')">&#10005; 删除</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showSkillModal('${s.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteSkill('${s.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}</div>`;
-}
-
-function runSkillDemo(name) {
-  toast(`技能 "${name}" 演示调用已触发`);
-  const task = getTask(state.activeTaskId);
-  if (!task || task.stageCurrent < 0) return;
-  // Simulate skill execution
-  setTimeout(() => {
-    if (task.stageGates[task.stageCurrent]) {
-      for (let i = 0; i < task.stageGates[task.stageCurrent].length; i++) {
-        if (task.stageGates[task.stageCurrent][i] === 0 && Math.random() > 0.3) {
-          task.stageGates[task.stageCurrent][i] = 1;
-        }
-      }
-    }
-    toast(`技能 "${name}" 执行完成`);
-    if (state.activePage === 'pipeline-view') {
-      const container = document.getElementById('mainContent');
-      renderPipeline(container, { tid: task.id });
-    }
-    updateBadges();
-  }, 1000);
 }
 
 function showSkillModal(skillId) {
