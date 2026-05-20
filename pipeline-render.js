@@ -476,7 +476,7 @@ function getArtifacts(stageName) {
         { icon: '&#9737;', name: '公文信创规范合规报告.pdf', meta: '22KB · 核心依赖国产适配率100%' }
       ],
       '生成制品': [
-        { icon: '&#10003;', name: '公文核心业务DoD确认单.html', meta: '8KB · 核心业务目标验收通过' }
+        { icon: '&#128230;', name: 'gov-doc-service:v1.2.0', meta: 'amd64 · 245MB · 核心业务DoD验收通过', type: 'image', imageTag: 'v1.2.0', architecture: 'linux/amd64', commitId: 'a3f7c2d', baseImage: 'eclipse-temurin:17-jre-alpine', buildTime: '2026-05-20 14:32:18', digest: 'sha256:8f4a3b2c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f' }
       ]
     };
     return map[stageName] || [{ icon: '&#128221;', name: '暂无产出物', meta: '等待阶段执行' }];
@@ -490,7 +490,7 @@ function getArtifacts(stageName) {
     '代码审查': [{ icon:'&#9745;', name:'QueryOptimizer.java', meta:'8KB · 245行' },{ icon:'&#9745;', name:'SQLBuilder.java', meta:'5KB · 142行' },{ icon:'&#9745;', name:'审查报告.json', meta:'3KB · 4项检查' }],
     '单元测试': [{ icon:'&#9881;', name:'QueryOptimizerTest.java', meta:'6KB · 18个用例' },{ icon:'&#9881;', name:'测试报告.html', meta:'15KB · 覆盖率62%' }],
     'UI测试': [{ icon:'&#9737;', name:'UI测试报告.pdf', meta:'20KB · 技术债务0.8%' }],
-    '生成制品': [{ icon:'&#10003;', name:'验收报告.html', meta:'10KB · DoD通过' }],
+    '生成制品': [{ icon:'&#128230;', name:'oa-system:v2.1.0', meta:'amd64 · 312MB · DoD验收通过', type: 'image', imageTag: 'v2.1.0', architecture: 'linux/amd64', commitId: 'e5b8a1f', baseImage: 'eclipse-temurin:17-jre-alpine', buildTime: '2026-05-19 09:15:42', digest: 'sha256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a' }],
   };
   return map[stageName] || [{ icon:'@{oriole}', name:'暂无产出物', meta:'等待阶段执行' }];
 }
@@ -634,6 +634,62 @@ function previewArtifact(name) {
         window.switchTestEvidence('2fa');
       }
     }, 50);
+  } else if (name.includes(':v') && !name.includes('.')) {
+    // Container image artifact preview
+    const task = getTask(state.activeTaskId);
+    const artifacts = getArtifacts(task ? task.stageNames[task.stageCurrent] : '');
+    const img = artifacts.find(a => a.name === name && a.type === 'image');
+    const tag = img ? img.imageTag : 'latest';
+    const arch = img ? img.architecture : 'linux/amd64';
+    const commitId = img ? img.commitId : 'unknown';
+    const baseImage = img ? img.baseImage : 'unknown';
+    const buildTime = img ? img.buildTime : '-';
+    const digest = img ? img.digest : '-';
+    const imgName = name.split(':')[0];
+    preview.innerHTML = `
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,#1E293B,#334155);border-radius:10px;margin-bottom:16px;">
+          <div style="width:48px;height:48px;background:#3B82F6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;">&#128230;</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#F8FAFC;">${imgName}</div>
+            <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Container Image · ${tag}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">镜像名称</div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B;font-family:monospace;">${imgName}</div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">镜像标签</div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B;font-family:monospace;">${tag}</div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">架构</div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B;font-family:monospace;">${arch}</div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">Commit ID</div>
+            <div style="font-size:13px;font-weight:600;color:#3B82F6;font-family:monospace;">${commitId}</div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">基础镜像</div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B;font-family:monospace;">${baseImage}</div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">构建时间</div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B;">${buildTime}</div>
+          </div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;margin-bottom:12px;">
+          <div style="font-size:11px;color:#64748B;margin-bottom:4px;">Digest</div>
+          <div style="font-size:11px;font-weight:500;color:#475569;font-family:monospace;word-break:break-all;">${digest}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="toast('docker pull ${imgName}:${tag} 已复制到剪贴板')">&#128203; 复制拉取命令</button>
+          <button class="btn btn-ghost btn-sm" onclick="toast('镜像安全扫描: 0 漏洞, 0 高危')">&#128737; 安全扫描</button>
+        </div>
+      </div>`;
   } else {
     preview.innerHTML = `<div style="margin-top:12px;padding:16px;background:#FAFBFC;border-radius:var(--radius);font-size:13px;color:var(--text-secondary);">&#9745; ${name} — 预览（模拟内容）<br>该产出物由 Agent 自动生成，包含结构化数据和详细分析。</div>`;
   }
