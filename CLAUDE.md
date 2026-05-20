@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 目标
 
-围绕这一产品思想，修改原型文件的展现，让核心开发成员和产品经理共同提出建议来定义产品的业务逻辑。修改需求记录在 `docs/req1.0.md`（已完成）和 `docs/req2.0.md`（待规划）中。
+围绕"可视、可信、可控"的产品理念，修改原型文件的展现，让核心开发成员和产品经理共同提出建议来定义产品的业务逻辑。需求迭代记录在 `docs/req1.0.md` ~ `docs/req5.0.md` 中，历史重构决策见 `docs/session_summary.md`。
 
 ## Architecture
 
@@ -36,6 +36,8 @@ pages.js            — 智能体管理、研制总结、技能市场页面
 
 **页面渲染**：`navigate(page)` → `renderPage(page)` → 各页面渲染函数，每个函数接收 `container` 元素并操作 `innerHTML`。
 
+**上下文层级**：系统有全局和项目两级上下文，通过 `state.context.level` 区分（`'global'` 或 `'project'`）。进入项目后侧边栏切换为项目内菜单（任务看板、项目评审、研发追溯等），部分页面（如 reviews.js）会根据上下文动态过滤数据。
+
 ## 核心页面
 
 | data-page | 渲染函数 | 文件 | 说明 |
@@ -54,12 +56,13 @@ pages.js            — 智能体管理、研制总结、技能市场页面
 ## Data Model
 
 ```
-state.projects[]    — 项目 { id, name, desc, repo, members, status, stagesDone, stagesTotal }
+state.projects[]    — 项目 { id, name, desc, repo, members, status, stagesDone, stagesTotal, guidelines: { dependency, collaboration, stack, coding, domain, quality? } }
 state.tasks[]       — 任务 { id, pid, title, type, priority, status, stageCurrent, stageNames[], stages[], stageGates[][] }
 state.gateDefs      — 门禁定义，按阶段名称索引，每个门禁有 name/desc/type(pass|warn|fail)
 state.conversations — 对话历史，key 为 `${taskId}-${stageIndex}`
 state.reviews[]     — 评审记录 { id, tid, stage, stageName, reviewer, status, desc }
 state.rulesConfig   — 门禁规则开关 { [ruleName]: boolean }
+state.globalGuidelinesStatuses — 全局规范类别开关 { engineering, security, collaboration, testing, release }
 ```
 
 ## Key Functions
@@ -71,6 +74,7 @@ state.rulesConfig   — 门禁规则开关 { [ruleName]: boolean }
 - `updateBadges()` — 更新侧边栏徽章数字（data.js）
 - `toggleAgentPanel()` — 智能体面板开关（router.js）
 - `sendSmartMessage()` — 智能体对话入口（router.js）
+- `window.openSidebar(config)` — 全局智能侧边栏，传入 `{title, subtitle, contentHtml, showInput}` 动态配置内容（router.js）
 
 ## Development
 

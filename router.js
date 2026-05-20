@@ -107,7 +107,7 @@ function generateSmartPlan(taskName) {
         { name: '代码生成', agent: '代码生成 Agent', gates: [{name:'编码规范检查',fail:false},{name:'安全漏洞扫描',fail:false}], artifacts: 'LoginController.java, UserService.java' },
         { name: '代码审查', agent: '代码审查 Agent', gates: [{name:'编码规范检查',fail:false},{name:'安全漏洞扫描',fail:false},{name:'代码复杂度检查',fail:false}], artifacts: '审查报告.json' },
         { name: '单元测试', agent: '测试生成 Agent', gates: [{name:'覆盖率门禁',fail:false},{name:'测试通过率',fail:false}], artifacts: 'LoginControllerTest.java' },
-        { name: '验收确认', agent: '验收检查 Agent', gates: [{name:'DoD检查清单',fail:false}], artifacts: '验收报告.html' },
+        { name: '生成制品', agent: '验收检查 Agent', gates: [{name:'DoD检查清单',fail:false}], artifacts: '验收报告.html' },
       ]
     },
     {
@@ -128,7 +128,7 @@ function generateSmartPlan(taskName) {
         { name: '需求拆解', agent: '任务拆解 Agent', gates: [{name:'粒度合理性检查',fail:false}], artifacts: '任务拆解方案.html' },
         { name: '方案设计', agent: '方案设计 Agent', gates: [{name:'架构合规检查',fail:false}], artifacts: '架构设计方案.html' },
         { name: '代码生成', agent: '代码生成 Agent', gates: [{name:'编码规范检查',fail:false},{name:'安全漏洞扫描',fail:false}], artifacts: 'ExportService.java, ExcelUtil.java' },
-        { name: '质量检查', agent: '质量分析 Agent', gates: [{name:'技术债务检查',fail:false},{name:'重复率分析',fail:false}], artifacts: '质量检查报告.pdf' },
+        { name: 'UI测试', agent: '质量分析 Agent', gates: [{name:'技术债务检查',fail:false},{name:'重复率分析',fail:false}], artifacts: 'UI测试报告.pdf' },
       ]
     }
   ];

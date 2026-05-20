@@ -4,5 +4,11 @@
       "Bash(node -e ' *)",
       "Bash(node *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "filesystem",
+    "fetch",
+    "github",
+    "sqlite"
+  ]
 }

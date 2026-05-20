@@ -1,7 +1,7 @@
 // ============================================================
 function renderRulesConfig(container) {
   const isProject = state.context.level === 'project';
-  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'];
   const categories = stageNames
     .filter(s => state.gateDefs[s] && state.gateDefs[s].length > 0)
     .map(s => ({ title: s + '规则', keys: state.gateDefs[s].map(g => g.name) }));
@@ -147,7 +147,7 @@ function resetRules() {
   });
 
   toast('规则配置已恢复默认');
-  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  const stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'];
   const categories = stageNames
     .filter(s => state.gateDefs[s] && state.gateDefs[s].length > 0)
     .map(s => ({ title: s + '规则', keys: state.gateDefs[s].map(g => g.name) }));
@@ -156,7 +156,7 @@ function resetRules() {
 
 function showAddRuleModal() {
   const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'];
   overlay.innerHTML = `
     <div class="modal">
       <h3>添加门禁规则</h3>

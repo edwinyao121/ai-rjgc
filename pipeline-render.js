@@ -29,7 +29,7 @@ function renderPipeline(container, data) {
     return;
   }
 
-  const stageIcons = { '需求分析':'@{oriole}', '需求拆解':'&#9776;', '方案设计':'&#9671;', '代码生成':'&#9745;', '代码审查':'&#9745;', '单元测试':'&#9881;', '集成测试':'&#9733;', '质量检查':'&#9737;', '部署发布':'&#9650;', '验收确认':'&#10003;', '持续监控':'&#8986;', '测试':'&#9881;' };
+  const stageIcons = { '需求分析':'@{oriole}', '需求拆解':'&#9776;', '方案设计':'&#9671;', '代码生成':'&#9745;', '代码审查':'&#9745;', '单元测试':'&#9881;', '集成测试':'&#9733;', 'UI测试':'&#9737;', '部署发布':'&#9650;', '生成制品':'&#10003;', '持续监控':'&#8986;', '测试':'&#9881;' };
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -89,8 +89,8 @@ function renderPipelineGraph(task, icons) {
     '代码生成': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
     '代码审查': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     '单元测试': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
-    '质量检查': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-    '验收确认': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    'UI测试': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    '生成制品': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     '测试': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
     '部署发布': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>',
     '持续监控': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
@@ -472,10 +472,10 @@ function getArtifacts(stageName) {
         { icon: '&#9881;', name: '测试用例证据报告.html', meta: '32KB · 5项安全核验用例全部通过' },
         { icon: '&#9881;', name: 'DocFlowStateTest.java', meta: '12KB · 18个测试场景' }
       ],
-      '质量检查': [
+      'UI测试': [
         { icon: '&#9737;', name: '公文信创规范合规报告.pdf', meta: '22KB · 核心依赖国产适配率100%' }
       ],
-      '验收确认': [
+      '生成制品': [
         { icon: '&#10003;', name: '公文核心业务DoD确认单.html', meta: '8KB · 核心业务目标验收通过' }
       ]
     };
@@ -489,8 +489,8 @@ function getArtifacts(stageName) {
     '代码生成': [{ icon:'&#9745;', name:'Employee.java', meta:'5KB · 186行 · 员工实体类' },{ icon:'&#9745;', name:'EmployeeController.java', meta:'4KB · 142行 · REST控制器' },{ icon:'&#9745;', name:'EmployeeRepository.java', meta:'2KB · 78行 · 数据访问层' },{ icon:'&#9745;', name:'EmployeeService.java', meta:'3KB · 112行 · 业务逻辑层' },{ icon:'&#9881;', name:'api_hr.js', meta:'2KB · 45行 · HR API封装' },{ icon:'&#9881;', name:'EmployeeList.jsx', meta:'3KB · 98行 · 员工列表组件' }],
     '代码审查': [{ icon:'&#9745;', name:'QueryOptimizer.java', meta:'8KB · 245行' },{ icon:'&#9745;', name:'SQLBuilder.java', meta:'5KB · 142行' },{ icon:'&#9745;', name:'审查报告.json', meta:'3KB · 4项检查' }],
     '单元测试': [{ icon:'&#9881;', name:'QueryOptimizerTest.java', meta:'6KB · 18个用例' },{ icon:'&#9881;', name:'测试报告.html', meta:'15KB · 覆盖率62%' }],
-    '质量检查': [{ icon:'&#9737;', name:'质量检查报告.pdf', meta:'20KB · 技术债务0.8%' }],
-    '验收确认': [{ icon:'&#10003;', name:'验收报告.html', meta:'10KB · DoD通过' }],
+    'UI测试': [{ icon:'&#9737;', name:'UI测试报告.pdf', meta:'20KB · 技术债务0.8%' }],
+    '生成制品': [{ icon:'&#10003;', name:'验收报告.html', meta:'10KB · DoD通过' }],
   };
   return map[stageName] || [{ icon:'@{oriole}', name:'暂无产出物', meta:'等待阶段执行' }];
 }
@@ -743,8 +743,8 @@ function getAgentSteps(stageName) {
     '代码生成': [{ text:'读取规范', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'读取任务说明', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'预检查冲突', color:'#F59E0B', fill:'#FFFBEB', stroke:'#F59E0B' },{ text:'最小化实现', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'执行自我验证', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'分步提交', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'更新任务记录', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'上报结果', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
     '代码审查': [{ text:'读取产出代码', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'规范检查', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'安全扫描', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'复杂度检查', color:'#EF4444', fill:'#FEF2F2', stroke:'#EF4444', children:[{text:'2处超标',color:'#EF4444',fill:'#FEF2F2'}] },{ text:'最佳实践', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
     '单元测试': [{ text:'读取代码', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'生成测试用例', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'执行测试', color:'#EF4444', fill:'#FEF2F2', stroke:'#EF4444', children:[{text:'覆盖率62%',color:'#EF4444',fill:'#FEF2F2'}] },{ text:'生成报告', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
-    '质量检查': [{ text:'技术债务扫描', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'重复率分析', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'性能基线', color:'#F59E0B', fill:'#FFFBEB', stroke:'#F59E0B' }],
-    '验收确认': [{ text:'DoD检查', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'合规审计', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'性能验证', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
+    'UI测试': [{ text:'技术债务扫描', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'重复率分析', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'性能基线', color:'#F59E0B', fill:'#FFFBEB', stroke:'#F59E0B' }],
+    '生成制品': [{ text:'DoD检查', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'合规审计', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'性能验证', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
     '方案设计': [{ text:'分析需求', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'架构设计', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981', children:[{text:'模块划分',color:'#10B981',fill:'#ECFDF5'},{text:'接口定义',color:'#10B981',fill:'#ECFDF5'}] },{ text:'技术选型', color:'#F59E0B', fill:'#FFFBEB', stroke:'#F59E0B' }],
     '需求拆解': [{ text:'分析需求粒度', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'拆解子任务', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981', children:[{text:'6个子任务',color:'#10B981',fill:'#ECFDF5'}] },{ text:'依赖分析', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],
     '测试': [{ text:'读取代码', color:'#3B82F6', fill:'#EFF6FF', stroke:'#3B82F6' },{ text:'执行用例', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' },{ text:'覆盖率统计', color:'#10B981', fill:'#ECFDF5', stroke:'#10B981' }],

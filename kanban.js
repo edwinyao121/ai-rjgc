@@ -116,11 +116,11 @@ function autoPlanPipeline(task) {
   const isFeature = task.type === 'Feature' || task.type === 'Enhancement';
   const isRefactor = task.type === 'Refactor';
   if (isFeature) {
-    task.stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+    task.stageNames = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'];
   } else if (isRefactor) {
-    task.stageNames = ['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'];
+    task.stageNames = ['方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'];
   } else {
-    task.stageNames = ['需求分析','代码生成','代码审查','测试','验收确认'];
+    task.stageNames = ['需求分析','代码生成','代码审查','测试','生成制品'];
   }
   task.stages = new Array(task.stageNames.length).fill(0);
   task.stageGates = task.stageNames.map(name => {

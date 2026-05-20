@@ -81,16 +81,16 @@ const state = {
     }
   ],
   tasks: [
-    { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },
-    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'review', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
-    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'planning', stageCurrent:-1, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0], stageGates:[[0],[0],[0],[0],[0],[0]], stageAssignees:['王工','王工','王工','王工','王工','王工'], aiCreated:true, assignee:'王工' },
+    { id:'t1', pid:'p1', title:'办公系统基线版本研制', type:'Feature', priority:'P0', estimate:'20d', status:'executing', stageCurrent:4, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[1,1,1,1,0,0,0,0], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,0,1],[0,0],[0],[0]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' },
+    { id:'t2', pid:'p1', title:'新增人事管理模块', type:'Feature', priority:'P0', estimate:'15d', status:'review', stageCurrent:2, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[1,1,0,0,0,0,0,0], stageGates:[[1,1],[1],[0,1],[0],[0,0,0,0],[0],[0],[0]], stageAssignees:['李工','李工','王工','赵工','刘工','李工','王工','张伟'], aiCreated:false, assignee:'李工' },
+    { id:'t3', pid:'p1', title:'重构流程审批模块', type:'Feature', priority:'P1', estimate:'12d', status:'planning', stageCurrent:-1, stageNames:['方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[0,0,0,0,0,0], stageGates:[[0],[0],[0],[0],[0],[0]], stageAssignees:['王工','王工','王工','王工','王工','王工'], aiCreated:true, assignee:'王工' },
     { id:'t4', pid:'p1', title:'优化公文档案模块', type:'Enhancement', priority:'P2', estimate:'10d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
-    { id:'t5', pid:'p5', title:'公文阅件流转与用印审批核心功能研制', type:'Feature', priority:'P0', estimate:'25d', status:'executing', stageCurrent:0, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[1,0,1],[0,0],[0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['张经理','李工','王工','赵工','刘工','李工','王工','张经理'], aiCreated:false, assignee:'张经理' },
-    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'planning', stageCurrent:-1, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[0,0,0,0,0,0,0,0], stageGates:[[0,0,0],[0,0],[0,0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['李工','李工','李工','李工','李工','李工','李工','李工'], aiCreated:true, assignee:'李工' },
+    { id:'t5', pid:'p5', title:'公文阅件流转与用印审批核心功能研制', type:'Feature', priority:'P0', estimate:'25d', status:'executing', stageCurrent:0, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[0,0,0,0,0,0,0,0], stageGates:[[1,0,1],[0,0],[0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['张经理','李工','王工','赵工','刘工','李工','王工','张经理'], aiCreated:false, assignee:'张经理' },
+    { id:'t6', pid:'p5', title:'基于大模型的公文摘要提取模块研制', type:'Feature', priority:'P1', estimate:'10d', status:'planning', stageCurrent:-1, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[0,0,0,0,0,0,0,0], stageGates:[[0,0,0],[0,0],[0,0],[0,0],[0,0,0,0],[0,0],[0],[0]], stageAssignees:['李工','李工','李工','李工','李工','李工','李工','李工'], aiCreated:true, assignee:'李工' },
     { id:'t7', pid:'p5', title:'阅件二次身份核验双因子(2FA)下载模块开发', type:'Feature', priority:'P1', estimate:'8d', status:'backlog', stageCurrent:-1, stageNames:[], stages:[], stageGates:[], stageAssignees:[], aiCreated:false, assignee:'赵工' },
-    { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'review', stageCurrent:2, stageNames:['方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,0,0,0,0], stageGates:[[1],[1],[1,1],[0,0],[0],[0]], stageAssignees:['刘工','刘工','刘工','刘工','刘工','刘工'], aiCreated:false, assignee:'刘工' },
-    { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,1,1],[1,1],[1],[1]], stageAssignees:['王工','王工','王工','王工','王工','王工','王工','王工'], aiCreated:false, assignee:'王工' },
-    { id:'t10', pid:'p1', title:'系统安全加固与配置巡检', type:'Enhancement', priority:'P1', estimate:'5d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1],[1],[1],[1],[1],[1],[1],[1]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' }
+    { id:'t8', pid:'p5', title:'档案历史版本回溯查看与版本控制引擎重构', type:'Refactor', priority:'P2', estimate:'12d', status:'review', stageCurrent:2, stageNames:['方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[1,1,0,0,0,0], stageGates:[[1],[1],[1,1],[0,0],[0],[0]], stageAssignees:['刘工','刘工','刘工','刘工','刘工','刘工'], aiCreated:false, assignee:'刘工' },
+    { id:'t9', pid:'p5', title:'自定义多级印章审批流程与电子签名日志组件', type:'Feature', priority:'P0', estimate:'15d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1,1],[1,1],[1],[1,1],[1,1,1,1],[1,1],[1],[1]], stageAssignees:['王工','王工','王工','王工','王工','王工','王工','王工'], aiCreated:false, assignee:'王工' },
+    { id:'t10', pid:'p1', title:'系统安全加固与配置巡检', type:'Enhancement', priority:'P1', estimate:'5d', status:'done', stageCurrent:7, stageNames:['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品'], stages:[1,1,1,1,1,1,1,1], stageGates:[[1,1],[1],[1],[1],[1],[1],[1],[1]], stageAssignees:['张伟','张伟','王工','李工','王工','李工','王工','张伟'], aiCreated:false, assignee:'张伟' }
   ],
   // Gate definitions per stage type
   gateDefs: {
@@ -121,10 +121,10 @@ const state = {
       { name:'覆盖率门禁', desc:'行覆盖率≥80%，分支覆盖率≥70%', type:'fail', detail:'当前覆盖率62%，未达80%阈值' },
       { name:'测试通过率', desc:'全部测试用例必须100%通过', type:'pass' },
     ],
-    '质量检查': [
+    'UI测试': [
       { name:'技术债务检查', desc:'技术债务比率不超过5%', type:'pass' },
     ],
-    '验收确认': [
+    '生成制品': [
       { name:'DoD检查清单', desc:'功能完成、测试通过、文档齐全', type:'pass' },
     ],
     '测试': [
@@ -217,7 +217,7 @@ const state = {
     { id:'sk3', name:'代码审查技能', ver:'v2.8', calls:2104, status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测、最佳实践审查。输出结构化审查报告和修复建议。', tags:['代码审查阶段','安全'] },
     { id:'sk4', name:'测试生成技能', ver:'v1.9', calls:1856, status:'enabled', desc:'自动生成单元测试和集成测试用例，支持 JUnit / pytest / Jest。目标覆盖率可配置。', tags:['测试阶段','TDD'] },
     { id:'sk5', name:'任务拆解技能', ver:'v2.0', calls:923, status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，评估依赖关系 and 工时，生成看板 Backlog。', tags:['需求拆解阶段'] },
-    { id:'sk6', name:'质量分析技能', ver:'v1.7', calls:1567, status:'enabled', desc:'技术债务检测、代码重复率分析、性能基线检查。', tags:['质量检查阶段','Metrics'] },
+    { id:'sk6', name:'质量分析技能', ver:'v1.7', calls:1567, status:'enabled', desc:'技术债务检测、代码重复率分析、性能基线检查。', tags:['UI测试阶段','Metrics'] },
     { id:'sk7', name:'方案设计技能', ver:'v1.8', calls:892, status:'enabled', desc:'架构设计辅助、接口定义、技术选型建议。自动生成设计文档。', tags:['方案设计阶段'] },
     { id:'sk8', name:'部署编排技能', ver:'v1.5', calls:412, status:'disabled', desc:'灰度发布策略生成、回滚条件校验、部署环境一致性检查。', tags:['部署阶段'] },
     { id:'sk9', name:'验收检查技能', ver:'v1.6', calls:678, status:'enabled', desc:'DoD 检查清单自动化校验、合规审计辅助、性能验收。', tags:['验收阶段'] },
@@ -229,8 +229,8 @@ const state = {
     { id:'ag4', name:'代码生成 Agent', avatar:'💻', color:'#06B6D4', stage:'代码生成', desc:'基于方案生成代码，执行编码规范检查' },
     { id:'ag5', name:'代码审查 Agent', avatar:'🔍', color:'#F59E0B', stage:'代码审查', desc:'静态分析、安全扫描、复杂度检测' },
     { id:'ag6', name:'单元测试 Agent', avatar:'🧪', color:'#EF4444', stage:'单元测试', desc:'生成测试用例，执行覆盖率门禁' },
-    { id:'ag7', name:'质量检查 Agent', avatar:'📊', color:'#10B981', stage:'质量检查', desc:'技术债务检测、重复率分析、性能基线' },
-    { id:'ag8', name:'验收确认 Agent', avatar:'✅', color:'#22C55E', stage:'验收确认', desc:'DoD 检查清单、合规审计、性能验收' },
+    { id:'ag7', name:'UI测试 Agent', avatar:'📊', color:'#10B981', stage:'UI测试', desc:'技术债务检测、重复率分析、性能基线' },
+    { id:'ag8', name:'生成制品 Agent', avatar:'✅', color:'#22C55E', stage:'生成制品', desc:'DoD 检查清单、合规审计、性能验收' },
   ],
 };
 
@@ -248,8 +248,8 @@ const stageAgents = {
   '代码生成': { name: '代码生成 Agent', avatar: '💻', color: '#06B6D4', desc: '基于方案生成代码，执行编码规范检查' },
   '代码审查': { name: '代码审查 Agent', avatar: '🔍', color: '#F59E0B', desc: '静态分析、安全扫描、复杂度检测' },
   '单元测试': { name: '单元测试 Agent', avatar: '🧪', color: '#EF4444', desc: '生成测试用例，执行覆盖率门禁' },
-  '质量检查': { name: '质量检查 Agent', avatar: '📊', color: '#10B981', desc: '技术债务检测、重复率分析、性能基线' },
-  '验收确认': { name: '验收确认 Agent', avatar: '✅', color: '#22C55E', desc: 'DoD 检查清单、合规审计、性能验收' },
+  'UI测试': { name: 'UI测试 Agent', avatar: '📊', color: '#10B981', desc: '技术债务检测、重复率分析、性能基线' },
+  '生成制品': { name: '生成制品 Agent', avatar: '✅', color: '#22C55E', desc: 'DoD 检查清单、合规审计、性能验收' },
   '测试': { name: '测试 Agent', avatar: '🧪', color: '#EF4444', desc: '执行测试用例，统计覆盖率' },
 };
 
@@ -272,8 +272,8 @@ const agentCommMessages = {
   '方案设计→代码生成': '架构方案和接口定义已就绪',
   '代码生成→代码审查': '5个Java文件已生成',
   '代码审查→单元测试': '代码审查完成，2处需修复',
-  '单元测试→质量检查': '测试用例已生成，覆盖率62%',
-  '质量检查→验收确认': '技术债务0.8%，质量达标',
+  '单元测试→UI测试': '测试用例已生成，覆盖率62%',
+  'UI测试→生成制品': '技术债务0.8%，质量达标',
 };
 
 // 阶段负责人配置 - 每个阶段可选的负责人列表
@@ -284,8 +284,8 @@ const stageOwners = {
   '代码生成': ['李工', '赵工'],
   '代码审查': ['王工', '刘工'],
   '单元测试': ['李工', '赵工'],
-  '质量检查': ['王工', '刘工'],
-  '验收确认': ['张伟', '王工'],
+  'UI测试': ['王工', '刘工'],
+  '生成制品': ['张伟', '王工'],
 };
 
 // Activity log for current task

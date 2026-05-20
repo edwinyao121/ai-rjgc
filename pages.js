@@ -29,7 +29,7 @@ function showAgentModal(agentId) {
   const agent = agentId ? state.agents.find(a => a.id === agentId) : null;
   const isEdit = !!agent;
   const avatarOptions = ['📋','✂️','🏗️','💻','🔍','🧪','📊','✅','🤖','🛡️','⚡','🔧','📡','🎯','💡','🔬','🎨','📝','🚀','🔔'];
-  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','质量检查','验收确认','测试','部署发布','持续监控','自定义'];
+  const stages = ['需求分析','需求拆解','方案设计','代码生成','代码审查','单元测试','UI测试','生成制品','测试','部署发布','持续监控','自定义'];
   const existingFile = agent && agent.packageFile ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">当前: ${agent.packageFile.name} (${(agent.packageFile.size/1024).toFixed(1)} KB)</div>` : '';
   const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -460,8 +460,8 @@ function showAddProjectAgentModal() {
     { name: '代码生成 Agent', avatar: '💻', stage: '代码生成', desc: '基于方案生成代码，执行编码规范检查' },
     { name: '代码审查 Agent', avatar: '🔍', stage: '代码审查', desc: '静态分析、安全扫描、复杂度检测' },
     { name: '测试生成 Agent', avatar: '🧪', stage: '单元测试', desc: '生成测试用例，执行覆盖率门禁' },
-    { name: '质量分析 Agent', avatar: '📊', stage: '质量检查', desc: '技术债务检测、重复率分析、性能基线' },
-    { name: '验收检查 Agent', avatar: '✅', stage: '验收确认', desc: 'DoD 检查清单、合规审计、性能验收' },
+    { name: '质量分析 Agent', avatar: '📊', stage: 'UI测试', desc: '技术债务检测、重复率分析、性能基线' },
+    { name: '验收检查 Agent', avatar: '✅', stage: '生成制品', desc: 'DoD 检查清单、合规审计、性能验收' },
   ];
 
   const overlay = document.createElement('div');
@@ -520,8 +520,8 @@ function showAddProjectAgentModal() {
               <option value="代码生成">代码生成</option>
               <option value="代码审查">代码审查</option>
               <option value="单元测试">单元测试</option>
-              <option value="质量检查">质量检查</option>
-              <option value="验收确认">验收确认</option>
+              <option value="UI测试">UI测试</option>
+              <option value="生成制品">生成制品</option>
               <option value="自定义">自定义阶段</option>
             </select>
           </div>
@@ -1946,11 +1946,11 @@ const AGENT_SPEC_MAPS = {
     specs: { dependency: true, collaboration: true, stack: false, coding: false, domain: false }
   },
   quality: {
-    name: "📊 质量检查 Agent",
+    name: "📊 UI测试 Agent",
     specs: { dependency: true, collaboration: true, stack: false, coding: false, domain: false }
   },
   accept: {
-    name: "✅ 验收确认 Agent",
+    name: "✅ 生成制品 Agent",
     specs: { dependency: true, collaboration: true, stack: false, coding: false, domain: false }
   }
 };
