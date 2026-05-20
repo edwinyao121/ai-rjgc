@@ -1248,7 +1248,7 @@ function renderProjectGuidelines(container) {
           </div>
           
           <div class="pg-scope-badges">
-            <span class="pg-scope-lbl">靶向范围:</span>
+            <span class="pg-scope-lbl">作用范围:</span>
             <span class="pg-agent-badge global">全部 8 个 AI 智能体</span>
           </div>
           
@@ -1290,7 +1290,7 @@ function renderProjectGuidelines(container) {
           </div>
           
           <div class="pg-scope-badges">
-            <span class="pg-scope-lbl">靶向范围:</span>
+            <span class="pg-scope-lbl">作用范围:</span>
             <span class="pg-agent-badge global">全部 8 个 AI 智能体</span>
           </div>
           
