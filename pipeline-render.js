@@ -377,7 +377,6 @@ function renderTabContent(task, tab) {
         <div style="margin-top:16px;padding:16px;background:var(--danger-light);border-radius:var(--radius);font-size:13px;">
           <strong>&#9888; 门禁阻断分析：</strong>
           <ul style="margin:8px 0 0 18px;line-height:1.6;" id="aiSuggestions"></ul>
-          <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="openSidebar({title:'门禁修复助手', subtitle:'智能分析并解决阻断问题', showInput:true})">&#9742; 唤起 Agent 对话协助解决</button>
         </div>` : ''}
     `;
     // AI suggestions
@@ -435,11 +434,6 @@ function renderTabContent(task, tab) {
           </div>`).join('')}
         <div id="artifactPreview"></div>
       </div>`;
-    openSidebar({
-      title: '产出物优化助手',
-      subtitle: `当前聚焦: ${stageName}`,
-      showInput: true
-    });
   }
 }
 
@@ -694,11 +688,6 @@ function previewArtifact(name) {
     preview.innerHTML = `<div style="margin-top:12px;padding:16px;background:#FAFBFC;border-radius:var(--radius);font-size:13px;color:var(--text-secondary);">&#9745; ${name} — 预览（模拟内容）<br>该产出物由 Agent 自动生成，包含结构化数据和详细分析。</div>`;
   }
 
-  openSidebar({
-    title: '产出物优化助手',
-    subtitle: `当前聚焦: ${name}`,
-    showInput: true
-  });
 }
 
 function drawMindMap(stageName) {
@@ -897,61 +886,8 @@ function renderChat(task) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-window.showNodeDetails = function(stageName, nodeName, color) {
-  const tokenCount = Math.floor(Math.random() * 2000 + 500);
-  const timeMs = Math.floor(Math.random() * 3000 + 500);
-  const isPending = (color === '#F59E0B' || color === '#CBD5E1' || color === '#3B82F6');
-  
-  let contentHtml = '';
-  if (isPending) {
-    contentHtml = `
-      <div style="padding:16px;">
-        <div style="font-weight:600; color:var(--warning); margin-bottom:12px;">&#9888; 节点处于待执行/执行中状态</div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">您可以为 Agent 注入额外的上下文或干预执行策略：</div>
-        <textarea placeholder="例如：等下生成代码时，重点关注一下边界条件或性能损耗..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; font-family:var(--font); resize:none;"></textarea>
-        <button class="btn btn-primary btn-sm" style="margin-top:12px; width:100%;" onclick="toast('已成功注入干预指令'); document.getElementById('agentPanel').style.display='none';">注入执行上下文</button>
-      </div>
-    `;
-  } else {
-    contentHtml = `
-      <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; font-size:12px;">
-        <div>
-          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9881; 执行参数 (Meta)</div>
-          <div style="display:flex; gap:10px; color:var(--text-muted);">
-            <span class="tag tag-slate" style="font-family:var(--mono);">耗时: ${timeMs}ms</span>
-            <span class="tag tag-slate" style="font-family:var(--mono);">Tokens: ${tokenCount}</span>
-          </div>
-        </div>
-        <div>
-          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10148; System Prompt (系统提示词)</div>
-          <div class="code-block" style="padding:10px; background:#1E293B; color:#A5B4FC; font-size:11px;">You are an expert software engineer performing ${nodeName}. Analyze the context strictly and follow the DoD constraints...</div>
-        </div>
-        <div>
-          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#9737; Chain of Thought (思维链)</div>
-          <div style="padding:10px; background:#F1F5F9; border-radius:var(--radius-sm); color:var(--text-secondary); line-height:1.5;">
-            1. 解析输入参数...<br>
-            2. 发现潜在依赖冲突，尝试调用 search_code 工具...<br>
-            3. 工具返回无冲突，准备生成结构...<br>
-            4. 最终完成格式化并返回。
-          </div>
-        </div>
-        <div>
-          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:6px;">&#10003; Output (原始输出)</div>
-          <div class="code-block" style="padding:10px; background:#1E293B; color:#6EE7B7; font-size:11px; white-space:pre-wrap; word-wrap:break-word;">{
-  "status": "success",
-  "data": "..."
-}</div>
-        </div>
-      </div>
-    `;
-  }
-  
-  openSidebar({
-    title: `${nodeName} ${isPending ? '干预' : '细节'}`,
-    subtitle: `所属阶段: ${stageName}`,
-    contentHtml: contentHtml,
-    showInput: false
-  });
+window.showNodeDetails = function(stageName, nodeName) {
+  toast(`已在任务监控页内查看「${nodeName}」详情`);
 };
 
 window.goToArtifacts = function(artifactName) {
@@ -1518,4 +1454,3 @@ window.showEvidenceLightbox = function(caseId) {
   
   overlay.style.opacity = '1';
 };
-
