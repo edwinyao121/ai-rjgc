@@ -1255,7 +1255,7 @@ window.switchTestEvidence = function(caseId) {
     `;
   } else if (caseId === 'stamp') {
     title = 'testCustomStampEChain';
-    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称算法与数字证书生成进行电子签名，并自动加盖中国政府机关标准样式的红色“电子印章专用章”，分配唯一档案归档编号。';
+    desc = '验证自定义多级电子公章用印核心逻辑。审批链全部通过后，利用 SM2 非对称算法与数字证书生成进行电子签名，并自动加盖标准企业样式的红色“电子印章专用章”，分配唯一档案归档编号。';
     logs = `[INFO]  Running test testCustomStampApprovalEChain...
 [DEBUG] Generating multi-level approval nodes for Public-level Document DOC-2026-9904
 [INFO]  Node 1: Division Chief Approval... APPROVED.
@@ -1271,9 +1271,9 @@ window.switchTestEvidence = function(caseId) {
     
     mockupHtml = `
       <div style="background:#fff; border:1px solid #D1D5DB; border-radius:8px; padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px; position:relative; min-height:280px; max-width:440px; margin:0 auto;">
-        <div style="border-bottom:2px solid #EF4444; padding-bottom:6px; text-align:center;">
-          <div style="font-size:16px; font-weight:800; color:#EF4444; letter-spacing:3px; font-family:'SimSun', 'STSong', serif;">智能软件工厂红头文件</div>
-          <div style="font-size:8px; color:#EF4444; margin-top:2px;">[ 2026 ] 第 0038491 号</div>
+        <div style="border-bottom:2px solid var(--primary); padding-bottom:6px; text-align:center;">
+          <div style="font-size:16px; font-weight:800; color:var(--primary); letter-spacing:3px; font-family:'SimSun', 'STSong', serif;">智能软件工厂电子发文</div>
+          <div style="font-size:8px; color:var(--text-muted); margin-top:2px;">[ 2026 ] 第 0038491 号</div>
         </div>
         
         <div style="font-size:11px; color:var(--text); line-height:1.6; font-family:'SimSun', serif;">
@@ -1534,9 +1534,9 @@ window.showEvidenceLightbox = function(caseId) {
     caseTitle = '电子公章印章用印与归档 - 证据截图';
     mockupHtml = `
       <div style="background:#fff; border:1px solid #D1D5DB; border-radius:8px; padding:30px; box-shadow:var(--shadow-lg); display:flex; flex-direction:column; gap:16px; min-height:360px; width:480px;">
-        <div style="border-bottom:2px solid #EF4444; padding-bottom:8px; text-align:center;">
-          <div style="font-size:20px; font-weight:800; color:#EF4444; letter-spacing:4px; font-family:'SimSun', 'STSong', serif;">智能软件工厂红头文件</div>
-          <div style="font-size:9px; color:#EF4444; margin-top:2px;">[ 2026 ] 第 0038491 号</div>
+        <div style="border-bottom:2px solid var(--primary); padding-bottom:8px; text-align:center;">
+          <div style="font-size:20px; font-weight:800; color:var(--primary); letter-spacing:4px; font-family:'SimSun', 'STSong', serif;">智能软件工厂电子发文</div>
+          <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">[ 2026 ] 第 0038491 号</div>
         </div>
         
         <div style="font-size:12px; color:var(--text); line-height:1.7; font-family:'SimSun', serif;">
