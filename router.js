@@ -173,7 +173,7 @@ function renderSidebar() {
       <div class="nav-item" data-page="agents" onclick="navigate('agents')">&#129302; 智能体</div>
       <div class="nav-item" data-page="skills" onclick="navigate('skills')">&#9730; 技能市场</div>
       <div class="nav-item" data-page="rules-config" onclick="navigate('rules-config')">&#9881; 门禁配置</div>
-      <div class="nav-item" data-page="guidelines" onclick="navigate('guidelines')">&#128220; 通用规范</div>
+      <div class="nav-item" data-page="guidelines" onclick="navigate('guidelines')">&#128220; 规范约束</div>
     `;
   } else {
     const p = getProject(state.activeProjectId);
