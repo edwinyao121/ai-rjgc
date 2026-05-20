@@ -18,9 +18,9 @@ function renderAgents(container) {
         </div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
         ${a.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${a.packageFile.name} <span style="color:var(--text-muted);">(${(a.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}</div>`;
 }
@@ -296,35 +296,12 @@ function renderSkills(container) {
         <div class="card-header"><div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver} · 调用 ${s.calls.toLocaleString()} 次</div></div><span class="tag ${s.status==='enabled'?'tag-green':'tag-slate'}">${s.status==='enabled'?'启用':'禁用'}</span></div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${s.desc}</div>
         <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
-        ${s.status==='enabled'?`<button class="btn btn-outline btn-sm" style="margin-top:10px;width:100%;" onclick="runSkillDemo('${s.name}')">&#9654; 演示调用</button>`:''}
         ${s.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${s.packageFile.name} <span style="color:var(--text-muted);">(${(s.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="event.stopPropagation();showSkillModal('${s.id}')">&#9998; 编辑</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteSkill('${s.id}')">&#10005; 删除</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showSkillModal('${s.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteSkill('${s.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}</div>`;
-}
-
-function runSkillDemo(name) {
-  toast(`技能 "${name}" 演示调用已触发`);
-  const task = getTask(state.activeTaskId);
-  if (!task || task.stageCurrent < 0) return;
-  // Simulate skill execution
-  setTimeout(() => {
-    if (task.stageGates[task.stageCurrent]) {
-      for (let i = 0; i < task.stageGates[task.stageCurrent].length; i++) {
-        if (task.stageGates[task.stageCurrent][i] === 0 && Math.random() > 0.3) {
-          task.stageGates[task.stageCurrent][i] = 1;
-        }
-      }
-    }
-    toast(`技能 "${name}" 执行完成`);
-    if (state.activePage === 'pipeline-view') {
-      const container = document.getElementById('mainContent');
-      renderPipeline(container, { tid: task.id });
-    }
-    updateBadges();
-  }, 1000);
 }
 
 function showSkillModal(skillId) {
@@ -442,28 +419,28 @@ function deleteSkill(skillId) {
 // ============================================================
 function renderProjectAgents(container) {
   const project = getProject(state.activeProjectId);
-  // Pick a subset of agents for this project
-  const allAgents = Object.entries(stageAgents).filter(([k]) => k !== '测试').map(([stage, a]) => ({ stage, ...a }));
-  // Just for demo, take first 5 agents
-  const agents = allAgents.slice(0, 5);
-  
+  const agents = state.agents;
+
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">项目智能体</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">本项目启用的研发智能体实例</div></div>
-      <button class="btn btn-primary btn-sm" onclick="showAddProjectAgentModal()">+ 添加智能体</button>
+      <div><div style="font-size:13px;color:var(--text-muted);">项目「${project.name}」的研发智能体实例</div></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${agents.length} 个智能体</span>
+        <button class="btn btn-primary btn-sm" onclick="showAddProjectAgentModal()">+ 添加智能体</button>
+      </div>
     </div>
-    <div class="grid-3" style="margin-top:16px;">${agents.map(a => `
+    <div class="grid-3">${agents.map(a => `
       <div class="card card-hover">
         <div class="card-header">
           <div><div class="card-title">${a.avatar} ${a.name}</div>
-          <div class="card-subtitle">负责阶段: ${a.stage}</div></div>
+          <div class="card-subtitle">阶段: ${a.stage}</div></div>
           <span class="tag tag-green">运行中</span>
         </div>
         <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${a.desc}</div>
-        <div style="margin-top:12px;display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:10px;">
-          <span style="font-size:12px;color:var(--text-muted);">&#9730; 已挂载 2 个专属技能</span>
-          <button class="btn btn-outline btn-xs" onclick="toast('正在打开实例配置面板...')">&#9881; 参数配置</button>
+        ${a.packageFile ? `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);font-size:11px;color:var(--primary);"><span>&#128230;</span> ${a.packageFile.name} <span style="color:var(--text-muted);">(${(a.packageFile.size/1024).toFixed(1)} KB)</span></div>` : ''}
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();showAgentModal('${a.id}')">&#9998; 编辑</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="event.stopPropagation();deleteAgent('${a.id}')">&#10005; 删除</button>
         </div>
       </div>`).join('')}
     </div>`;
@@ -684,24 +661,23 @@ function renderProjectSkills(container) {
     { name:'代码审查技能', ver:'v2.8', agent:'代码审查 Agent', status:'enabled', desc:'静态分析、安全扫描（OWASP）、复杂度检测。', tags:['代码审查阶段','安全'] },
     { name:'任务拆解技能', ver:'v2.0', agent:'任务拆解 Agent', status:'enabled', desc:'将大粒度需求智能拆解为可执行子任务，生成看板 Backlog。', tags:['需求拆解阶段'] }
   ];
-  
+
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">项目技能库</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">已从全局市场下载，并分配给本项目的技能</div></div>
-      <button class="btn btn-primary btn-sm" onclick="navigate('skills')">+ 去市场获取技能</button>
+      <div><div style="font-size:13px;color:var(--text-muted);">已从全局市场下载并分配给本项目的技能</div></div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="tag tag-blue">${skills.filter(s=>s.status==='enabled').length} 个技能可用</span>
+        <button class="btn btn-primary btn-sm" onclick="navigate('skills')">+ 去市场获取技能</button>
+      </div>
     </div>
-    <div class="grid-3" style="margin-top:16px;">${skills.map(s => `
+    <div class="grid-3">${skills.map(s => `
       <div class="card card-hover">
-        <div class="card-header">
-          <div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver}</div></div>
-          <span class="tag tag-blue" style="background:#E0E7FF;color:#3730A3;">已绑定: ${s.agent}</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">${s.desc}</div>
+        <div class="card-header"><div><div class="card-title">&#9671; ${s.name}</div><div class="card-subtitle">${s.ver} · 绑定: ${s.agent}</div></div><span class="tag ${s.status==='enabled'?'tag-green':'tag-slate'}">${s.status==='enabled'?'启用':'禁用'}</span></div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${s.desc}</div>
         <div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;">${s.tags.map(t=>`<span class="tag tag-slate">${t}</span>`).join('')}</div>
-        <div style="margin-top:12px;display:flex;gap:8px;border-top:1px solid var(--border);padding-top:10px;">
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="toast('打开技能参数配置...')">&#9881; 实例参数</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;border-color:var(--danger);color:var(--danger);" onclick="toast('技能已解绑', true)">解除绑定</button>
+        <div style="margin-top:12px;display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px;">
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;" onclick="toast('打开技能参数配置...')">&#9881; 实例参数</button>
+          <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;border-color:var(--danger);color:var(--danger);" onclick="toast('技能已解绑', true)">解除绑定</button>
         </div>
       </div>`).join('')}
 
