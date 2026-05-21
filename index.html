@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能软件工厂</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left"><h1>智能软件工厂</h1><span class="breadcrumb" id="breadcrumbWrapper"></span></div>
+    <div class="topbar-right"><div class="avatar" title="张经理">张</div></div>
+  </div>
+  <div class="content" id="mainContent"></div>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<!-- Floating Agent Widget -->
+<div id="agentFloatWidget" class="agent-float-widget" onclick="toggleAgentPanel()">
+  <div class="agent-float-icon">
+    <span style="font-size:18px;">&#9759;</span>
+    <div class="agent-float-pulse"></div>
+  </div>
+  <div class="agent-float-label">小智</div>
+</div>
+
+<!-- Smart Agent Dialogue Panel -->
+<div id="agentPanel" class="smart-panel" style="display:none;">
+  <div class="smart-panel-header">
+    <div class="smart-panel-avatar">&#9759;</div>
+    <div class="smart-panel-title">
+      <div class="smart-panel-title-main">小智 · 软件工厂超级智能体</div>
+      <div class="smart-panel-title-sub">智能生成软件研制方案，实现端到端交付</div>
+    </div>
+    <button class="smart-panel-close" onclick="toggleAgentPanel()">&#10005;</button>
+  </div>
+  <div class="smart-panel-body" id="smartPanelBody">
+    <div class="smart-welcome">
+      <div class="smart-welcome-icon">&#9759;</div>
+      <h2>我是软件工厂超级智能体</h2>
+      <p>能帮你智能生成软件研制方案<br>实现端到端交付</p>
+    </div>
+    <div id="smartMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+  <div class="smart-panel-input">
+    <input type="text" id="smartInput" placeholder="输入任务需求，如：用户登录功能、订单查询模块..." onkeydown="if(event.key==='Enter')sendSmartMessage()">
+    <button class="smart-send-btn" onclick="sendSmartMessage()">&#10148;</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="dashboard.js"></script>
+<script src="projects.js"></script>
+<script src="kanban.js"></script>
+<script src="pipeline-render.js"></script>
+<script src="pipeline-actions.js"></script>
+<script src="gates.js"></script>
+<script src="reviews.js"></script>
+<script src="rules-config.js"></script>
+<script src="pages.js"></script>
+<script src="router.js"></script>
+
+</body>
+</html>
