@@ -168,12 +168,13 @@ function renderPipelineGraph(task, icons) {
   });
   container.innerHTML = html;
 
-  // Auto-scroll to active stage
-  const activeStage = container.querySelector('.pipeline-stage .pipeline-node-circle.active');
-  if (activeStage) {
-    const stageElement = activeStage.closest('.pipeline-stage');
-    if (stageElement) {
-      stageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // Auto-scroll to current stage (active or just completed)
+  if (task.stageCurrent >= 0) {
+    const stages = container.querySelectorAll('.pipeline-stage');
+    const targetIndex = Math.min(task.stageCurrent, stages.length - 1);
+    const targetStage = stages[targetIndex];
+    if (targetStage) {
+      targetStage.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   }
 }
