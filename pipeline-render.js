@@ -2,6 +2,35 @@
 // ============================================================
 function renderPipeline(container, data) {
   const tid = (data && data.tid) || state.activeTaskId;
+  
+  // If no task ID, show task selection
+  if (!tid) {
+    const project = getProject(state.activeProjectId);
+    if (!project) {
+      container.innerHTML = '<div class="card"><div class="empty-state">请先选择项目</div></div>';
+      return;
+    }
+    const tasks = getProjectTasks(project.id).filter(t => t.stageNames && t.stageNames.length > 0);
+    if (tasks.length === 0) {
+      container.innerHTML = '<div class="card"><div class="empty-state">该项目暂无任务</div></div>';
+      return;
+    }
+    container.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div><div style="font-size:13px;color:var(--text-muted);">项目: ${project.name} — 请选择要监控的任务</div></div>
+      </div>
+      <div class="card-grid">
+        ${tasks.map(t => `
+          <div class="card" style="cursor:pointer;" onclick="navigate('pipeline-view',{tid:'${t.id}'})">
+            <div style="font-weight:600;margin-bottom:8px;">${t.title}</div>
+            <div style="font-size:12px;color:var(--text-muted);">类型: ${t.type} · 优先级: ${t.priority}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">阶段: ${t.stageNames.length} 个 · 当前: ${t.stageCurrent >= 0 ? t.stageNames[t.stageCurrent] : '未开始'}</div>
+          </div>
+        `).join('')}
+      </div>`;
+    return;
+  }
+  
   state.activeTaskId = tid;
   const task = getTask(tid);
   if (!task) { container.innerHTML = '<div class="card"><div class="empty-state">未找到任务</div></div>'; return; }
@@ -11,7 +40,7 @@ function renderPipeline(container, data) {
   if (task.stageNames.length === 0) {
     container.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div style="font-size:22px;font-weight:700;">任务监控</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
+        <div><div style="font-size:13px;color:var(--text-muted);">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
         <div style="display:flex;gap:10px;"><button class="btn btn-primary btn-sm" id="btnAutoPlan">&#9730; AI 智能规划阶段</button></div>
       </div>
       <div class="card"><div class="empty-state"><div class="icon">&#9730;</div><div>该任务尚未规划执行阶段</div><div style="font-size:12px;color:var(--text-muted);margin-top:8px;">点击上方按钮，AI 将根据任务类型自动规划执行流水线</div></div></div>`;
@@ -33,7 +62,7 @@ function renderPipeline(container, data) {
 
   container.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:22px;font-weight:700;">任务监控</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
+      <div><div style="font-size:13px;color:var(--text-muted);">任务: ${task.title} &mdash; 项目: ${project.name}</div></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-outline btn-sm" onclick="navigate('kanban')">&#9664; 返回看板</button>
         <button class="btn btn-primary btn-sm" id="btnNextStage">&#9654; 执行下一阶段</button>
@@ -104,17 +133,17 @@ function renderPipelineGraph(task, icons) {
   let html = '';
   task.stageNames.forEach((name, i) => {
     let cls = 'pending';
-    if (task.stages[i] >= 1) cls = 'done';
-    else if (i === task.stageCurrent) {
+    if (task.stages[i] === 1) cls = 'done';
+    else if (task.stages[i] === 2 || i === task.stageCurrent) {
       const hasBlocked = task.stageGates[i] && task.stageGates[i].some(g => g === 0);
       cls = hasBlocked ? 'blocked' : 'active';
     }
     const icon = stageIcons[name] || '📦';
     const agent = stageAgents[name] || { name: '未知 Agent', avatar: '🤖', color: '#94A3B8' };
-    const agentState = task.stages[i] >= 1 ? 'done' : (i === task.stageCurrent ? 'working' : 'idle');
+    const agentState = task.stages[i] === 1 ? 'done' : (task.stages[i] === 2 || i === task.stageCurrent ? 'working' : 'idle');
     const hasHumanReview = humanReviewStages.includes(name) && i <= task.stageCurrent;
     const review = state.reviews.find(r => r.tid === task.id && r.stage === i);
-    const reviewStatus = review ? review.status : (hasHumanReview && task.stages[i] >= 1 ? 'approved' : null);
+    const reviewStatus = review ? review.status : (hasHumanReview && task.stages[i] === 1 ? 'approved' : null);
 
     // Stage node with agent
     html += `<div class="pipeline-stage">
@@ -128,7 +157,7 @@ function renderPipelineGraph(task, icons) {
         <div class="pipeline-node-center"></div>
         <div class="pipeline-node-circle ${cls}">${icon}</div>
         <div class="pipeline-node-label">${name}</div>
-        <div class="pipeline-node-sublabel">${task.stages[i] >= 1 ? '(已完成)' : i === task.stageCurrent ? '(执行中)' : '(待执行)'}</div>
+        <div class="pipeline-node-sublabel">${task.stages[i] === 1 ? '(已完成)' : task.stages[i] === 2 ? '(进行中)' : i === task.stageCurrent ? '(进行中)' : '(待执行)'}</div>
         <div class="pipeline-node-gates">${(task.stageGates[i]||[]).map(g => `<span class="pipeline-gate-dot ${g===1?'pass':g===0?'fail':'pending'}"></span>`).join('')}</div>
       </div>
       <div class="pipeline-agent">
@@ -182,7 +211,12 @@ function renderPipelineGraph(task, icons) {
 function renderActivityFeed(task) {
   const feedContainer = document.getElementById('activityFeed');
   if (!feedContainer) return;
-  const logs = getActivityLogs(task);
+  const allLogs = getActivityLogs(task);
+  // Filter logs for current stage only
+  const logs = allLogs.filter(log => {
+    if (task.stageCurrent === -1) return log.stage === -1 || log.stage === undefined; // Before task starts
+    return log.stage === task.stageCurrent; // Current stage only
+  });
   feedContainer.innerHTML = logs.length === 0
     ? '<div style="padding:12px;color:var(--text-muted);font-size:12px;">暂无活动记录</div>'
     : logs.map(log => `
@@ -220,6 +254,7 @@ function generateInitialActivityLogs(task) {
         icon: agent.avatar,
         iconType: 'agent',
         text: `<strong>${agent.name}</strong> 开始执行「${name}」阶段`,
+        stage: i,
         stageName: name,
         isStageLog: true
       });
@@ -236,6 +271,7 @@ function generateInitialActivityLogs(task) {
           icon: isStepDone ? '✓' : (isStepActive ? '▶' : '○'),
           iconType: 'agent',
           text: `<strong>${agent.name}</strong> ${step.text} <span style="color:${isStepDone ? 'var(--success)' : (isStepActive ? 'var(--primary)' : 'var(--text-muted)')};font-size:10px;">${isStepDone ? '已完成' : (isStepActive ? '执行中' : '待执行')}</span>`,
+          stage: i,
           stageName: name,
           stepName: step.text,
           isStepLog: true
@@ -252,7 +288,8 @@ function generateInitialActivityLogs(task) {
           type: 'agent-work',
           icon: '&#128196;',
           iconType: 'agent',
-          text: `<strong>${agent.name}</strong> 产出了 <a href="javascript:void(0)" onclick="goToArtifacts('${artifacts[0].name}')" style="color:var(--primary);text-decoration:underline;font-weight:600;">${artifacts[0].name}</a> 等物料`
+          text: `<strong>${agent.name}</strong> 产出了 <a href="javascript:void(0)" onclick="goToArtifacts('${artifacts[0].name}')" style="color:var(--primary);text-decoration:underline;font-weight:600;">${artifacts[0].name}</a> 等物料`,
+          stage: i
         });
       }
     }
@@ -275,7 +312,8 @@ function generateInitialActivityLogs(task) {
             type: 'gate-fail',
             icon: '✗',
             iconType: 'fail',
-            text: `门禁「${gateDefs[gi]?.name || '检查'}」<strong>阻断</strong> — ${gateDefs[gi]?.desc || ''}`
+            text: `门禁「${gateDefs[gi]?.name || '检查'}」<strong>阻断</strong> — ${gateDefs[gi]?.desc || ''}`,
+            stage: i
           });
         }
       });
@@ -288,7 +326,8 @@ function generateInitialActivityLogs(task) {
         type: 'agent-work',
         icon: '✓',
         iconType: 'agent',
-        text: `<strong>${agent.name}</strong> 完成「${name}」阶段`
+        text: `<strong>${agent.name}</strong> 完成「${name}」阶段`,
+        stage: i
       });
       // Communication to next agent
       if (i < task.stageNames.length - 1) {
@@ -299,7 +338,8 @@ function generateInitialActivityLogs(task) {
           type: 'agent-comm',
           icon: '→',
           iconType: 'agent',
-          text: `<strong>${agent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`
+          text: `<strong>${agent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`,
+          stage: i
         });
       }
     }
@@ -313,7 +353,8 @@ function generateInitialActivityLogs(task) {
         type: 'human-action',
         icon: '👤',
         iconType: 'human',
-        text: `<strong>${review.reviewer}</strong> 对「${name}」评审: <strong>${statusText}</strong> — ${review.desc}`
+        text: `<strong>${review.reviewer}</strong> 对「${name}」评审: <strong>${statusText}</strong> — ${review.desc}`,
+        stage: i
       });
     }
   });
@@ -323,10 +364,10 @@ function generateInitialActivityLogs(task) {
   return logs;
 }
 
-function addActivityLog(taskId, type, icon, iconType, text) {
+function addActivityLog(taskId, type, icon, iconType, text, stage) {
   if (!activityLogs[taskId]) activityLogs[taskId] = [];
   const now = new Date().toLocaleString('zh-CN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  activityLogs[taskId].unshift({ time: now, type, icon, iconType, text });
+  activityLogs[taskId].unshift({ time: now, type, icon, iconType, text, stage });
 }
 
 function requestReviewForStage(stageIdx) {
@@ -349,7 +390,7 @@ function requestReviewForStage(stageIdx) {
     desc: `${stageName}阶段产出物需要人工评审确认`
   };
   state.reviews.push(rv);
-  addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人`);
+  addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人`, task.stageCurrent);
   toast(`已创建评审任务，评审人: ${rv.reviewer}`);
   renderPipelineGraph(task, {});
   updateBadges();
@@ -493,6 +534,9 @@ function getArtifacts(stageName) {
       'UI测试': [
         { icon: '&#9737;', name: 'UI测试报告.html', meta: '28KB · 5项安全与合规自动化用例100%通过' }
       ],
+      '部署': [
+        { icon: '&#9650;', name: 'http://192.168.8.75:34555/gw', meta: '灰度发布完成 · 服务运行正常' }
+      ],
       '生成制品': [
         { icon: '&#128230;', name: 'gov-doc-service:v1.2.0', meta: 'amd64 · 245MB · 核心业务DoD验收通过', type: 'image', imageTag: 'v1.2.0', architecture: 'linux/amd64', commitId: 'a3f7c2d', baseImage: 'eclipse-temurin:17-jre-alpine', buildTime: '2026-05-20 14:32:18', digest: 'sha256:8f4a3b2c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f' }
       ]
@@ -508,6 +552,7 @@ function getArtifacts(stageName) {
     '代码审查': [{ icon:'&#9745;', name:'QueryOptimizer.java', meta:'8KB · 245行' },{ icon:'&#9745;', name:'SQLBuilder.java', meta:'5KB · 142行' },{ icon:'&#9745;', name:'审查报告.json', meta:'3KB · 4项检查' }],
     '单元测试': [{ icon:'&#9881;', name:'QueryOptimizerTest.java', meta:'6KB · 18个用例' },{ icon:'&#9881;', name:'单元测试报告.html', meta:'15KB · 覆盖率85%' }],
     'UI测试': [{ icon:'&#9737;', name:'UI测试报告.html', meta:'20KB · 技术债务0.8%' },{ icon:'&#9737;', name:'UI测试报告.html', meta:'18KB · 测试通过率100%' }],
+    '部署': [{ icon:'&#9650;', name:'http://192.168.8.75:34555/gw', meta:'灰度发布完成 · 服务运行正常' }],
     '生成制品': [{ icon:'&#128230;', name:'oa-system:v2.1.0', meta:'amd64 · 312MB · DoD验收通过', type: 'image', imageTag: 'v2.1.0', architecture: 'linux/amd64', commitId: 'e5b8a1f', baseImage: 'eclipse-temurin:17-jre-alpine', buildTime: '2026-05-19 09:15:42', digest: 'sha256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a' }],
   };
   return map[stageName] || [{ icon:'@{oriole}', name:'暂无产出物', meta:'等待阶段执行' }];
@@ -706,6 +751,45 @@ function previewArtifact(name) {
         <div style="display:flex;gap:8px;">
           <button class="btn btn-primary btn-sm" onclick="toast('docker pull ${imgName}:${tag} 已复制到剪贴板')">&#128203; 复制拉取命令</button>
           <button class="btn btn-ghost btn-sm" onclick="toast('镜像安全扫描: 0 漏洞, 0 高危')">&#128737; 安全扫描</button>
+        </div>
+      </div>`;
+  } else if (name.startsWith('http://') || name.startsWith('https://')) {
+    // URL artifact preview
+    preview.innerHTML = `
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,#065F46,#059669);border-radius:10px;margin-bottom:16px;">
+          <div style="width:48px;height:48px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;">&#9650;</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#F8FAFC;">部署服务地址</div>
+            <div style="font-size:12px;color:#A7F3D0;margin-top:2px;">灰度发布完成 · 服务运行正常</div>
+          </div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;margin-bottom:16px;">
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px;">服务访问地址</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;font-size:14px;font-weight:600;color:#065F46;font-family:monospace;background:#ECFDF5;padding:10px 14px;border-radius:6px;border:1px solid #A7F3D0;">${name}</div>
+            <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText('${name}');toast('已复制到剪贴板')">&#128203; 复制</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">部署状态</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#10B981;"></span>
+              <span style="font-size:13px;font-weight:600;color:#065F46;">运行中</span>
+            </div>
+          </div>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px;">
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px;">健康检查</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#10B981;"></span>
+              <span style="font-size:13px;font-weight:600;color:#065F46;">正常</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="window.open('${name}', '_blank')">&#128260; 打开服务</button>
+          <button class="btn btn-ghost btn-sm" onclick="toast('健康检查: 200 OK, 响应时间: 23ms')">&#128737; 健康检查</button>
         </div>
       </div>`;
   } else {
@@ -962,7 +1046,7 @@ function changeStageOwner(taskId, stageIdx, newOwner) {
   task.stageAssignees[stageIdx] = newOwner;
 
   const stageName = task.stageNames[stageIdx];
-  addActivityLog(taskId, 'human-action', '👤', 'human', `「${stageName}」阶段负责人变更为 <strong>${newOwner}</strong>`);
+  addActivityLog(taskId, 'human-action', '👤', 'human', `「${stageName}」阶段负责人变更为 <strong>${newOwner}</strong>`, stageIdx);
   toast(`「${stageName}」阶段负责人已变更为 ${newOwner}`);
 }
 

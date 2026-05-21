@@ -62,7 +62,7 @@ function autoFixGates(tid, stageIdx) {
   const stageName = task.stageNames[stageIdx];
   const agent = stageAgents[stageName] || { name: '未知 Agent', avatar: '🤖' };
   toast('Agent 正在自动修复门禁问题...');
-  addActivityLog(tid, 'agent-work', agent.avatar, 'agent', `<strong>${agent.name}</strong> 开始自动修复「${stageName}」门禁问题`);
+  addActivityLog(tid, 'agent-work', agent.avatar, 'agent', `<strong>${agent.name}</strong> 开始自动修复「${stageName}」门禁问题`, stageIdx);
   const btn = document.querySelector('#stageDetailPanel .fix-gate-btn');
   if (btn) { btn.disabled = true; btn.textContent = '修复中...'; }
 
@@ -75,7 +75,7 @@ function autoFixGates(tid, stageIdx) {
       if (task.stageGates[stageIdx][i] === 0) {
         if (Math.random() > 0.4) {
           task.stageGates[stageIdx][i] = 1;
-          addActivityLog(tid, 'gate-check', '✓', 'gate', `门禁「${gateDefs[i]?.name || '检查'}」修复后 <strong>通过</strong>`);
+          addActivityLog(tid, 'gate-check', '✓', 'gate', `门禁「${gateDefs[i]?.name || '检查'}」修复后 <strong>通过</strong>`, stageIdx);
         } else {
           allFixed = false;
         }
@@ -87,7 +87,7 @@ function autoFixGates(tid, stageIdx) {
       clearInterval(progressInterval);
       if (btn) { btn.disabled = false; btn.textContent = '已修复'; btn.className = 'btn btn-success btn-sm fix-gate-btn'; }
       toast('全部门禁修复完成！');
-      addActivityLog(tid, 'agent-work', '✓', 'agent', `<strong>${agent.name}</strong> 完成「${stageName}」门禁修复，全部通过`);
+      addActivityLog(tid, 'agent-work', '✓', 'agent', `<strong>${agent.name}</strong> 完成「${stageName}」门禁修复，全部通过`, stageIdx);
       state.timeline.unshift({ time: m(0), text: `Agent 自动修复了 <strong>${task.title}</strong> 的 ${stageName} 阶段门禁问题` });
     }
   }, 800);
@@ -115,6 +115,7 @@ function getPerfectDemoActivityDetails(stageName) {
     '代码生成': ['生成流转状态机、用印审批单、电子签名确认和档案编号自动归档接口'],
     '代码审查': ['审查登记防篡改、历史版本保留、审批记录不可抵赖和敏感信息脱敏实现'],
     '单元测试': ['执行流转顺序、双重身份核验、用印后归档和历史版本回溯测试用例'],
+    '部署': ['配置灰度发布策略、回滚条件校验、部署环境一致性检查'],
     'UI测试': ['验证待用印文件在线预览、电子签名确认、下载二次核验和审批轨迹展示'],
     '生成制品': ['生成档案编号 DOC-2026-ARCHIVE-001，并归档申请单、审批记录、前后文件和审计报告'],
   };
@@ -137,32 +138,66 @@ function runPerfectDemoTask(task) {
   task.stageCurrent = 0;
   task.stages = task.stageNames.map(() => 0);
   task._perfectDemoRunning = true;
-  addActivityLog(task.id, 'agent-work', '▶', 'agent', '启动公文管理系统完美任务演示：按阶段模拟摘要、流转、核验、用印、归档和审计闭环');
+  addActivityLog(task.id, 'agent-work', '▶', 'agent', '启动公文管理系统完美任务演示：按阶段模拟摘要、流转、核验、用印、归档和审计闭环', -1);
+  renderActivityFeed(task);
 
   task.stageNames.forEach((stageName, i) => {
-    const delay = PERFECT_DEMO_STAGE_DELAY * (i + 1);
+    const baseDelay = PERFECT_DEMO_STAGE_DELAY * i;
+
+    const agent = stageAgents[stageName] || { name: '未知 Agent', avatar: '🤖' };
+    const details = getPerfectDemoActivityDetails(stageName);
+    const gateDefs = state.gateDefs[stageName] || [];
+    const gateResults = getStageGateResults(task, stageName, gateDefs);
+
+    // Calculate time distribution for logs during stage execution
+    const totalLogs = 1 + details.length + gateResults.filter(g => g === 1).length + 1; // start + details + passed gates + completion
+    const interval = PERFECT_DEMO_STAGE_DELAY / (totalLogs + 1);
+    let logIndex = 0;
+
+    // Log: Agent starts stage
     setTimeout(() => {
-      const gateDefs = state.gateDefs[stageName] || [];
       task.stageCurrent = i;
       task.stages[i] = 2;
-      task.stageGates[i] = getStageGateResults(task, stageName, gateDefs);
+      task.stageGates[i] = gateResults;
+      addActivityLog(task.id, 'agent-work', agent.avatar || '🤖', 'agent', `<strong>${agent.name}</strong> 开始执行「${stageName}」阶段`, i);
+      renderActivityFeed(task);
+      renderPipelineGraph(task, {});
+      updateBadges();
+    }, baseDelay + interval * ++logIndex);
 
-      const agent = stageAgents[stageName] || { name: '未知 Agent', avatar: '🤖' };
-      addActivityLog(task.id, 'agent-work', agent.avatar || '🤖', 'agent', `<strong>${agent.name}</strong> 执行「${stageName}」阶段`);
-      getPerfectDemoActivityDetails(stageName).forEach(detail => {
-        addActivityLog(task.id, 'agent-work', '•', 'agent', detail);
-      });
-      task.stageGates[i].forEach((g, gi) => {
+    // Log: Activity details
+    details.forEach((detail, di) => {
+      setTimeout(() => {
+        addActivityLog(task.id, 'agent-work', '•', 'agent', detail, i);
+        renderActivityFeed(task);
+      }, baseDelay + interval * ++logIndex);
+    });
+
+    // Log: Gate checks that pass
+    gateResults.forEach((g, gi) => {
+      if (g === 1) {
         const gateName = gateDefs[gi]?.name || '检查';
-        if (g === 1) addActivityLog(task.id, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`);
-      });
-      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${agent.name}</strong> 完成「${stageName}」阶段`);
+        setTimeout(() => {
+          addActivityLog(task.id, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`, i);
+          renderActivityFeed(task);
+        }, baseDelay + interval * ++logIndex);
+      }
+    });
 
+    // Log: Stage completion
+    setTimeout(() => {
+      task.stages[i] = 1; // Mark as done
+      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${agent.name}</strong> 完成「${stageName}」阶段`, i);
+      renderActivityFeed(task);
+      renderPipelineGraph(task, {}); // Update pipeline to show done state
+      updateBadges();
+
+      // Communication to next stage
       if (i < task.stageNames.length - 1) {
         const nextName = task.stageNames[i + 1];
         const nextAgent = stageAgents[nextName] || { name: '未知 Agent' };
         const commKey = `${stageName}→${nextName}`;
-        addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${agent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`);
+        addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${agent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`, i);
       } else {
         task.status = 'done';
         task._perfectDemoRunning = false;
@@ -170,20 +205,13 @@ function runPerfectDemoTask(task) {
         const project = getProject(task.pid);
         if (!wasDone && project && project.stagesDone < project.stagesTotal) project.stagesDone++;
 
-        addActivityLog(task.id, 'agent-work', '✓', 'agent', '公文流转、用印审批、双重身份核验、归档审计闭环全部通过');
+        addActivityLog(task.id, 'agent-work', '✓', 'agent', '公文流转、用印审批、双重身份核验、归档审计闭环全部通过', -1);
         state.timeline.unshift({ time: m(0), text: `任务 <strong>${task.title}</strong> 已通过全部阶段与门禁` });
         toast('完美任务示例已通过全部阶段');
       }
-
-      const container = document.getElementById('mainContent');
-      renderPipeline(container, { tid: task.id });
-      updateBadges();
-    }, delay);
+      renderActivityFeed(task);
+    }, baseDelay + interval * ++logIndex);
   });
-
-  const firstStageName = task.stageNames[0];
-  const firstAgent = stageAgents[firstStageName] || { name: '未知 Agent', avatar: '🤖' };
-  addActivityLog(task.id, 'agent-work', firstAgent.avatar || '🤖', 'agent', `<strong>${firstAgent.name}</strong> 开始执行「${firstStageName}」阶段`);
 
   const container = document.getElementById('mainContent');
   renderPipeline(container, { tid: task.id });
@@ -209,7 +237,7 @@ function advanceStage(task) {
     task.stages[task.stageCurrent] = 2;
     // Log agent completion
     if (prevAgent) {
-      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${prevAgent.name}</strong> 完成「${prevStageName}」阶段`);
+      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${prevAgent.name}</strong> 完成「${prevStageName}」阶段`, task.stageCurrent - 1);
     }
   }
   task.stageCurrent++;
@@ -228,18 +256,18 @@ function advanceStage(task) {
   // Log agent-to-agent communication
   if (prevAgent) {
     const commKey = `${prevStageName}→${stageName}`;
-    addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${prevAgent.name}</strong> → <strong>${agent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`);
+    addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${prevAgent.name}</strong> → <strong>${agent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`, task.stageCurrent);
   }
   // Log new agent starting
-  addActivityLog(task.id, 'agent-work', agent.avatar, 'agent', `<strong>${agent.name}</strong> 开始执行「${stageName}」阶段`);
+  addActivityLog(task.id, 'agent-work', agent.avatar, 'agent', `<strong>${agent.name}</strong> 开始执行「${stageName}」阶段`, task.stageCurrent);
 
   // Log gate results
   newGates.forEach((g, i) => {
     const gateName = gateDefs[i]?.name || '检查';
     if (g === 1) {
-      addActivityLog(task.id, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`);
+      addActivityLog(task.id, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`, task.stageCurrent);
     } else {
-      addActivityLog(task.id, 'gate-fail', '✗', 'fail', `门禁「${gateName}」<strong>阻断</strong> — ${gateDefs[i]?.desc || ''}`);
+      addActivityLog(task.id, 'gate-fail', '✗', 'fail', `门禁「${gateName}」<strong>阻断</strong> — ${gateDefs[i]?.desc || ''}`, task.stageCurrent);
     }
   });
 
@@ -247,7 +275,7 @@ function advanceStage(task) {
     const reviewers = ['王工','李工','赵工','刘工'];
     const rv = { id:'r'+(reviewIdCounter++), tid:task.id, stage:task.stageCurrent, stageName, reviewer:reviewers[Math.floor(Math.random()*reviewers.length)], status:'pending', desc:`${stageName}阶段产出物需要人工评审确认` };
     state.reviews.push(rv);
-    addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人`);
+    addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人`, task.stageCurrent);
     toast(`已自动创建 ${stageName} 评审任务，评审人: ${rv.reviewer}`);
   }
 
@@ -275,15 +303,29 @@ function advanceStage(task) {
     if (task.stages[idx] === 0) {
       const animStageName = task.stageNames[idx];
       const animAgent = stageAgents[animStageName] || { name: '未知 Agent', avatar: '🤖' };
-      task.stages[idx] = 2;
-      addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${animAgent.name}</strong> 完成「${animStageName}」阶段`);
-      task._animStageIdx++;
+      task.stages[idx] = 2; // Mark as in-progress
+      task.stageCurrent = idx;
+      addActivityLog(task.id, 'agent-work', animAgent.avatar || '🤖', 'agent', `<strong>${animAgent.name}</strong> 开始执行「${animStageName}」阶段`, idx);
       renderPipelineGraph(task, {});
+      renderActivityFeed(task);
+      task._animStageIdx++;
+      
+      // Mark stage as done after a brief delay to show in-progress state
+      setTimeout(() => {
+        task.stages[idx] = 1; // Mark as done
+        addActivityLog(task.id, 'agent-work', '✓', 'agent', `<strong>${animAgent.name}</strong> 完成「${animStageName}」阶段`, idx);
+        renderPipelineGraph(task, {});
+        renderActivityFeed(task);
+      }, 5000);
+      
       if (task._animStageIdx < task.stageNames.length) {
         const nextName = task.stageNames[task._animStageIdx];
         const nextAgent = stageAgents[nextName] || { name: '未知 Agent' };
         const commKey = `${animStageName}→${nextName}`;
-        addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${animAgent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`);
+        setTimeout(() => {
+          addActivityLog(task.id, 'agent-comm', '→', 'agent', `<strong>${animAgent.name}</strong> → <strong>${nextAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`, idx);
+          renderActivityFeed(task);
+        }, 6000);
 task._animTimer = setTimeout(runAnim, 10000);
       } else {
         task._animRunning = false;
@@ -373,8 +415,8 @@ function agentRollbackToCodeGen(taskId) {
   document.querySelector('.modal-overlay')?.remove();
 
   // Log the rollback decision
-  addActivityLog(taskId, 'agent-comm', '↩', 'agent', `<strong>${currentAgent.name}</strong> → <strong>${codeGenAgent.name}</strong>: 门禁阻断，请求回退修复`);
-  addActivityLog(taskId, 'human-action', '👤', 'human', `审批通过：回退到「代码生成」阶段进行修复`);
+  addActivityLog(taskId, 'agent-comm', '↩', 'agent', `<strong>${currentAgent.name}</strong> → <strong>${codeGenAgent.name}</strong>: 门禁阻断，请求回退修复`, codeGenIdx);
+  addActivityLog(taskId, 'human-action', '👤', 'human', `审批通过：回退到「代码生成」阶段进行修复`, codeGenIdx);
 
   // Reset stages from codeGenIdx+1 to current
   for (let i = codeGenIdx + 1; i <= task.stageCurrent; i++) {
@@ -394,7 +436,7 @@ function agentRollbackToCodeGen(taskId) {
 
   // Start the repair animation
   toast('Agent 开始回退修复...');
-  addActivityLog(taskId, 'agent-work', codeGenAgent.avatar, 'agent', `<strong>${codeGenAgent.name}</strong> 开始修复代码，解决门禁阻断问题`);
+  addActivityLog(taskId, 'agent-work', codeGenAgent.avatar, 'agent', `<strong>${codeGenAgent.name}</strong> 开始修复代码，解决门禁阻断问题`, codeGenIdx);
 
   const container = document.getElementById('mainContent');
   renderPipeline(container, { tid: taskId });
@@ -403,7 +445,7 @@ function agentRollbackToCodeGen(taskId) {
   // Simulate agent repair process
   setTimeout(() => {
     task.stages[codeGenIdx] = 2; // Mark code gen as done
-    addActivityLog(taskId, 'agent-work', '✓', 'agent', `<strong>${codeGenAgent.name}</strong> 完成代码修复`);
+    addActivityLog(taskId, 'agent-work', '✓', 'agent', `<strong>${codeGenAgent.name}</strong> 完成代码修复`, codeGenIdx);
 
     // Re-advance through subsequent stages
     const stagesToRedo = [];
@@ -440,17 +482,17 @@ function agentRollbackToCodeGen(taskId) {
         // Log communication
         if (prevAgent) {
           const commKey = `${prevName}→${sName}`;
-          addActivityLog(taskId, 'agent-comm', '→', 'agent', `<strong>${prevAgent.name}</strong> → <strong>${sAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`);
+          addActivityLog(taskId, 'agent-comm', '→', 'agent', `<strong>${prevAgent.name}</strong> → <strong>${sAgent.name}</strong>: ${agentCommMessages[commKey] || '传递产出物'}`, stageIdx);
         }
-        addActivityLog(taskId, 'agent-work', sAgent.avatar, 'agent', `<strong>${sAgent.name}</strong> 开始执行「${sName}」阶段`);
+        addActivityLog(taskId, 'agent-work', sAgent.avatar, 'agent', `<strong>${sAgent.name}</strong> 开始执行「${sName}」阶段`, stageIdx);
 
         // Log gate results
         newGates.forEach((g, i) => {
           const gateName = gateDefs[i]?.name || '检查';
           if (g === 1) {
-            addActivityLog(taskId, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`);
+            addActivityLog(taskId, 'gate-check', '✓', 'gate', `门禁「${gateName}」<strong>通过</strong>`, stageIdx);
           } else {
-            addActivityLog(taskId, 'gate-fail', '✗', 'fail', `门禁「${gateName}」<strong>阻断</strong>`);
+            addActivityLog(taskId, 'gate-fail', '✗', 'fail', `门禁「${gateName}」<strong>阻断</strong>`, stageIdx);
           }
         });
 
@@ -460,8 +502,8 @@ function agentRollbackToCodeGen(taskId) {
         if (stageIdx === task.stageNames.length - 1) {
           setTimeout(() => {
             task.stages[stageIdx] = 2;
-            addActivityLog(taskId, 'agent-work', '✓', 'agent', `<strong>${sAgent.name}</strong> 完成「${sName}」阶段`);
-            addActivityLog(taskId, 'agent-work', '✅', 'agent', `全部阶段修复完成，流水线已恢复`);
+            addActivityLog(taskId, 'agent-work', '✓', 'agent', `<strong>${sAgent.name}</strong> 完成「${sName}」阶段`, stageIdx);
+            addActivityLog(taskId, 'agent-work', '✅', 'agent', `全部阶段修复完成，流水线已恢复`, -1);
             renderPipelineGraph(task, {});
             toast('Agent 修复完成，流水线已恢复！');
             state.timeline.unshift({ time: m(0), text: `Agent 修复了 <strong>${task.title}</strong> 的门禁问题，流水线已恢复` });
@@ -487,7 +529,7 @@ function skipGateAndAdvance(taskId) {
     task.stageGates[task.stageCurrent] = task.stageGates[task.stageCurrent].map(() => 1);
   }
 
-  addActivityLog(taskId, 'human-action', '👤', 'human', `手动跳过「${stageName}」阶段门禁`);
+  addActivityLog(taskId, 'human-action', '👤', 'human', `手动跳过「${stageName}」阶段门禁`, task.stageCurrent);
   toast('已手动跳过门禁');
 
   // Now advance
@@ -503,7 +545,7 @@ function submitReview(rid, decision) {
   toast(`评审已${decisionLabel}`);
 
   // Log human action
-  addActivityLog(review.tid, 'human-action', '👤', 'human', `<strong>${review.reviewer}</strong> 对「${review.stageName}」评审: <strong>${decisionLabel}</strong>`);
+  addActivityLog(review.tid, 'human-action', '👤', 'human', `<strong>${review.reviewer}</strong> 对「${review.stageName}」评审: <strong>${decisionLabel}</strong>`, review.stage);
 
   // If approved, check if all reviews for this task are approved
   if (decision === 'approved') {
@@ -515,7 +557,7 @@ function submitReview(rid, decision) {
 
       if (pendingReviews.length === 0 && !hasRejected) {
         // All reviews passed - auto advance
-        addActivityLog(task.id, 'agent-comm', '✓', 'agent', `全部评审通过，流水线自动推进`);
+        addActivityLog(task.id, 'agent-comm', '✓', 'agent', `全部评审通过，流水线自动推进`, task.stageCurrent);
         state.timeline.unshift({ time: m(0), text: `<strong>${task.title}</strong> 的全部评审已通过，流水线自动推进` });
 
         // Check if gates are all passed before advancing
@@ -572,7 +614,7 @@ function resolveConflictReview(rid, choice) {
     }
     
     // Log human action
-    addActivityLog(task.id, 'human-action', '👤', 'human', `项目负责人张经理进行行政干预决策：<strong>${choiceText}</strong>`);
+    addActivityLog(task.id, 'human-action', '👤', 'human', `项目负责人张经理进行行政干预决策：<strong>${choiceText}</strong>`, 0);
     
     toast('行政决策成功！语义一致性冲突已消除，门禁阻断已清空！');
   }
@@ -602,7 +644,7 @@ function requestReview() {
   const stageName = task.stageNames[task.stageCurrent] || '未知';
   const rv = { id:'r'+(reviewIdCounter++), tid:task.id, stage:task.stageCurrent, stageName, reviewer:'王工', status:'pending', desc:'手动请求人工评审' };
   state.reviews.push(rv);
-  addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人（手动请求）`);
+  addActivityLog(task.id, 'human-action', '👤', 'human', `<strong>${rv.reviewer}</strong> 被分配为「${stageName}」评审人（手动请求）`, task.stageCurrent);
   toast(`已请求 ${rv.reviewer} 进行评审`);
   updateBadges();
   const container = document.getElementById('mainContent');
