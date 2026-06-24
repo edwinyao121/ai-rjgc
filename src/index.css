@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'YouSheBiaoTiHei';
+  src: local('YouSheBiaoTiHei'), local('优设标题黑'), sans-serif;
+}
+
+@font-face {
+  font-family: 'OPPO Sans 4.0';
+  src: local('OPPO Sans 4.0'), local('OPPOSans'), local('OPPO Sans'), sans-serif;
+}
+
+body {
+  font-family: 'OPPO Sans 4.0', 'OPPOSans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #243340 !important;
+  color: #E5EAFF !important;
+}
+
+/* Base Headings & Titles */
+h1 {
+  font-family: 'YouSheBiaoTiHei', sans-serif !important;
+  font-size: 26px !important;
+  font-weight: normal !important;
+  color: #E5EAFF !important;
+}
+
+h2 {
+  font-family: 'OPPO Sans 4.0', 'OPPOSans', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #E5EAFF !important;
+}
+
+h3 {
+  font-family: 'OPPO Sans 4.0', 'OPPOSans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #C9D2D9 !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #243340;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2E3F4D;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(187, 203, 217, 0.35);
+}
+
+/* Custom Dropdown Selectors */
+select, .select-custom {
+  background-color: #1B2732 !important;
+  color: #E5EAFF !important;
+  border-left: 4px solid #3b82f6 !important; /* Left highlight bar */
+  border-top: 1px solid rgba(187, 203, 217, 0.35) !important;
+  border-right: 1px solid rgba(187, 203, 217, 0.35) !important;
+  border-bottom: 1px solid rgba(187, 203, 217, 0.35) !important;
+  border-radius: 4px !important;
+  padding: 8px 12px !important;
+  font-family: 'OPPO Sans 4.0', sans-serif !important;
+  font-size: 14px !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23C9D2D9' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
+  background-position: right 0.5rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.5em 1.5em !important;
+  padding-right: 2.5rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Tag/Button Styles (深色背景 + 浅蓝文字，带边框) */
+.custom-tag, .tag-pill {
+  background-color: #2E3F4D !important;
+  color: #CCDAFF !important;
+  border: 1px solid rgba(187, 203, 217, 0.35) !important;
+  font-family: 'OPPO Sans 4.0', sans-serif !important;
+  font-weight: 300 !important;
+}
+
+/* Custom Overrides for Standard Inputs */
+input[type="text"], input[type="search"], textarea {
+  background-color: #1B2732 !important;
+  color: #E5EAFF !important;
+  border: 1px solid rgba(187, 203, 217, 0.35) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-family: 'OPPO Sans 4.0', sans-serif !important;
+  font-size: 14px !important;
+}
+
+input[type="text"]:focus, input[type="search"]:focus, textarea:focus {
+  border-color: #3b82f6 !important;
+  outline: none !important;
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Button Groups (深色背景的矩形按钮) */
+button:not(.bg-transparent):not(.p-1):not(.p-2):not(.w-10):not(.w-12) {
+  font-family: 'OPPO Sans 4.0', sans-serif !important;
+}
+
+/* Make sure active states look excellent */
+.bg-blue-50 {
+  background-color: rgba(36, 51, 64, 0.6) !important;
+}
+.text-blue-600 {
+  color: #CCDAFF !important;
+}
+.border-blue-600 {
+  border-color: #3b82f6 !important;
+}
+.hover\:bg-gray-50:hover {
+  background-color: rgba(36, 51, 64, 0.1) !important;
+}
+.hover\:bg-gray-100:hover {
+  background-color: rgba(36, 51, 64, 0.1) !important;
+}
+
+/* Override utility lists background */
+.bg-gray-50 {
+  background-color: rgba(36, 51, 64, 0.1) !important;
+}
+
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
