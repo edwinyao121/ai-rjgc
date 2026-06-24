@@ -1454,7 +1454,7 @@ function KanbanBoard() {
       </div>
 
       <div className="flex" style={{ height: 'calc(100vh - 200px)' }}>
-        <div className="w-72 flex-shrink-0 space-y-3 mr-4">
+        <div className="w-60 flex-shrink-0 space-y-3 mr-4">
           <h2 className="font-semibold text-gray-700 text-sm px-1">应用列表 ({orders.length})</h2>
           <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
             {orders.map(order => (
@@ -1469,10 +1469,10 @@ function KanbanBoard() {
           </div>
         </div>
 
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+        <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0" style={{ minWidth: '600px' }}>
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3 flex-wrap gap-3">
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
                 <button
                   onClick={() => setActiveAppView(selectedOrder.id)}
@@ -1525,7 +1525,7 @@ function KanbanBoard() {
 
         {/* AI R&D Assistant Panel with collapsible layout */}
         <div className={`transition-all duration-300 ease-in-out flex-shrink-0 flex h-full overflow-hidden ${
-          isChatOpen ? 'w-96 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
+          isChatOpen ? 'w-80 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
         }`}>
           <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} onClose={() => setIsChatOpen(false)} />
         </div>
