@@ -1,0 +1,30 @@
+{
+  "说明": "本文件是智能体协作的功能状态唯一来源。状态仅可使用 not-started、in-progress、blocked、completed；每次会话结束前必须更新。",
+  "features": [
+    {
+      "id": "harness-001",
+      "name": "建立智能体协作基线",
+      "description": "提供中文工作指引、功能状态、会话进度、交接记录和统一校验入口。",
+      "dependencies": [],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "全部协作文件已创建且内容为中文。",
+        "统一入口可依次运行测试与生产构建。",
+        "校验结果被记录为可复核证据。"
+      ],
+      "evidence": "2026-06-25 03:26：执行 ./init.sh 成功；npm test 通过（35/35），npm run build 成功。构建仅报告单个压缩后大于 500 kB 的提示，不影响退出状态。"
+    },
+    {
+      "id": "product-001",
+      "name": "选择下一项产品工单",
+      "description": "从 docs/requirements/ 中确认优先级与验收标准，并将一个明确的产品事项设为 in-progress。",
+      "dependencies": ["harness-001"],
+      "status": "not-started",
+      "acceptanceCriteria": [
+        "已关联具体需求文档或用户确认的需求。",
+        "验收标准、相关代码范围和验证方式已明确。"
+      ],
+      "evidence": ""
+    }
+  ]
+}
