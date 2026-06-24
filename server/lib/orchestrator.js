@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { createMessage } from './store.js'
 import {
   STAGE_STATUS,
   WORK_ORDER_STATUS,
@@ -48,8 +49,8 @@ export class WorkOrderService {
     return this.store.readWorkOrder(id)
   }
 
-  async getEvents(id) {
-    return this.store.readEvents(id)
+  async getEvents(id, options = {}) {
+    return this.store.readEvents(id, options)
   }
 
   async getStageLog(id, stageKey) {
@@ -61,21 +62,25 @@ export class WorkOrderService {
       throw error
     }
 
-    let content = stage.logSummary || ''
+    const entries = await this.store.readStageLogEntries(id, stageKey)
+    let content = formatStageLogEntries(entries)
     if (stage.logPath) {
       try {
-        content = await fs.readFile(stage.logPath, 'utf8')
+        const legacyContent = await fs.readFile(stage.logPath, 'utf8')
+        content = [content, legacyContent].filter(Boolean).join('\n')
       } catch (error) {
-        content = `${stage.logSummary || ''}\n\n[日志文件读取失败] ${error.message}`.trim()
+        content = `${content || stage.logSummary || ''}\n\n[日志文件读取失败] ${error.message}`.trim()
       }
     }
+    content = content || stage.logSummary || ''
 
     return {
       workOrderId: id,
       stageKey,
       stageName: stage.name,
       status: stage.status,
-      logPath: stage.logPath || null,
+      logPath: stage.logPath || (entries.length > 0 ? await this.getStageLogPath(id, stageKey) : null),
+      entries,
       content
     }
   }
@@ -96,12 +101,14 @@ export class WorkOrderService {
     const trimmed = validateMessage(message)
     const state = await this.requireWorkOrder(id)
     const now = new Date().toISOString()
-    state.messages.push({
+    const userMessage = createMessage({
       id: randomUUID(),
-      sender: 'user',
-      text: trimmed,
+      role: 'user',
+      content: trimmed,
+      phase: 'clarification',
       createdAt: now
     })
+    state.messages.push(userMessage)
     state.status = WORK_ORDER_STATUS.CLARIFYING
     state.progress = Math.max(state.progress, 10)
     const requirementsStage = getStageByKey(state.stages, 'requirements')
@@ -113,7 +120,7 @@ export class WorkOrderService {
       })
     }
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'message.created', { message: state.messages.at(-1), workOrder: state })
+    await this.emit(id, 'assistant.message.append', { message: userMessage, workOrder: state })
     if (startClarification) {
       queueMicrotask(() => {
         this.processClarification(id).catch((error) => this.failFromUnexpectedError(id, 'requirements', error))
@@ -136,12 +143,16 @@ export class WorkOrderService {
       state.status = WORK_ORDER_STATUS.CLARIFYING
       state.progress = getStageProgress(state.stages)
       await this.store.saveWorkOrder(state)
-      await this.emit(id, 'clarification.started', { workOrder: state })
+      await this.emitStageStatus(id, state, requirementsStage, 'AI 正在分析需求完整性')
 
       const prompt = createClarificationPrompt(state.messages)
-      const result = await this.runner.run(buildOpencodeCommand(prompt, state.appDir), {
+      const command = buildOpencodeCommand(prompt, state.appDir)
+      const result = await this.runCommandWithStageLogging(id, 'requirements', {
+        label: '需求澄清',
+        command,
         cwd: state.appDir,
-        timeoutMs: 5 * 60 * 1000
+        timeoutMs: 5 * 60 * 1000,
+        source: 'opencode'
       })
 
       if (result.exitCode !== 0) {
@@ -153,12 +164,14 @@ export class WorkOrderService {
       const clarification = parseClarificationResponse(rawOutput)
       state = await this.requireWorkOrder(id)
       const now = new Date().toISOString()
-      state.messages.push({
+      const assistantMessage = createMessage({
         id: randomUUID(),
-        sender: 'ai',
-        text: clarification.reply || (clarification.complete ? '需求已澄清，开始进入自动研发流水线。' : '请补充更多需求信息。'),
+        role: 'assistant',
+        content: clarification.reply || (clarification.complete ? '需求已澄清，开始进入自动研发流水线。' : '请补充更多需求信息。'),
+        phase: 'clarification',
         createdAt: now
       })
+      state.messages.push(assistantMessage)
 
       if (clarification.title) {
         state.title = clarification.title
@@ -173,7 +186,8 @@ export class WorkOrderService {
         state.progress = getStageProgress(state.stages)
         state.status = WORK_ORDER_STATUS.CLARIFYING
         await this.store.saveWorkOrder(state)
-        await this.emit(id, 'clarification.completed', { complete: false, workOrder: state })
+        await this.emit(id, 'assistant.message.append', { message: assistantMessage, workOrder: state })
+        await this.emitStageStatus(id, state, getStageByKey(state.stages, 'requirements'), '等待用户补充需求')
         return state
       }
 
@@ -202,7 +216,8 @@ export class WorkOrderService {
       state.currentStage = 2
       state.progress = getStageProgress(state.stages)
       await this.store.saveWorkOrder(state)
-      await this.emit(id, 'clarification.completed', { complete: true, workOrder: state })
+      await this.emit(id, 'assistant.message.append', { message: assistantMessage, workOrder: state })
+      await this.emitStageStatus(id, state, stage, '需求澄清完成，已生成需求文档')
 
       if (startPipeline) {
         queueMicrotask(() => {
@@ -225,11 +240,10 @@ export class WorkOrderService {
       await this.runTestingStage(id)
       await this.runDeploymentStage(id)
       const state = await this.requireWorkOrder(id)
-      state.status = WORK_ORDER_STATUS.COMPLETED
+      state.status = WORK_ORDER_STATUS.DEPLOYED
       state.progress = 100
       state.currentStage = 5
       await this.store.saveWorkOrder(state)
-      await this.emit(id, 'pipeline.completed', { workOrder: state })
       return state
     } finally {
       this.activePipelines.delete(id)
@@ -248,7 +262,12 @@ export class WorkOrderService {
     state.status = WORK_ORDER_STATUS.RUNNING
     state.progress = getStageProgress(state.stages)
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage, workOrder: state })
+    await this.emitStageStatus(id, state, stage, `${stage.name}阶段开始`)
+    await this.appendVisibleMessage(state, {
+      content: `${stage.name}阶段已开始，我会执行该阶段任务并同步日志。`,
+      phase: 'execution',
+      stageId: stageKey
+    })
 
     const prompt = createStagePrompt({
       stageKey,
@@ -256,15 +275,14 @@ export class WorkOrderService {
       requirementsMarkdown: await this.getRequirementsMarkdown(state)
     })
     const command = buildOpencodeCommand(prompt, state.appDir)
-    const result = await this.runner.run(command, {
-      cwd: state.appDir,
-      timeoutMs: 20 * 60 * 1000
-    })
-    const logPath = await this.writeStageLog(id, stageKey, formatCommandLog({
+    const result = await this.runCommandWithStageLogging(id, stageKey, {
       label: stage.name,
       command,
-      result
-    }))
+      cwd: state.appDir,
+      timeoutMs: 20 * 60 * 1000,
+      source: 'opencode'
+    })
+    const logPath = await this.getStageLogPath(id, stageKey)
     if (result.exitCode !== 0) {
       await this.failStage(id, stageKey, `${stage.name}执行失败`, summarizeCommandResult(result), logPath)
       throw new Error(`${stage.name} failed`)
@@ -286,7 +304,12 @@ export class WorkOrderService {
     completedStage.logSummary = summarizeCommandResult(result) || '阶段执行完成'
     state.progress = getStageProgress(state.stages)
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage: completedStage, workOrder: state })
+    await this.emitStageStatus(id, state, completedStage, `${completedStage.name}阶段完成`)
+    await this.appendVisibleMessage(state, {
+      content: `${completedStage.name}阶段已完成：${completedStage.logSummary}`,
+      phase: 'execution',
+      stageId: stageKey
+    })
     return state
   }
 
@@ -312,17 +335,16 @@ export class WorkOrderService {
         }
       ]
       await this.store.saveWorkOrder(state)
-      await this.emit(id, 'stage.updated', { stage: currentStage, workOrder: state })
+      await this.emitStageStatus(id, state, currentStage, `${label}开始`)
 
-      const result = await this.runner.run(command, {
-        cwd: state.appDir,
-        timeoutMs: 15 * 60 * 1000
-      })
-      const logPath = await this.appendStageLog(id, 'testing', formatCommandLog({
+      const result = await this.runCommandWithStageLogging(id, 'testing', {
         label,
         command,
-        result
-      }))
+        cwd: state.appDir,
+        timeoutMs: 15 * 60 * 1000,
+        source: label === '运行测试' ? 'test' : 'command'
+      })
+      const logPath = await this.getStageLogPath(id, 'testing')
       if (result.exitCode !== 0) {
         await this.failStage(id, 'testing', `${label}失败`, summarizeCommandResult(result), logPath)
         throw new Error(`${label} failed`)
@@ -345,7 +367,12 @@ export class WorkOrderService {
     testingStage.logSummary = '安装、构建、测试全部通过'
     state.progress = getStageProgress(state.stages)
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage: getStageByKey(state.stages, 'testing'), workOrder: state })
+    await this.emitStageStatus(id, state, getStageByKey(state.stages, 'testing'), '安装、构建、测试全部通过')
+    await this.appendVisibleMessage(state, {
+      content: '测试质检已完成：安装、构建、测试全部通过。',
+      phase: 'execution',
+      stageId: 'testing'
+    })
     return state
   }
 
@@ -367,24 +394,45 @@ export class WorkOrderService {
     state.deploymentPort = port
     state.progress = getStageProgress(state.stages)
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage, workOrder: state })
+    await this.emitStageStatus(id, state, stage, `正在启动 ${healthUrl}`)
+    await this.appendStageLogEntry(id, 'deployment', {
+      level: 'INFO',
+      source: 'deploy',
+      text: `本机部署: ${formatCommand(startCommand)}`
+    })
+    await this.appendStageLogEntry(id, 'deployment', {
+      level: 'INFO',
+      source: 'deploy',
+      text: `healthUrl: ${healthUrl}`
+    })
 
     const child = this.runner.start(startCommand, {
       cwd: state.appDir,
-      env: { PORT: String(port) }
+      env: { PORT: String(port) },
+      onStdoutLine: async (line) => {
+        await this.appendStageLogEntry(id, 'deployment', {
+          level: 'INFO',
+          source: 'deploy',
+          text: line
+        })
+      },
+      onStderrLine: async (line) => {
+        await this.appendStageLogEntry(id, 'deployment', {
+          level: 'WARN',
+          source: 'deploy',
+          text: line
+        })
+      }
     })
     this.runningApps.set(id, child)
-    const logPath = await this.writeStageLog(id, 'deployment', [
-      `# 本机部署`,
-      `command: ${formatCommand(startCommand)}`,
-      `cwd: ${state.appDir}`,
-      `healthUrl: ${healthUrl}`,
-      ''
-    ].join('\n'))
+    const logPath = await this.getStageLogPath(id, 'deployment')
 
     const healthy = await this.healthCheck(healthUrl, { timeoutMs: 60 * 1000 })
     if (!healthy) {
-      const failedLogPath = await this.appendStageLog(id, 'deployment', `\n[health-check]\n未能访问 ${healthUrl}\n`)
+      const failedLogPath = await this.appendStageLog(id, 'deployment', `健康检查失败：未能访问 ${healthUrl}`, {
+        level: 'ERROR',
+        source: 'deploy'
+      })
       await this.failStage(id, 'deployment', '健康检查失败', `未能访问 ${healthUrl}`, failedLogPath)
       throw new Error('Deployment health check failed')
     }
@@ -404,9 +452,20 @@ export class WorkOrderService {
     getStageByKey(state.stages, 'deployment').logPath = logPath
     getStageByKey(state.stages, 'deployment').logSummary = `部署成功：${healthUrl}`
     state.deploymentUrl = healthUrl
+    state.status = WORK_ORDER_STATUS.DEPLOYED
     state.progress = 100
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage: getStageByKey(state.stages, 'deployment'), workOrder: state })
+    await this.emitStageStatus(id, state, getStageByKey(state.stages, 'deployment'), `部署成功：${healthUrl}`)
+    await this.emit(id, 'deployment.updated', {
+      deploymentUrl: healthUrl,
+      status: WORK_ORDER_STATUS.DEPLOYED,
+      workOrder: state
+    })
+    await this.appendVisibleMessage(state, {
+      content: `部署交付已完成：${healthUrl}`,
+      phase: 'execution',
+      stageId: 'deployment'
+    })
     return state
   }
 
@@ -435,13 +494,32 @@ export class WorkOrderService {
   async failStage(id, stageKey, message, logSummary = '', logPath = null) {
     const state = await this.requireWorkOrder(id)
     const stage = getStageByKey(state.stages, stageKey)
-    markStageFailed(stage, message, logSummary, new Date(), logPath)
+    const errorText = [message, logSummary].filter(Boolean).join('：')
+    const errorEntry = await this.appendStageLogEntry(id, stageKey, {
+      level: 'ERROR',
+      source: 'system',
+      text: errorText
+    })
+    const effectiveLogPath = logPath || await this.getStageLogPath(id, stageKey)
+    markStageFailed(stage, message, logSummary, new Date(), effectiveLogPath)
     state.status = WORK_ORDER_STATUS.FAILED
     state.currentStage = stage.id
     state.progress = getStageProgress(state.stages)
+    const assistantMessage = createMessage({
+      role: 'assistant',
+      content: `${stage.name}执行失败：${logSummary || message}`,
+      phase: 'execution',
+      stageId: stageKey,
+      status: 'FAILED',
+      createdAt: errorEntry.timestamp
+    })
+    state.messages = [...(state.messages || []), assistantMessage]
     await this.store.saveWorkOrder(state)
-    await this.emit(id, 'stage.updated', { stage, workOrder: state })
-    await this.emit(id, 'pipeline.failed', { stage, error: { message, logSummary }, workOrder: state })
+    await this.emitStageStatus(id, state, stage, message)
+    await this.emit(id, 'assistant.message.append', {
+      message: assistantMessage,
+      workOrder: state
+    })
     return state
   }
 
@@ -459,14 +537,12 @@ export class WorkOrderService {
   }
 
   async emit(workOrderId, type, data) {
-    const event = {
-      id: randomUUID(),
+    const event = await this.store.appendEvent(workOrderId, {
       type,
       workOrderId,
       timestamp: new Date().toISOString(),
-      data
-    }
-    await this.store.appendEvent(workOrderId, event)
+      ...data
+    })
     this.eventBus.publish(workOrderId, event)
     return event
   }
@@ -480,21 +556,129 @@ export class WorkOrderService {
   }
 
   async getStageLogPath(id, stageKey) {
-    return path.join(this.store.getWorkOrderDir(id), 'logs', `${stageKey}.log`)
+    return this.store.getStageLogPath(id, stageKey)
   }
 
   async writeStageLog(id, stageKey, content) {
+    return this.appendStageLog(id, stageKey, content)
+  }
+
+  async appendStageLog(id, stageKey, content, { level = 'INFO', source = 'system' } = {}) {
     const logPath = await this.getStageLogPath(id, stageKey)
-    await fs.mkdir(path.dirname(logPath), { recursive: true })
-    await fs.writeFile(logPath, `${String(content || '').trim()}\n`, 'utf8')
+    const lines = splitOutputLines(content)
+    if (lines.length === 0) {
+      await this.appendStageLogEntry(id, stageKey, { level, source, text: '' })
+    }
+    for (const line of lines) {
+      await this.appendStageLogEntry(id, stageKey, { level, source, text: line })
+    }
     return logPath
   }
 
-  async appendStageLog(id, stageKey, content) {
-    const logPath = await this.getStageLogPath(id, stageKey)
-    await fs.mkdir(path.dirname(logPath), { recursive: true })
-    await fs.appendFile(logPath, `${String(content || '').trim()}\n`, 'utf8')
-    return logPath
+  async appendStageLogEntry(id, stageKey, entry) {
+    const savedEntry = await this.store.appendStageLogEntry(id, stageKey, entry)
+    await this.emit(id, 'stage.log.append', {
+      stageId: stageKey,
+      entry: savedEntry
+    })
+    return savedEntry
+  }
+
+  async emitStageStatus(id, state, stage, message) {
+    return this.emit(id, 'stage.status.changed', {
+      stageId: stage.key,
+      status: stage.status,
+      progress: state.progress,
+      message,
+      stage,
+      workOrder: state
+    })
+  }
+
+  async appendVisibleMessage(state, {
+    role = 'assistant',
+    content,
+    phase = 'execution',
+    stageId = null,
+    status = 'COMPLETED'
+  }) {
+    const message = createMessage({
+      role,
+      content,
+      phase,
+      stageId,
+      status,
+      createdAt: new Date().toISOString()
+    })
+    state.messages = [...(state.messages || []), message]
+    await this.store.saveWorkOrder(state)
+    await this.emit(state.id, 'assistant.message.append', {
+      message,
+      workOrder: state
+    })
+    return message
+  }
+
+  async runCommandWithStageLogging(id, stageKey, {
+    label,
+    command,
+    cwd,
+    env,
+    timeoutMs,
+    source = 'command'
+  }) {
+    let streamedLineCount = 0
+    await this.appendStageLogEntry(id, stageKey, {
+      level: 'INFO',
+      source,
+      text: `${label}: ${formatCommand(command)}`
+    })
+
+    const result = await this.runner.run(command, {
+      cwd,
+      env,
+      timeoutMs,
+      onStdoutLine: async (line) => {
+        streamedLineCount += 1
+        await this.appendStageLogEntry(id, stageKey, {
+          level: 'INFO',
+          source,
+          text: line
+        })
+      },
+      onStderrLine: async (line) => {
+        streamedLineCount += 1
+        await this.appendStageLogEntry(id, stageKey, {
+          level: 'WARN',
+          source,
+          text: line
+        })
+      }
+    })
+
+    if (streamedLineCount === 0) {
+      for (const line of splitOutputLines(result.stdout)) {
+        await this.appendStageLogEntry(id, stageKey, {
+          level: 'INFO',
+          source,
+          text: line
+        })
+      }
+      for (const line of splitOutputLines(result.stderr)) {
+        await this.appendStageLogEntry(id, stageKey, {
+          level: 'WARN',
+          source,
+          text: line
+        })
+      }
+    }
+
+    await this.appendStageLogEntry(id, stageKey, {
+      level: result.exitCode === 0 ? 'INFO' : 'ERROR',
+      source,
+      text: `${label} exitCode=${result.exitCode}${result.timedOut ? ' timedOut=true' : ''}`
+    })
+    return result
   }
 
   async requireWorkOrder(id) {
@@ -559,6 +743,22 @@ function formatCommand(command) {
     printable[printable.length - 1] = '[prompt omitted]'
   }
   return printable.map((part) => JSON.stringify(part)).join(' ')
+}
+
+function formatStageLogEntries(entries) {
+  return entries.map((entry) => {
+    const timestamp = entry.timestamp || ''
+    const level = entry.level || 'INFO'
+    const source = entry.source || 'system'
+    return `[${timestamp}] [${level}] [${source}] ${entry.text || ''}`
+  }).join('\n')
+}
+
+function splitOutputLines(content) {
+  return String(content || '')
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0)
 }
 
 async function listRelativeFiles(rootDir) {

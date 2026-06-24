@@ -8,6 +8,7 @@ export const STAGE_STATUS = Object.freeze({
 export const WORK_ORDER_STATUS = Object.freeze({
   CLARIFYING: 'CLARIFYING',
   RUNNING: 'RUNNING',
+  DEPLOYED: 'DEPLOYED',
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED'
 })

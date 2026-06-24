@@ -81,7 +81,10 @@ async function routeRequest({ request, response, service, eventBus }) {
         sendError(response, 404, 'NOT_FOUND', 'Work order not found')
         return
       }
-      const history = await service.getEvents(id)
+      const lastEventId = Number(request.headers['last-event-id'])
+      const history = await service.getEvents(id, {
+        afterSequence: Number.isFinite(lastEventId) ? lastEventId : null
+      })
       eventBus.subscribe(id, response, history)
       return
     }
@@ -108,7 +111,7 @@ async function readJsonBody(request) {
 function setCorsHeaders(response) {
   response.setHeader('Access-Control-Allow-Origin', '*')
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Last-Event-ID')
 }
 
 function sendJson(response, statusCode, payload) {

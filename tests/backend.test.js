@@ -9,6 +9,7 @@ import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
 import { parseClarificationResponse } from '../server/lib/opencode.js'
 import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
+import { runCommand } from '../server/lib/runner.js'
 import { STAGE_STATUS, WORK_ORDER_STATUS } from '../server/lib/stages.js'
 
 test('allocates work order ids and persists state and requirements files', async () => {
@@ -125,14 +126,128 @@ test('broadcasts SSE events and writes events.jsonl', async () => {
     const response = new FakeResponse()
 
     fixture.eventBus.subscribe(state.id, response, [])
-    await service.emit(state.id, 'stage.updated', { ok: true })
+    await service.emit(state.id, 'stage.status.changed', { ok: true })
 
     const events = await fixture.store.readEvents(state.id)
-    assert.equal(events.at(-1).type, 'stage.updated')
-    assert.match(response.chunks.join(''), /event: stage\.updated/)
+    assert.equal(events.at(-1).type, 'stage.status.changed')
+    assert.match(response.chunks.join(''), /event: stage\.status\.changed/)
   } finally {
     await fixture.cleanup()
   }
+})
+
+test('assigns monotonic event sequences and replays events after Last-Event-ID', async () => {
+  const fixture = await createFixture()
+  try {
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ message: '做一个测试应用' }, { startClarification: false })
+
+    const first = await service.emit(state.id, 'stage.status.changed', {
+      stageId: 'requirements',
+      status: STAGE_STATUS.RUNNING
+    })
+    const second = await service.emit(state.id, 'assistant.message.append', {
+      message: { id: 'msg-test', role: 'assistant', content: '需求澄清中' }
+    })
+
+    assert.equal(first.sequence, 2)
+    assert.equal(second.sequence, 3)
+
+    const history = await service.getEvents(state.id, { afterSequence: 2 })
+    const response = new FakeResponse()
+    fixture.eventBus.subscribe(state.id, response, history)
+    const streamed = response.chunks.join('')
+
+    assert.doesNotMatch(streamed, /stage\.status\.changed/)
+    assert.match(streamed, /event: assistant\.message\.append/)
+    assert.match(streamed, /id: 3/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('migrates legacy state.messages into messages.json with normalized roles', async () => {
+  const fixture = await createFixture()
+  try {
+    const state = await fixture.store.createWorkOrder({
+      message: '旧格式用户需求',
+      now: new Date('2026-06-24T08:00:00+08:00')
+    })
+    const messagesPath = path.join(fixture.store.getWorkOrderDir(state.id), 'messages.json')
+    await rm(messagesPath, { force: true })
+
+    const loaded = await fixture.store.readWorkOrder(state.id)
+    assert.equal(loaded.messages[0].role, 'user')
+    assert.equal(loaded.messages[0].content, '旧格式用户需求')
+    assert.equal(loaded.messages[1].role, 'assistant')
+    assert.equal(loaded.messages[1].content, '已创建工单，正在进行需求澄清。')
+
+    const persisted = JSON.parse(await readFile(messagesPath, 'utf8'))
+    assert.equal(persisted[0].role, 'user')
+    assert.equal(persisted[1].role, 'assistant')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('appends and reads structured stage log entries as JSONL', async () => {
+  const fixture = await createFixture()
+  try {
+    const state = await fixture.store.createWorkOrder({
+      message: '需要实时日志',
+      now: new Date('2026-06-24T08:00:00+08:00')
+    })
+
+    const first = await fixture.store.appendStageLogEntry(state.id, 'design', {
+      level: 'INFO',
+      source: 'opencode',
+      text: '开始生成架构设计'
+    })
+    const second = await fixture.store.appendStageLogEntry(state.id, 'design', {
+      level: 'ERROR',
+      source: 'system',
+      text: '设计阶段失败'
+    })
+
+    const entries = await fixture.store.readStageLogEntries(state.id, 'design')
+    assert.equal(first.sequence, 1)
+    assert.equal(second.sequence, 2)
+    assert.deepEqual(entries.map((entry) => entry.text), ['开始生成架构设计', '设计阶段失败'])
+
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      autoStart: false
+    })
+    const log = await service.getStageLog(state.id, 'design')
+    assert.equal(log.stageKey, 'design')
+    assert.equal(log.entries.length, 2)
+    assert.match(log.content, /开始生成架构设计/)
+    assert.match(log.content, /ERROR/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('runCommand reports stdout and stderr lines as they arrive', async () => {
+  const stdoutLines = []
+  const stderrLines = []
+  const result = await runCommand([
+    process.execPath,
+    '-e',
+    'console.log("out one"); console.error("err one"); process.stdout.write("out two")'
+  ], {
+    onStdoutLine: (line) => stdoutLines.push(line),
+    onStderrLine: (line) => stderrLines.push(line)
+  })
+
+  assert.equal(result.exitCode, 0)
+  assert.deepEqual(stdoutLines, ['out one', 'out two'])
+  assert.deepEqual(stderrLines, ['err one'])
 })
 
 test('validates manifest command arrays and substitutes deployment port', () => {
@@ -191,10 +306,20 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
     await service.processClarification(state.id, { startPipeline: false })
     const completed = await service.runPipeline(state.id)
 
-    assert.equal(completed.status, WORK_ORDER_STATUS.COMPLETED)
+    assert.equal(completed.status, WORK_ORDER_STATUS.DEPLOYED)
     assert.equal(completed.deploymentUrl, 'http://127.0.0.1:4101')
     assert.equal(completed.stages.every((stage) => stage.status === STAGE_STATUS.COMPLETED), true)
     assert.deepEqual(runner.starts[0].command, ['node', 'server.js', '--port', '4101'])
+
+    const events = await fixture.store.readEvents(state.id)
+    assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.text === 'install ok'))
+    assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.source === 'deploy'))
+    assert.ok(events.some((event) => event.type === 'deployment.updated' && event.status === WORK_ORDER_STATUS.DEPLOYED))
+
+    const testingLog = await service.getStageLog(state.id, 'testing')
+    assert.match(testingLog.content, /install ok/)
+    assert.match(testingLog.content, /build ok/)
+    assert.match(testingLog.content, /test ok/)
   } finally {
     await fixture.cleanup()
   }
@@ -228,6 +353,10 @@ test('marks a stage as failed and keeps a log summary when a stage command fails
     const designStage = failed.stages.find((stage) => stage.key === 'design')
     assert.equal(designStage.status, STAGE_STATUS.FAILED)
     assert.match(designStage.logSummary, /design exploded/)
+    assert.ok(failed.messages.some((message) => message.role === 'assistant' && /系统设计执行失败/.test(message.content)))
+
+    const log = await service.getStageLog(state.id, 'design')
+    assert.ok(log.entries.some((entry) => entry.level === 'ERROR' && /design exploded/.test(entry.text)))
   } finally {
     await fixture.cleanup()
   }

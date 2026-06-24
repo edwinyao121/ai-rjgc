@@ -1,4 +1,9 @@
 const EVENT_TYPES = [
+  'stage.status.changed',
+  'stage.log.append',
+  'assistant.message.append',
+  'assistant.message.delta',
+  'deployment.updated',
   'work-order.created',
   'message.created',
   'clarification.started',

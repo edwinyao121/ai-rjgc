@@ -39,7 +39,7 @@ export class WorkOrderEventBus extends EventEmitter {
   }
 
   writeSse(response, event) {
-    response.write?.(`id: ${event.id}\n`)
+    response.write?.(`id: ${event.sequence ?? event.id}\n`)
     response.write?.(`event: ${event.type}\n`)
     response.write?.(`data: ${JSON.stringify(event)}\n\n`)
   }

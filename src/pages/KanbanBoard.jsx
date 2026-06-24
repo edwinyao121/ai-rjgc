@@ -484,6 +484,84 @@ function normalizeRuntimeOrder(order) {
   }
 }
 
+export function normalizeChatMessage(message = {}) {
+  const role = message.role || (message.sender === 'ai' ? 'assistant' : message.sender)
+  const sender = message.sender || (role === 'assistant' ? 'ai' : role) || 'ai'
+  const text = String(message.content ?? message.text ?? '')
+  return {
+    id: message.id || `${sender}-${message.createdAt || Date.now()}`,
+    sender,
+    text,
+    status: message.status || 'COMPLETED',
+    time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '刚刚'
+  }
+}
+
+function upsertRuntimeOrder(orders, nextOrder) {
+  if (!nextOrder?.id) return orders
+  return [nextOrder, ...orders.filter(order => order.id !== nextOrder.id)]
+}
+
+function applyGranularEventToOrder(order, event) {
+  if (!order || order.id !== event.workOrderId) return order
+
+  if (event.type === 'stage.status.changed') {
+    const stageId = event.stageId
+    return {
+      ...order,
+      progress: event.progress ?? order.progress,
+      lastUpdate: '刚刚',
+      stages: (order.stages || []).map(stage => {
+        if (stage.key !== stageId && String(stage.id) !== String(stageId)) return stage
+        return {
+          ...stage,
+          ...(event.stage || {}),
+          status: event.status || event.stage?.status || stage.status
+        }
+      })
+    }
+  }
+
+  if (event.type === 'assistant.message.append' && event.message) {
+    const existing = order.messages || []
+    const exists = existing.some(message => message.id === event.message.id)
+    return {
+      ...order,
+      messages: exists ? existing.map(message => message.id === event.message.id ? event.message : message) : [...existing, event.message],
+      lastUpdate: '刚刚'
+    }
+  }
+
+  if (event.type === 'assistant.message.delta' && event.messageId) {
+    return {
+      ...order,
+      messages: (order.messages || []).map(message => {
+        if (message.id !== event.messageId) return message
+        const content = `${message.content ?? message.text ?? ''}${event.delta || ''}`
+        return {
+          ...message,
+          content,
+          text: content,
+          status: event.status || message.status || 'STREAMING'
+        }
+      }),
+      lastUpdate: '刚刚'
+    }
+  }
+
+  if (event.type === 'deployment.updated') {
+    return {
+      ...order,
+      status: event.status || order.status,
+      deploymentUrl: event.deploymentUrl ?? order.deploymentUrl,
+      progress: event.status === 'DEPLOYED' ? 100 : order.progress,
+      lastUpdate: '刚刚'
+    }
+  }
+
+  return order
+}
+
 // Extract and group deliverables (产出文档, 制品, 访问地址) from order stages
 const getDeliverables = (order) => {
   const docs = []
@@ -1347,12 +1425,7 @@ function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
   const messagesEndRef = useRef(null)
   const displayMessages = useMemo(() => {
     if (activeOrder.messages?.length) {
-      return activeOrder.messages.map((message) => ({
-        id: message.id,
-        sender: message.sender,
-        text: message.text,
-        time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '刚刚'
-      }))
+      return activeOrder.messages.map(normalizeChatMessage)
     }
     return [
       {
@@ -1418,6 +1491,8 @@ function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
               <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
                 msg.sender === 'user'
                   ? 'bg-blue-600 text-white rounded-tr-none font-medium'
+                  : msg.status === 'FAILED'
+                    ? 'bg-red-50 text-red-750 rounded-tl-none border border-red-200'
                   : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
               }`}>
                 {msg.text}
@@ -1503,25 +1578,51 @@ function CreateWorkOrderModal({ open, value, onChange, onClose, onSubmit, submit
   )
 }
 
-function StageLogModal({ open, stage, log, loading, error, onClose }) {
+export function StageLogModal({ open, stage, log, loading, error, onClose }) {
+  const [autoScroll, setAutoScroll] = useState(true)
+  const logListRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    setAutoScroll(true)
+  }, [open, stage?.key, stage?.name])
+
+  useEffect(() => {
+    if (!autoScroll || !logListRef.current) return
+    logListRef.current.scrollTop = logListRef.current.scrollHeight
+  }, [autoScroll, log?.entries, log?.content, loading])
+
   if (!open) return null
   const title = log?.stageName || stage?.name || '阶段日志'
-  const content = log?.content || stage?.logSummary || '暂无日志。'
+  const entries = Array.isArray(log?.entries) ? log.entries : []
+  const content = log?.content || stage?.logSummary || ''
+  const status = log?.status || stage?.status || '-'
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl max-h-[82vh] bg-white border border-gray-200 rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 gap-4">
           <div className="min-w-0">
             <h2 className="font-bold text-gray-800 text-base truncate">{title} · 日志详情</h2>
-            <p className="text-xs text-gray-500 mt-1 truncate">{log?.logPath || '运行态摘要'}</p>
+            <p className="text-xs text-gray-500 mt-1 truncate">{log?.logPath || '运行态摘要'} · {status}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 flex-shrink-0">
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+              <input
+                type="checkbox"
+                checked={autoScroll}
+                onChange={(event) => setAutoScroll(event.target.checked)}
+                className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 accent-blue-600"
+              />
+              自动滚动
+            </label>
+            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="p-5 overflow-auto">
+        <div className="p-5 overflow-hidden min-h-0">
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1532,10 +1633,44 @@ function StageLogModal({ open, stage, log, loading, error, onClose }) {
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
-          ) : (
-            <pre className="whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 border border-slate-800 min-h-72">
+          ) : entries.length > 0 ? (
+            <div
+              ref={logListRef}
+              onScroll={(event) => {
+                const target = event.currentTarget
+                const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight
+                if (distanceFromBottom > 80) setAutoScroll(false)
+              }}
+              className="max-h-[58vh] min-h-72 overflow-auto rounded-lg bg-slate-950 border border-slate-800 p-3 space-y-1.5"
+            >
+              {entries.map((entry) => (
+                <div
+                  key={entry.id || `${entry.timestamp}-${entry.text}`}
+                  className={`grid grid-cols-[88px_64px_76px_minmax(0,1fr)] gap-2 rounded px-2 py-1.5 text-xs leading-relaxed ${
+                    entry.level === 'ERROR'
+                      ? 'bg-red-950/80 text-red-100 border border-red-800/70'
+                      : entry.level === 'WARN'
+                        ? 'bg-amber-950/40 text-amber-100 border border-amber-900/40'
+                        : 'text-slate-200'
+                  }`}
+                >
+                  <span className="font-mono text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}</span>
+                  <span className={`font-bold ${entry.level === 'ERROR' ? 'text-red-300' : entry.level === 'WARN' ? 'text-amber-300' : 'text-emerald-300'}`}>{entry.level || 'INFO'}</span>
+                  <span className="font-mono text-slate-400 truncate">{entry.source || 'system'}</span>
+                  <span className="whitespace-pre-wrap break-words">{entry.text}</span>
+                </div>
+              ))}
+            </div>
+          ) : content ? (
+            <pre className="max-h-[58vh] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 border border-slate-800 min-h-72">
               {content}
             </pre>
+          ) : (
+            <div className="min-h-72 rounded-lg border border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-center text-sm text-gray-500">
+              <FileText className="w-6 h-6 text-gray-350 mb-2" />
+              <span className="font-semibold text-gray-600">暂无实时日志</span>
+              <span className="text-xs mt-1">阶段开始后会自动追加日志条目。</span>
+            </div>
           )}
         </div>
       </div>
@@ -1562,6 +1697,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     error: ''
   })
   const lastCreateRequestRef = useRef(newWorkOrderRequest)
+  const seenEventSequencesRef = useRef(new globalThis.Map())
   const [activeDeliverablesType, setActiveDeliverablesType] = useState(null)
   const [deliverablesModalOpen, setDeliverablesModalOpen] = useState(false)
 
@@ -1628,10 +1764,56 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     if (!isRuntimeOrder(selectedOrder)) return undefined
     return subscribeWorkOrderEvents(selectedOrder.id, {
       onEvent: (event) => {
-        const updatedOrder = event.data?.workOrder
+        const sequence = Number(event.sequence)
+        if (Number.isFinite(sequence)) {
+          const seenForOrder = seenEventSequencesRef.current.get(event.workOrderId) || new Set()
+          if (seenForOrder.has(sequence)) return
+          seenForOrder.add(sequence)
+          seenEventSequencesRef.current.set(event.workOrderId, seenForOrder)
+        }
+
+        const updatedOrder = event.workOrder || event.data?.workOrder
         if (updatedOrder) {
-          setRuntimeOrders(prev => [updatedOrder, ...prev.filter(order => order.id !== updatedOrder.id)])
+          setRuntimeOrders(prev => upsertRuntimeOrder(prev, updatedOrder))
           setApiError('')
+        } else if (event.workOrderId) {
+          setRuntimeOrders(prev => prev.map(order => applyGranularEventToOrder(order, event)))
+        }
+
+        if (event.type === 'stage.log.append' && event.entry) {
+          setStageLogModal(prev => {
+            if (!prev.open || prev.stage?.key !== event.stageId) return prev
+            const currentLog = prev.log || {
+              workOrderId: event.workOrderId,
+              stageKey: event.stageId,
+              stageName: prev.stage?.name || event.stageId,
+              status: prev.stage?.status || '-',
+              entries: [],
+              content: ''
+            }
+            const entries = Array.isArray(currentLog.entries) ? currentLog.entries : []
+            if (entries.some(entry => entry.id === event.entry.id)) return prev
+            return {
+              ...prev,
+              log: {
+                ...currentLog,
+                entries: [...entries, event.entry]
+              },
+              loading: false,
+              error: ''
+            }
+          })
+        }
+
+        if (event.type === 'stage.status.changed') {
+          setStageLogModal(prev => {
+            if (!prev.open || prev.stage?.key !== event.stageId) return prev
+            return {
+              ...prev,
+              stage: event.stage || prev.stage,
+              log: prev.log ? { ...prev.log, status: event.status || prev.log.status } : prev.log
+            }
+          })
         }
       },
       onError: () => {

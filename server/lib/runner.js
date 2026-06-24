@@ -17,7 +17,9 @@ export function runCommand(command, {
   cwd = process.cwd(),
   env = {},
   timeoutMs = 10 * 60 * 1000,
-  maxOutputBytes = 1024 * 1024
+  maxOutputBytes = 1024 * 1024,
+  onStdoutLine = null,
+  onStderrLine = null
 } = {}) {
   assertCommandArray(command)
 
@@ -30,6 +32,9 @@ export function runCommand(command, {
 
     let stdout = ''
     let stderr = ''
+    let stdoutPending = ''
+    let stderrPending = ''
+    const lineCallbacks = []
     let timedOut = false
     const timer = setTimeout(() => {
       timedOut = true
@@ -38,25 +43,39 @@ export function runCommand(command, {
     }, timeoutMs)
 
     child.stdout.on('data', (chunk) => {
-      stdout = trimBufferedOutput(stdout + chunk.toString(), maxOutputBytes)
+      const text = chunk.toString()
+      stdout = trimBufferedOutput(stdout + text, maxOutputBytes)
+      stdoutPending = emitCompleteLines(stdoutPending + text, onStdoutLine, lineCallbacks)
     })
     child.stderr.on('data', (chunk) => {
-      stderr = trimBufferedOutput(stderr + chunk.toString(), maxOutputBytes)
+      const text = chunk.toString()
+      stderr = trimBufferedOutput(stderr + text, maxOutputBytes)
+      stderrPending = emitCompleteLines(stderrPending + text, onStderrLine, lineCallbacks)
     })
     child.on('error', (error) => {
       clearTimeout(timer)
-      resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${error.message}`.trim(), timedOut })
+      if (stdoutPending) emitLine(stdoutPending, onStdoutLine, lineCallbacks)
+      if (stderrPending) emitLine(stderrPending, onStderrLine, lineCallbacks)
+      Promise.allSettled(lineCallbacks).then(() => {
+        resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${error.message}`.trim(), timedOut })
+      })
     })
     child.on('close', (exitCode) => {
       clearTimeout(timer)
-      resolve({ exitCode: timedOut ? 124 : exitCode ?? 0, stdout, stderr, timedOut })
+      if (stdoutPending) emitLine(stdoutPending, onStdoutLine, lineCallbacks)
+      if (stderrPending) emitLine(stderrPending, onStderrLine, lineCallbacks)
+      Promise.allSettled(lineCallbacks).then(() => {
+        resolve({ exitCode: timedOut ? 124 : exitCode ?? 0, stdout, stderr, timedOut })
+      })
     })
   })
 }
 
 export function startCommand(command, {
   cwd = process.cwd(),
-  env = {}
+  env = {},
+  onStdoutLine = null,
+  onStderrLine = null
 } = {}) {
   assertCommandArray(command)
   const child = spawn(command[0], command.slice(1), {
@@ -64,8 +83,19 @@ export function startCommand(command, {
     env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', 'pipe']
   })
-  child.stdout?.on('data', () => {})
-  child.stderr?.on('data', () => {})
+  let stdoutPending = ''
+  let stderrPending = ''
+  const lineCallbacks = []
+  child.stdout?.on('data', (chunk) => {
+    stdoutPending = emitCompleteLines(stdoutPending + chunk.toString(), onStdoutLine, lineCallbacks)
+  })
+  child.stderr?.on('data', (chunk) => {
+    stderrPending = emitCompleteLines(stderrPending + chunk.toString(), onStderrLine, lineCallbacks)
+  })
+  child.on('close', () => {
+    if (stdoutPending) emitLine(stdoutPending, onStdoutLine, lineCallbacks)
+    if (stderrPending) emitLine(stderrPending, onStderrLine, lineCallbacks)
+  })
   return child
 }
 
@@ -131,4 +161,18 @@ function probeHttp(url) {
 function trimBufferedOutput(value, maxOutputBytes) {
   if (Buffer.byteLength(value, 'utf8') <= maxOutputBytes) return value
   return value.slice(-maxOutputBytes)
+}
+
+function emitCompleteLines(buffer, callback, pending) {
+  const lines = buffer.split(/\r?\n/)
+  const remainder = lines.pop() ?? ''
+  for (const line of lines) {
+    emitLine(line, callback, pending)
+  }
+  return remainder
+}
+
+function emitLine(line, callback, pending) {
+  if (!callback) return
+  pending.push(Promise.resolve().then(() => callback(line)))
 }

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { createPipelineStages, WORK_ORDER_STATUS } from './stages.js'
 
 const WORK_ORDER_ID_PATTERN = /^WO-\d{8}-\d{3}$/
+const STAGE_KEY_PATTERN = /^[a-z]+$/
 
 export function toDateKey(date = new Date()) {
   const year = date.getFullYear()
@@ -16,6 +17,14 @@ export function assertWorkOrderId(id) {
   if (!WORK_ORDER_ID_PATTERN.test(id)) {
     const error = new Error('Invalid work order id')
     error.code = 'INVALID_WORK_ORDER_ID'
+    throw error
+  }
+}
+
+export function assertStageKey(stageKey) {
+  if (!STAGE_KEY_PATTERN.test(stageKey)) {
+    const error = new Error('Invalid stage key')
+    error.code = 'INVALID_STAGE_KEY'
     throw error
   }
 }
@@ -33,6 +42,10 @@ export class WorkOrderStore {
   } = {}) {
     this.rootDir = rootDir
     this.requirementsDir = requirementsDir
+    this.eventQueues = new Map()
+    this.eventSequences = new Map()
+    this.stageLogQueues = new Map()
+    this.stageLogSequences = new Map()
   }
 
   async init() {
@@ -51,6 +64,19 @@ export class WorkOrderStore {
 
   getEventsPath(id) {
     return path.join(this.getWorkOrderDir(id), 'events.jsonl')
+  }
+
+  getMessagesPath(id) {
+    return path.join(this.getWorkOrderDir(id), 'messages.json')
+  }
+
+  getStageLogsDir(id) {
+    return path.join(this.getWorkOrderDir(id), 'logs')
+  }
+
+  getStageLogPath(id, stageKey) {
+    assertStageKey(stageKey)
+    return path.join(this.getStageLogsDir(id), `${stageKey}.jsonl`)
   }
 
   getAppDir(id) {
@@ -75,6 +101,21 @@ export class WorkOrderStore {
     const appDir = this.getAppDir(id)
     await fs.mkdir(appDir, { recursive: true })
 
+    const messages = [
+      createMessage({
+        role: 'user',
+        content: String(message || '').trim(),
+        createdAt: now.toISOString(),
+        phase: 'clarification'
+      }),
+      createMessage({
+        role: 'assistant',
+        content: '已创建工单，正在进行需求澄清。',
+        createdAt: now.toISOString(),
+        phase: 'clarification'
+      })
+    ]
+
     const state = {
       id,
       title: inferTitle(message),
@@ -91,20 +132,7 @@ export class WorkOrderStore {
       deploymentUrl: null,
       deploymentPort: null,
       requirementsPath: null,
-      messages: [
-        {
-          id: randomUUID(),
-          sender: 'user',
-          text: String(message || '').trim(),
-          createdAt: now.toISOString()
-        },
-        {
-          id: randomUUID(),
-          sender: 'ai',
-          text: '已创建工单，正在进行需求澄清。',
-          createdAt: now.toISOString()
-        }
-      ],
+      messages,
       stages: createPipelineStages(now)
     }
 
@@ -117,6 +145,10 @@ export class WorkOrderStore {
     state.updatedAt = now.toISOString()
     state.lastUpdate = '刚刚'
     await fs.mkdir(this.getWorkOrderDir(state.id), { recursive: true })
+    if (Array.isArray(state.messages)) {
+      state.messages = state.messages.map((message) => normalizeMessage(message))
+      await this.writeMessages(state.id, state.messages)
+    }
     const statePath = this.getStatePath(state.id)
     const tempPath = `${statePath}.tmp`
     await fs.writeFile(tempPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
@@ -128,7 +160,18 @@ export class WorkOrderStore {
     assertWorkOrderId(id)
     try {
       const raw = await fs.readFile(this.getStatePath(id), 'utf8')
-      return JSON.parse(raw)
+      const state = JSON.parse(raw)
+      const persistedMessages = await this.readMessages(id)
+      if (persistedMessages) {
+        state.messages = persistedMessages
+      } else if (Array.isArray(state.messages)) {
+        state.messages = state.messages.map((message) => normalizeMessage(message))
+        await this.writeMessages(id, state.messages)
+      } else {
+        state.messages = []
+        await this.writeMessages(id, state.messages)
+      }
+      return state
     } catch (error) {
       if (error.code === 'ENOENT') return null
       throw error
@@ -149,11 +192,24 @@ export class WorkOrderStore {
 
   async appendEvent(workOrderId, event) {
     assertWorkOrderId(workOrderId)
-    await fs.mkdir(this.getWorkOrderDir(workOrderId), { recursive: true })
-    await fs.appendFile(this.getEventsPath(workOrderId), `${JSON.stringify(event)}\n`, 'utf8')
+    return this.enqueueEvent(workOrderId, async () => {
+      await fs.mkdir(this.getWorkOrderDir(workOrderId), { recursive: true })
+      const currentSequence = await this.getLastEventSequence(workOrderId)
+      const sequence = Number.isInteger(event.sequence) ? event.sequence : currentSequence + 1
+      const savedEvent = {
+        id: event.id || randomUUID(),
+        sequence,
+        workOrderId,
+        timestamp: event.timestamp || new Date().toISOString(),
+        ...event
+      }
+      this.eventSequences.set(workOrderId, Math.max(currentSequence, sequence))
+      await fs.appendFile(this.getEventsPath(workOrderId), `${JSON.stringify(savedEvent)}\n`, 'utf8')
+      return savedEvent
+    })
   }
 
-  async readEvents(workOrderId) {
+  async readEvents(workOrderId, { afterSequence = null } = {}) {
     assertWorkOrderId(workOrderId)
     try {
       const raw = await fs.readFile(this.getEventsPath(workOrderId), 'utf8')
@@ -161,6 +217,7 @@ export class WorkOrderStore {
         .split('\n')
         .filter(Boolean)
         .map((line) => JSON.parse(line))
+        .filter((event) => afterSequence == null || Number(event.sequence || 0) > Number(afterSequence))
     } catch (error) {
       if (error.code === 'ENOENT') return []
       throw error
@@ -182,4 +239,166 @@ export class WorkOrderStore {
     await fs.writeFile(filePath, content, 'utf8')
     return filePath
   }
+
+  async readMessages(workOrderId) {
+    assertWorkOrderId(workOrderId)
+    try {
+      const raw = await fs.readFile(this.getMessagesPath(workOrderId), 'utf8')
+      return JSON.parse(raw).map((message) => normalizeMessage(message))
+    } catch (error) {
+      if (error.code === 'ENOENT') return null
+      throw error
+    }
+  }
+
+  async writeMessages(workOrderId, messages) {
+    assertWorkOrderId(workOrderId)
+    await fs.mkdir(this.getWorkOrderDir(workOrderId), { recursive: true })
+    const normalized = messages.map((message) => normalizeMessage(message))
+    const messagesPath = this.getMessagesPath(workOrderId)
+    const tempPath = `${messagesPath}.tmp`
+    await fs.writeFile(tempPath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8')
+    await fs.rename(tempPath, messagesPath)
+    return normalized
+  }
+
+  async appendMessage(workOrderId, message) {
+    const messages = (await this.readMessages(workOrderId)) || []
+    const next = normalizeMessage(message)
+    messages.push(next)
+    await this.writeMessages(workOrderId, messages)
+    return next
+  }
+
+  async appendStageLogEntry(workOrderId, stageKey, entry) {
+    assertWorkOrderId(workOrderId)
+    assertStageKey(stageKey)
+    const queueKey = `${workOrderId}:${stageKey}`
+    return this.enqueueStageLog(queueKey, async () => {
+      await fs.mkdir(this.getStageLogsDir(workOrderId), { recursive: true })
+      const currentSequence = await this.getLastStageLogSequence(workOrderId, stageKey)
+      const sequence = Number.isInteger(entry.sequence) ? entry.sequence : currentSequence + 1
+      const savedEntry = {
+        id: entry.id || randomUUID(),
+        sequence,
+        workOrderId,
+        stageId: entry.stageId || stageKey,
+        timestamp: entry.timestamp || new Date().toISOString(),
+        level: entry.level || 'INFO',
+        source: entry.source || 'system',
+        text: String(entry.text || '')
+      }
+      this.stageLogSequences.set(queueKey, Math.max(currentSequence, sequence))
+      await fs.appendFile(this.getStageLogPath(workOrderId, stageKey), `${JSON.stringify(savedEntry)}\n`, 'utf8')
+      return savedEntry
+    })
+  }
+
+  async readStageLogEntries(workOrderId, stageKey) {
+    assertWorkOrderId(workOrderId)
+    assertStageKey(stageKey)
+    try {
+      const raw = await fs.readFile(this.getStageLogPath(workOrderId, stageKey), 'utf8')
+      return raw
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line))
+    } catch (error) {
+      if (error.code === 'ENOENT') return []
+      throw error
+    }
+  }
+
+  async getLastEventSequence(workOrderId) {
+    if (this.eventSequences.has(workOrderId)) {
+      return this.eventSequences.get(workOrderId)
+    }
+    const events = await this.readEvents(workOrderId)
+    const sequence = events.reduce((max, event) => Math.max(max, Number(event.sequence || 0)), 0)
+    this.eventSequences.set(workOrderId, sequence)
+    return sequence
+  }
+
+  async getLastStageLogSequence(workOrderId, stageKey) {
+    const queueKey = `${workOrderId}:${stageKey}`
+    if (this.stageLogSequences.has(queueKey)) {
+      return this.stageLogSequences.get(queueKey)
+    }
+    const entries = await this.readStageLogEntries(workOrderId, stageKey)
+    const sequence = entries.reduce((max, entry) => Math.max(max, Number(entry.sequence || 0)), 0)
+    this.stageLogSequences.set(queueKey, sequence)
+    return sequence
+  }
+
+  enqueueEvent(workOrderId, task) {
+    const previous = this.eventQueues.get(workOrderId) || Promise.resolve()
+    const next = previous.then(task, task)
+    this.eventQueues.set(workOrderId, next.catch(() => {}))
+    return next
+  }
+
+  enqueueStageLog(queueKey, task) {
+    const previous = this.stageLogQueues.get(queueKey) || Promise.resolve()
+    const next = previous.then(task, task)
+    this.stageLogQueues.set(queueKey, next.catch(() => {}))
+    return next
+  }
+}
+
+export function createMessage({
+  id = randomUUID(),
+  role = 'assistant',
+  sender = null,
+  content = '',
+  text = null,
+  phase = 'execution',
+  stageId = null,
+  status = 'COMPLETED',
+  createdAt = new Date().toISOString(),
+  updatedAt = createdAt
+} = {}) {
+  return normalizeMessage({
+    id,
+    role,
+    sender,
+    content,
+    text,
+    phase,
+    stageId,
+    status,
+    createdAt,
+    updatedAt
+  })
+}
+
+export function normalizeMessage(message = {}) {
+  const role = message.role || senderToRole(message.sender)
+  const content = String(message.content ?? message.text ?? '')
+  const createdAt = message.createdAt || new Date().toISOString()
+  const normalizedRole = ['user', 'assistant', 'system', 'tool'].includes(role) ? role : 'assistant'
+  return {
+    id: message.id || randomUUID(),
+    role: normalizedRole,
+    sender: roleToSender(normalizedRole),
+    phase: message.phase || (message.stageId ? 'execution' : 'clarification'),
+    stageId: message.stageId ?? null,
+    content,
+    text: content,
+    status: message.status || 'COMPLETED',
+    createdAt,
+    updatedAt: message.updatedAt || createdAt
+  }
+}
+
+function senderToRole(sender) {
+  if (sender === 'ai') return 'assistant'
+  if (sender === 'user') return 'user'
+  if (sender === 'system') return 'system'
+  if (sender === 'tool') return 'tool'
+  return 'assistant'
+}
+
+function roleToSender(role) {
+  if (role === 'assistant') return 'ai'
+  return role
 }
