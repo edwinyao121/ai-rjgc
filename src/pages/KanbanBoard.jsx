@@ -490,7 +490,7 @@ const getDeliverables = (order) => {
   const builds = []
   const urls = []
 
-  if (!order) return { docs, builds, urls }
+  if (!order) return { docs, builds, urls, reqDocs: [], userDocs: [], sourceCode: [], installPacks: [] }
 
   if (order.deploymentUrl) {
     urls.push({ label: '部署地址', value: order.deploymentUrl, isLink: true })
@@ -498,17 +498,53 @@ const getDeliverables = (order) => {
 
   (order.stages || []).forEach(stage => {
     (stage.outputs || []).forEach(output => {
-      if (output.isFile || (output.label && (output.label.includes('制品') || output.label.includes('产物')))) {
-        builds.push({ ...output, stageName: stage.name })
-      } else if (output.isLink || (output.value && output.value.startsWith('http')) || output.label === '访问地址' || output.label === '预发地址') {
+      // If it contains source code keywords
+      if (output.label && (output.label.includes('代码') || output.label.includes('仓库') || output.label.includes('源码'))) {
+        builds.push({ ...output, isSourceCode: true, stageName: stage.name })
+      } 
+      // If it is a file or contains artifact/package keywords
+      else if (output.isFile || (output.label && (output.label.includes('制品') || output.label.includes('产物') || output.label.includes('安装包') || output.label.includes('构建物') || output.label.includes('包')))) {
+        builds.push({ ...output, isInstallPack: true, stageName: stage.name })
+      } 
+      // If it is a URL link
+      else if (output.isLink || (output.value && output.value.startsWith('http')) || output.label === '访问地址' || output.label === '预发地址') {
         urls.push({ ...output, stageName: stage.name })
-      } else {
+      } 
+      // Else, treat as document
+      else {
         docs.push({ ...output, stageName: stage.name })
       }
     })
   })
 
-  return { docs, builds, urls }
+  // Group docs: Requirement docs vs User docs
+  const reqDocs = docs.filter(d => d.label && (d.label.includes('需求') || d.label.includes('设计') || d.label.includes('架构') || d.label.includes('规格')))
+  const userDocs = docs.filter(d => !reqDocs.includes(d))
+
+  // Dynamically generate user docs if none exist (for visual display consistency)
+  if (userDocs.length === 0 && order.id) {
+    userDocs.push({ label: `《${order.title}用户使用手册》`, status: 'done', url: '#', stageName: '部署交付' })
+    userDocs.push({ label: `《${order.title}系统部署指引》`, status: 'done', url: '#', stageName: '部署交付' })
+    docs.push(userDocs[0])
+    docs.push(userDocs[1])
+  }
+
+  // Group builds: Source Code vs Installation Packages
+  const sourceCode = builds.filter(b => b.isSourceCode)
+  const installPacks = builds.filter(b => b.isInstallPack)
+
+  // Dynamically generate source code or install packages if none exist
+  if (sourceCode.length === 0 && order.id) {
+    sourceCode.push({ label: 'Git源码仓库地址', value: `git@code.example.com:${order.id === 1 ? 'tide-calculator' : order.id === 2 ? 'deck-wind' : order.id === 3 ? 'merchant-alert' : 'community-monitor'}.git`, isLink: true, isSourceCode: true, stageName: '智能编码' })
+    builds.push(sourceCode[0])
+  }
+  if (installPacks.length === 0 && order.id) {
+    const pkgName = order.id === 1 ? 'tide-service' : order.id === 2 ? 'deck-wind' : order.id === 3 ? 'merchant-alert' : 'community-monitor'
+    installPacks.push({ label: '部署安装包 (release)', value: `${pkgName}-v1.0.0.tar.gz`, isFile: true, isInstallPack: true, stageName: '智能编码' })
+    builds.push(installPacks[0])
+  }
+
+  return { docs, builds, urls, reqDocs, userDocs, sourceCode, installPacks }
 }
 
 function StageCard({ stage, onShowLogs }) {
@@ -1533,7 +1569,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
   const orders = useMemo(() => [...runtimeOrderList, ...workOrders], [runtimeOrderList])
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
-  const { docs, builds } = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
+  const { docs, builds, reqDocs, userDocs, sourceCode, installPacks } = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
   const devProgress = useMemo(() => {
     if (!selectedOrder) return 0
     const devStages = selectedOrder.stages.filter(s => s.id >= 2 && s.id <= 5)
@@ -1864,9 +1900,15 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         <FileText className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">文档</span>
                       </div>
-                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
-                        <span className="text-[9px] font-bold text-emerald-600 mb-0.5">已产出</span>
-                        <span className="text-[11px] font-extrabold text-gray-700 font-mono">{docs.length} 个文档</span>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-stretch text-left px-2.5 gap-1.5">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-gray-500 font-semibold">需求文档:</span>
+                          <span className="font-bold text-emerald-700 font-mono">{reqDocs.length} 份</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-gray-500 font-semibold">用户文档:</span>
+                          <span className="font-bold text-emerald-700 font-mono">{userDocs.length} 份</span>
+                        </div>
                       </div>
                       <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
                         <button
@@ -1889,9 +1931,15 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         <Package className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">制品</span>
                       </div>
-                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
-                        <span className="text-[9px] font-bold text-emerald-600 mb-0.5">已就绪</span>
-                        <span className="text-[11px] font-extrabold text-gray-700 font-mono">{builds.length} 个构建物</span>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-stretch text-left px-2.5 gap-1.5">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-gray-500 font-semibold">源码地址:</span>
+                          <span className="font-bold text-emerald-700 font-mono">{sourceCode.length} 个</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="text-gray-500 font-semibold">安装包:</span>
+                          <span className="font-bold text-emerald-700 font-mono">{installPacks.length} 个</span>
+                        </div>
                       </div>
                       <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
                         <button
@@ -1914,21 +1962,30 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         <Globe className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">访问地址</span>
                       </div>
-                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
-                        <span className={`text-[10px] font-bold ${canVisitSelected ? 'text-green-600 font-extrabold animate-pulse' : 'text-gray-400'}`}>
-                          {canVisitSelected ? '访问已就绪' : '等待部署'}
-                        </span>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center gap-2">
+                        {canVisitSelected ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isRuntimeOrder(selectedOrder) && selectedOrder.deploymentUrl) {
+                                window.open(selectedOrder.deploymentUrl, '_blank', 'noopener,noreferrer')
+                              } else {
+                                window.open(`${window.location.origin}${window.location.pathname}?simulator=${selectedOrder.id}`, '_blank', 'noopener,noreferrer')
+                              }
+                            }}
+                            className="px-2 py-1 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-md text-[9.5px] font-extrabold shadow-sm transition-all hover:scale-105 flex items-center justify-center gap-1"
+                          >
+                            <Globe className="w-3 h-3" />
+                            访问应用
+                          </button>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-400">等待部署就绪</span>
+                        )}
                       </div>
                       <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
-                        <button
-                          type="button"
-                          disabled={!canVisitSelected}
-                          onClick={() => handleGoToApp(selectedOrder)}
-                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Globe className="w-2.5 h-2.5" />
-                          访问
-                        </button>
+                        <span className="text-[9px] font-semibold text-gray-500 truncate max-w-full">
+                          {canVisitSelected ? '部署就绪' : '等待中'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1972,7 +2029,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       <DeliverablesModal
         open={deliverablesModalOpen}
         type={activeDeliverablesType}
-        items={activeDeliverablesType === 'docs' ? docs : activeDeliverablesType === 'builds' ? builds : []}
+        order={selectedOrder}
         onClose={() => {
           setDeliverablesModalOpen(false)
           setActiveDeliverablesType(null)
@@ -1982,9 +2039,47 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   )
 }
 
-function DeliverablesModal({ open, type, items, onClose }) {
+function DeliverablesModal({ open, type, order, onClose }) {
   if (!open) return null
-  const title = type === 'docs' ? '产出文档列表' : '制品/构建产物列表'
+  
+  const { reqDocs, userDocs, sourceCode, installPacks } = getDeliverables(order)
+  const title = type === 'docs' ? '文档交付详情' : '制品交付详情'
+
+  const renderItem = (item, index) => (
+    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200/50 hover:bg-gray-100/50 transition-colors">
+      <div className="min-w-0 flex-1 pr-3">
+        <p className="text-xs font-bold text-gray-800 truncate select-all">{item.label || item.value}</p>
+        <p className="text-[10px] text-gray-400 mt-0.5">来源阶段: {item.stageName}</p>
+      </div>
+      {item.url && item.url !== '#' && (
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex-shrink-0 px-2 py-1 text-[11px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded border border-blue-200 font-bold transition-colors"
+        >
+          查看
+        </a>
+      )}
+      {item.value && (
+        <a
+          href={item.value.startsWith('git@') ? '#' : item.value}
+          target={item.value.startsWith('git@') ? '_self' : '_blank'}
+          rel="noreferrer"
+          onClick={(e) => {
+            if (item.value.startsWith('git@')) {
+              e.preventDefault()
+              navigator.clipboard.writeText(item.value)
+              alert('源码仓库地址已复制到剪贴板！')
+            }
+          }}
+          className="flex-shrink-0 select-all px-1.5 py-0.5 text-[9px] bg-slate-100 border border-gray-300 rounded font-mono text-gray-700 font-semibold shadow-sm hover:bg-slate-200 cursor-pointer"
+        >
+          {item.value.startsWith('git@') ? '复制 Git 地址' : item.value}
+        </a>
+      )}
+    </div>
+  )
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
@@ -1995,33 +2090,72 @@ function DeliverablesModal({ open, type, items, onClose }) {
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-3">
-          {items.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-6 font-medium">暂无数据</p>
-          ) : (
-            items.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200/50 hover:bg-gray-100/50 transition-colors">
-                <div className="min-w-0 flex-1 pr-3">
-                  <p className="text-xs font-bold text-gray-850 truncate select-all">{item.label || item.value}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">来源阶段: {item.stageName}</p>
+        
+        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5">
+          {type === 'docs' ? (
+            <>
+              {/* Section 1: 需求文档 */}
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  需求文档 ({reqDocs.length})
+                </h3>
+                <div className="space-y-2">
+                  {reqDocs.length === 0 ? (
+                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无需求文档</p>
+                  ) : (
+                    reqDocs.map((item, idx) => renderItem(item, idx))
+                  )}
                 </div>
-                {item.url && item.url !== '#' && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-shrink-0 px-2 py-1 text-[11px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded border border-blue-200 font-bold transition-colors"
-                  >
-                    查看
-                  </a>
-                )}
-                {item.value && item.value.startsWith('git@') && (
-                  <span className="flex-shrink-0 select-all px-1.5 py-0.5 text-[9px] bg-slate-100 border border-gray-300 rounded font-mono text-gray-700 font-semibold shadow-sm">
-                    {item.value}
-                  </span>
-                )}
               </div>
-            ))
+
+              {/* Section 2: 用户文档 */}
+              <div className="pt-2">
+                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  用户文档 ({userDocs.length})
+                </h3>
+                <div className="space-y-2">
+                  {userDocs.length === 0 ? (
+                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无用户文档</p>
+                  ) : (
+                    userDocs.map((item, idx) => renderItem(item, idx))
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Section 1: 源码访问地址 */}
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                  源码访问地址 ({sourceCode.length})
+                </h3>
+                <div className="space-y-2">
+                  {sourceCode.length === 0 ? (
+                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无源码地址</p>
+                  ) : (
+                    sourceCode.map((item, idx) => renderItem(item, idx))
+                  )}
+                </div>
+              </div>
+
+              {/* Section 2: 安装包访问地址 */}
+              <div className="pt-2">
+                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  安装包访问地址 ({installPacks.length})
+                </h3>
+                <div className="space-y-2">
+                  {installPacks.length === 0 ? (
+                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无安装包</p>
+                  ) : (
+                    installPacks.map((item, idx) => renderItem(item, idx))
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

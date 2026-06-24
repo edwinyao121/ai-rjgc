@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LayoutDashboard, Kanban, Bot, Settings, FileText, Shield, Network, ChevronDown, Bell, Search, Plus, Menu, Factory, ShoppingBag } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
-import KanbanBoard from './pages/KanbanBoard'
+import KanbanBoard, { AppSimulator } from './pages/KanbanBoard'
 import AppStore from './pages/AppStore'
 import AgentCenter from './pages/AgentCenter'
 import RuleEngine from './pages/RuleEngine'
@@ -23,6 +23,20 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showAgentTip, setShowAgentTip] = useState(false)
   const [newWorkOrderRequest, setNewWorkOrderRequest] = useState(0)
+
+  // Check for simulator mode
+  const urlParams = new URLSearchParams(window.location.search)
+  const simulatorAppIdStr = urlParams.get('simulator')
+  if (simulatorAppIdStr) {
+    const appId = parseInt(simulatorAppIdStr, 10)
+    return (
+      <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
+        <div className="w-full h-full max-w-6xl">
+          <AppSimulator appId={appId} onClose={() => window.close()} closeLabel="关闭模拟器窗口" />
+        </div>
+      </div>
+    )
+  }
 
   const renderPage = () => {
     switch (activePage) {
