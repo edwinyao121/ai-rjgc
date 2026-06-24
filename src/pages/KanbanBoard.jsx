@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target } from 'lucide-react'
+import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X } from 'lucide-react'
 
 const workOrders = [
   {
@@ -1193,7 +1193,7 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
 }
 
 // AI Chat Panel Component
-function AIChatPanel({ activeOrder, onAdvanceStages }) {
+function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -1253,31 +1253,40 @@ function AIChatPanel({ activeOrder, onAdvanceStages }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-60 flex-shrink-0 w-full">
-      <div className="w-full max-w-4xl mx-auto flex flex-col h-full min-h-0">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-full w-full">
+      <div className="w-full flex flex-col h-full min-h-0">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
           <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
             <Bot className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0 flex-1 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-gray-800 text-xs">AI 研发助手</h3>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-bold text-gray-800 text-xs flex-shrink-0">AI 研发助手</h3>
               <span className="text-[10px] text-gray-400">|</span>
-              <p className="text-[10px] text-gray-500 truncate">当前应用: {activeOrder.title}</p>
+              <p className="text-[10px] text-gray-500 truncate" title={activeOrder.title}>当前应用: {activeOrder.title}</p>
             </div>
-            {loading && (
-              <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-[10px]">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
-                <span>AI 智能研发推进中...</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {loading && (
+                <div className="flex items-center gap-1 text-blue-600 font-semibold text-[9px] flex-shrink-0">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
+                  <span>推进中...</span>
+                </div>
+              )}
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-650 transition-colors flex-shrink-0"
+                title="收起助手"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[80%] rounded-lg p-2.5 leading-relaxed ${
+              <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
                 msg.sender === 'user'
                   ? 'bg-blue-600 text-white rounded-tr-none font-medium'
                   : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
@@ -1295,16 +1304,16 @@ function AIChatPanel({ activeOrder, onAdvanceStages }) {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={`请输入对于【${activeOrder.title}】的定制需求（如：优化参数、接入新数据源、配置警报规则等）...`}
+            placeholder={`给【${activeOrder.title}】提需求...`}
             disabled={loading}
             className="flex-1 min-w-0 text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
           />
           <button
             type="submit"
             disabled={loading || !inputValue.trim()}
-            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
           >
-            发送需求
+            发送
           </button>
         </form>
       </div>
@@ -1316,6 +1325,7 @@ function KanbanBoard() {
   const [orders, setOrders] = useState(workOrders)
   const [selectedOrderId, setSelectedOrderId] = useState(workOrders[0].id)
   const [activeAppView, setActiveAppView] = useState(null)
+  const [isChatOpen, setIsChatOpen] = useState(true)
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
 
@@ -1443,8 +1453,8 @@ function KanbanBoard() {
         </div>
       </div>
 
-      <div className="flex gap-4" style={{ height: 'calc(100vh - 200px)' }}>
-        <div className="w-72 flex-shrink-0 space-y-3">
+      <div className="flex" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="w-72 flex-shrink-0 space-y-3 mr-4">
           <h2 className="font-semibold text-gray-700 text-sm px-1">应用列表 ({orders.length})</h2>
           <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
             {orders.map(order => (
@@ -1459,55 +1469,65 @@ function KanbanBoard() {
           </div>
         </div>
 
-        {/* Stack the Kanban board and AI chat panel vertically */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0 h-full">
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
+        <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
+                <button
+                  onClick={() => setActiveAppView(selectedOrder.id)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  访问部署应用
+                </button>
+                {!isChatOpen && (
                   <button
-                    onClick={() => setActiveAppView(selectedOrder.id)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                    onClick={() => setIsChatOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
                   >
-                    <Globe className="w-3.5 h-3.5" />
-                    访问部署应用
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    AI 研发助手
                   </button>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
+                )}
               </div>
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
-                  <CheckCircle className="w-3 h-3 text-green-600" />
-                  <span className="text-green-700">{completedCount} 完成</span>
-                </div>
-                <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
-                  <Clock className="w-3 h-3 text-blue-600" />
-                  <span className="text-blue-700">{activeCount} 进行中</span>
-                </div>
-                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
-                  <Lock className="w-3 h-3 text-gray-500" />
-                  <span className="text-gray-600">{pendingCount} 等待</span>
-                </div>
-              </div>
+              <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
             </div>
-
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-              <div className="flex items-stretch gap-4 h-full pb-2">
-                {selectedOrder.stages.map((stage, index) => (
-                  <StageCard
-                    key={stage.id}
-                    stage={stage}
-                    index={index}
-                    isLast={index === selectedOrder.stages.length - 1}
-                  />
-                ))}
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
+                <CheckCircle className="w-3 h-3 text-green-600" />
+                <span className="text-green-700">{completedCount} 完成</span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
+                <Clock className="w-3 h-3 text-blue-600" />
+                <span className="text-blue-700">{activeCount} 进行中</span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
+                <Lock className="w-3 h-3 text-gray-500" />
+                <span className="text-gray-600">{pendingCount} 等待</span>
               </div>
             </div>
           </div>
 
-          {/* AI R&D Assistant Panel */}
-          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} />
+          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex items-stretch gap-4 h-full pb-2">
+              {selectedOrder.stages.map((stage, index) => (
+                <StageCard
+                  key={stage.id}
+                  stage={stage}
+                  index={index}
+                  isLast={index === selectedOrder.stages.length - 1}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* AI R&D Assistant Panel with collapsible layout */}
+        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 flex h-full overflow-hidden ${
+          isChatOpen ? 'w-96 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
+        }`}>
+          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} onClose={() => setIsChatOpen(false)} />
         </div>
       </div>
     </div>
