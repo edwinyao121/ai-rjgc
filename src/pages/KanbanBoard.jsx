@@ -516,6 +516,60 @@ function StageCard({ stage, onShowLogs }) {
   const Icon = stage.icon
   const visualStatus = normalizeStageStatus(stage.status)
 
+  const stageAgents = {
+    1: '需求设计 Agent',
+    2: '需求设计 Agent',
+    3: '代码生成 Agent',
+    4: '测试质量 Agent',
+    5: '部署交付 Agent'
+  }
+
+  const progress = (() => {
+    if (visualStatus === 'completed') return 100
+    if (visualStatus === 'pending') return 0
+    if (visualStatus === 'failed') return 0
+    
+    // Active stage: check for explicit progress first
+    if (stage.items && stage.items.length > 0) {
+      const itemWithProgress = stage.items.find(item => typeof item.progress === 'number')
+      if (itemWithProgress) {
+        return itemWithProgress.progress
+      }
+      
+      // Parse fractions or percentages in item values
+      for (const item of stage.items) {
+        if (item.value) {
+          const pctMatch = String(item.value).match(/(\d+)%/)
+          if (pctMatch) return parseInt(pctMatch[1], 10)
+          
+          const fracMatch = String(item.value).match(/(\d+)\s*\/\s*(\d+)/)
+          if (fracMatch) {
+            const num = parseInt(fracMatch[1], 10)
+            const den = parseInt(fracMatch[2], 10)
+            if (den > 0) return Math.round((num / den) * 100)
+          }
+        }
+      }
+      
+      // Check for completed item keywords
+      const completedItems = stage.items.filter(item => 
+        item.status === 'done' || 
+        item.status === 'passed' ||
+        (item.value && (item.value.includes('完成') || item.value.includes('通过') || item.value.includes('成功')))
+      ).length
+      if (completedItems > 0) {
+        return Math.round((completedItems / stage.items.length) * 100)
+      }
+    }
+    
+    // Default fallback based on stage ID
+    if (stage.id === 2) return 60
+    if (stage.id === 3) return 45
+    if (stage.id === 4) return 30
+    if (stage.id === 5) return 20
+    return 50
+  })()
+
   return (
     <div className={`w-40 rounded-xl ${colors.bg} border border-gray-200 flex flex-col flex-shrink-0 transition-all ${
       visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100 scale-[1.02]' : ''
@@ -544,8 +598,8 @@ function StageCard({ stage, onShowLogs }) {
       </div>
 
       {/* Body: Center status and duration */}
-      <div className="flex-1 p-2 flex flex-col justify-center items-center text-center">
-        <span className={`text-[9.5px] font-bold tracking-wider mb-0.5 ${
+      <div className="flex-1 p-2 flex flex-col justify-center items-center text-center gap-2">
+        <span className={`text-[9.5px] font-bold tracking-wider ${
           visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
           visualStatus === 'failed' ? 'text-red-500' :
           visualStatus === 'completed' ? 'text-green-650' : 'text-gray-400'
@@ -555,10 +609,37 @@ function StageCard({ stage, onShowLogs }) {
           {visualStatus === 'pending' && '等待中'}
           {visualStatus === 'failed' && '开发失败'}
         </span>
-        <span className={`text-xs font-bold font-mono tracking-tight ${
+
+        {/* Used Agent badge */}
+        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white/80 rounded-md text-[9px] font-medium text-gray-600 border border-gray-150/50 shadow-sm max-w-full">
+          <Bot className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+          <span className="truncate">{stageAgents[stage.id] || 'AI Agent'}</span>
+        </div>
+
+        {/* Progress Bar (Only show if stage.id >= 2 && stage.id <= 5, i.e., in intelligent development template cards) */}
+        {stage.id >= 2 && stage.id <= 5 && (
+          <div className="w-full px-1">
+            <div className="w-full h-1 bg-gray-200/80 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  visualStatus === 'completed' ? 'bg-green-500' :
+                  visualStatus === 'active' ? 'bg-blue-500 animate-pulse' :
+                  visualStatus === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                }`}
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between items-center text-[8.5px] text-gray-500 mt-1 font-semibold">
+              <span>进度</span>
+              <span className="font-mono">{progress}%</span>
+            </div>
+          </div>
+        )}
+
+        <span className={`text-[10px] font-bold font-mono tracking-tight ${
           visualStatus === 'active' ? 'text-blue-600' :
           visualStatus === 'failed' ? 'text-red-500' :
-          visualStatus === 'completed' ? 'text-gray-750' : 'text-gray-400'
+          visualStatus === 'completed' ? 'text-gray-500' : 'text-gray-400'
         }`}>
           {stage.duration || '-'}
         </span>

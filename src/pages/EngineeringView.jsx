@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Network, CheckCircle, Circle, Loader, Clock, ArrowRight, ZoomIn, ZoomOut, Maximize2, GitBranch, FileCode, FlaskConical, Rocket, Package } from 'lucide-react'
+import { Network, CheckCircle, Circle, Loader, Clock, ArrowRight, ZoomIn, ZoomOut, Maximize2, GitBranch, FileCode, FlaskConical, Rocket, Package, Bot } from 'lucide-react'
 
 const pipelineNodes = [
   { id: 1, name: '需求入厂', icon: Package, status: 'completed', count: 12, avgTime: '5分钟', agents: ['需求设计 Agent'] },
@@ -69,7 +69,7 @@ const typeColors = {
 function PipelineNode({ node, isActive }) {
   const Icon = node.icon
   return (
-    <div className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+    <div className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all w-32 ${
       node.status === 'completed' ? 'bg-emerald-50 border-emerald-400' :
       node.status === 'active' ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200' :
       'bg-gray-50 border-gray-300'
@@ -90,7 +90,15 @@ function PipelineNode({ node, isActive }) {
       <p className={`mt-2 font-semibold text-sm ${node.status === 'completed' ? 'text-emerald-700' : node.status === 'active' ? 'text-blue-700' : 'text-gray-500'}`}>
         {node.name}
       </p>
-      <p className="text-xs text-gray-500">{node.count} 个工单</p>
+      
+      {node.agents && node.agents.length > 0 && (
+        <div className="mt-1 flex items-center gap-1 text-[9px] font-medium text-gray-500 bg-white/70 px-1 py-0.5 rounded border border-gray-200/50 max-w-full">
+          <Bot className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+          <span className="truncate">{node.agents[0]}</span>
+        </div>
+      )}
+
+      <p className="text-[10px] text-gray-450 mt-1">{node.count} 个工单</p>
     </div>
   )
 }
