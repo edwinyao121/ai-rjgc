@@ -1565,7 +1565,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [activeDeliverablesType, setActiveDeliverablesType] = useState(null)
   const [deliverablesModalOpen, setDeliverablesModalOpen] = useState(false)
 
-  const isChatOpen = !sidebarOpen
+  const [isChatOpen, setIsChatOpen] = useState(true)
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
   const orders = useMemo(() => [...runtimeOrderList, ...workOrders], [runtimeOrderList])
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
@@ -1663,6 +1663,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       setCreateModalOpen(false)
       setApiError('')
       setSidebarOpen?.(false)
+      setIsChatOpen(true)
     } catch (error) {
       setCreateError(error.message || '创建工单失败')
     } finally {
@@ -1810,7 +1811,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                   </button>
                   {!isChatOpen && (
                     <button
-                      onClick={() => setSidebarOpen(false)}
+                      onClick={() => {
+                        setIsChatOpen(true)
+                        setSidebarOpen?.(false)
+                      }}
                       className="flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-md text-[11px] font-semibold shadow-sm transition-all hover:scale-105"
                     >
                       <MessageSquare className="w-3 h-3" />
@@ -2021,7 +2025,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
             <AIChatPanel
               activeOrder={selectedOrder}
               onSendMessage={handleChatMessage}
-              onClose={() => setSidebarOpen(true)}
+              onClose={() => {
+                setIsChatOpen(false)
+                setSidebarOpen?.(true)
+              }}
               loading={chatLoading}
               error={chatError}
             />
