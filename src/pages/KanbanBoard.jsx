@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target } from 'lucide-react'
 
 const workOrders = [
@@ -1192,14 +1192,236 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
   )
 }
 
+// AI Chat Panel Component
+function AIChatPanel({ activeOrder, onAdvanceStages }) {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: 'ai',
+      text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入您的系统重构或新增功能需求，我将为您自动编写方案、生成代码，并自动跑通流水线推进部署交付。`,
+      time: '刚刚'
+    }
+  ])
+  const [inputValue, setInputValue] = useState('')
+  const [loading, setLoading] = useState(false)
+  const messagesEndRef = useRef(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
+    setMessages([
+      {
+        id: 1,
+        sender: 'ai',
+        text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入您的系统重构或新增功能需求，我将为您自动编写方案、生成代码，并自动跑通流水线推进部署交付。`,
+        time: '刚刚'
+      }
+    ])
+    setLoading(false)
+  }, [activeOrder.id])
+
+  const handleSend = (e) => {
+    e.preventDefault()
+    if (!inputValue.trim() || loading) return
+
+    const userText = inputValue.trim()
+    setInputValue('')
+    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userText, time: '刚刚' }])
+    setLoading(true)
+
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: `已收到您的需求：“${userText}”。正在深度解析，启动 AI 流水线自动化推进...`,
+        time: '刚刚'
+      }])
+
+      onAdvanceStages(activeOrder.id, (stageMsg) => {
+        setMessages(prev => [...prev, {
+          id: Date.now() + Math.random(),
+          sender: 'ai',
+          text: stageMsg,
+          time: '刚刚'
+        }])
+      }, () => {
+        setLoading(false)
+      })
+    }, 1000)
+  }
+
+  return (
+    <div className="w-80 bg-white rounded-xl border border-gray-200 p-4 flex flex-col flex-shrink-0 shadow-sm" style={{ height: '100%' }}>
+      <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
+        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <Bot className="w-4 h-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-bold text-gray-800 text-sm">AI 研发助手</h3>
+          <p className="text-[10px] text-gray-500 truncate">对当前应用: {activeOrder.title}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs mb-3">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
+              msg.sender === 'user'
+                ? 'bg-blue-600 text-white rounded-tr-none font-medium'
+                : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
+            }`}>
+              {msg.text}
+            </div>
+            <span className="text-[9px] text-gray-400 mt-1 px-1">{msg.time}</span>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex items-center gap-1.5 text-gray-400 px-1 py-1">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
+            <span className="text-[10px]">AI 智能研发自动构建中...</span>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSend} className="flex gap-2 border-t border-gray-100 pt-3">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="输入重构或调参需求..."
+          disabled={loading}
+          className="flex-1 min-w-0 text-xs px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
+        />
+        <button
+          type="submit"
+          disabled={loading || !inputValue.trim()}
+          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
+        >
+          发送
+        </button>
+      </form>
+    </div>
+  )
+}
+
 function KanbanBoard() {
-  const [selectedOrder, setSelectedOrder] = useState(workOrders[0])
-  const [orders] = useState(workOrders)
+  const [orders, setOrders] = useState(workOrders)
+  const [selectedOrderId, setSelectedOrderId] = useState(workOrders[0].id)
   const [activeAppView, setActiveAppView] = useState(null)
+
+  const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
 
   const completedCount = selectedOrder.stages.filter(s => s.status === 'completed').length
   const activeCount = selectedOrder.stages.filter(s => s.status === 'active').length
   const pendingCount = selectedOrder.stages.filter(s => s.status === 'pending').length
+
+  const onAdvanceStages = (orderId, addAIMessage, onComplete) => {
+    const originalOrder = workOrders.find(o => o.id === orderId)
+    if (!originalOrder) return
+
+    const steps = [
+      {
+        progress: 15,
+        msg: "【需求待入厂】已分析需求规格书并重构校验规则...",
+        updater: (stages) => {
+          stages[0].status = 'active'
+          stages[0].duration = '进行中'
+          stages[1].status = 'pending'
+          stages[2].status = 'pending'
+          stages[3].status = 'pending'
+          stages[4].status = 'pending'
+        }
+      },
+      {
+        progress: 35,
+        msg: "【需求待入厂】通过审核。正在推进至【系统设计】：重构系统架构图与API接口定义...",
+        updater: (stages) => {
+          stages[0].status = 'completed'
+          stages[0].duration = '5分钟'
+          stages[1].status = 'active'
+          stages[1].duration = '进行中'
+        }
+      },
+      {
+        progress: 60,
+        msg: "【系统设计】评审通过。正在推进至【智能编码】：自动重构生成源文件，正在编译构建...",
+        updater: (stages) => {
+          stages[1].status = 'completed'
+          stages[1].duration = '20分钟'
+          stages[2].status = 'active'
+          stages[2].duration = '进行中'
+        }
+      },
+      {
+        progress: 80,
+        msg: "【智能编码】成功生成代码包。正在推进至【测试质检】：更新单元测试，自动运行测试集...",
+        updater: (stages) => {
+          stages[2].status = 'completed'
+          stages[2].duration = '40分钟'
+          stages[3].status = 'active'
+          stages[3].duration = '进行中'
+        }
+      },
+      {
+        progress: 95,
+        msg: "【测试质检】全数用例运行通过。正在推进至【部署交付】：打包全新容器镜像，开启灰度部署...",
+        updater: (stages) => {
+          stages[3].status = 'completed'
+          stages[3].duration = '30分钟'
+          stages[4].status = 'active'
+          stages[4].duration = '进行中'
+        }
+      },
+      {
+        progress: 100,
+        msg: "【部署交付】部署成功！新版本已上线至生产环境。您可以点击页面顶部的‘访问部署应用’以体验最新版系统。",
+        updater: (stages) => {
+          stages[4].status = 'completed'
+          stages[4].duration = '15分钟'
+        }
+      }
+    ]
+
+    let currentStep = 0
+
+    const executeStep = () => {
+      if (currentStep >= steps.length) {
+        onComplete()
+        return
+      }
+
+      const step = steps[currentStep]
+      addAIMessage(step.msg)
+
+      setOrders(prevOrders => {
+        return prevOrders.map(o => {
+          if (o.id === orderId) {
+            const updatedStages = o.stages.map(s => ({
+              ...s,
+              items: s.items.map(item => ({ ...item })),
+              outputs: s.outputs.map(out => ({ ...out })),
+              reviews: s.reviews.map(rev => ({ ...rev }))
+            }))
+            step.updater(updatedStages)
+            return {
+              ...o,
+              progress: step.progress,
+              stages: updatedStages
+            }
+          }
+          return o
+        })
+      })
+
+      currentStep++
+      setTimeout(executeStep, 2000)
+    }
+
+    executeStep()
+  }
 
   if (activeAppView !== null) {
     return (
@@ -1225,7 +1447,7 @@ function KanbanBoard() {
                 key={order.id}
                 order={order}
                 isSelected={selectedOrder?.id === order.id}
-                onClick={() => setSelectedOrder(order)}
+                onClick={() => setSelectedOrderId(order.id)}
                 onGoToApp={setActiveAppView}
               />
             ))}
@@ -1276,6 +1498,9 @@ function KanbanBoard() {
             </div>
           </div>
         </div>
+
+        {/* AI R&D Assistant Panel */}
+        <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} />
       </div>
     </div>
   )
