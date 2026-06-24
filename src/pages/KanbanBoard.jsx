@@ -571,7 +571,7 @@ function StageCard({ stage, onShowLogs }) {
   })()
 
   return (
-    <div className={`w-40 rounded-xl ${colors.bg} border border-gray-200 flex flex-col flex-shrink-0 transition-all ${
+    <div className={`w-40 h-[180px] rounded-xl ${colors.bg} border border-gray-200 flex flex-col flex-shrink-0 transition-all ${
       visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100 scale-[1.02]' : ''
     } ${visualStatus === 'pending' ? 'opacity-65' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-md shadow-red-100' : ''}`}>
       
@@ -1746,7 +1746,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         <div className="flex-1 flex flex-col gap-4 min-h-0 min-w-0">
           {/* Kanban Board Container (Top) */}
           <div className={`bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0 transition-all duration-300 ${
-            isChatOpen ? 'h-[245px] flex-shrink-0' : 'flex-1'
+            isChatOpen ? 'h-[340px] flex-shrink-0' : 'flex-1'
           }`}>
             <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2 flex-wrap gap-3">
               <div>
@@ -1859,7 +1859,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                   </div>
                   <div className="flex-1 flex gap-2 items-center">
                     {/* Deliverables Card 1: 文档 */}
-                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[135px]">
                       <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
                         <FileText className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">文档</span>
@@ -1884,7 +1884,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                     </div>
 
                     {/* Deliverables Card 2: 制品 */}
-                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[135px]">
                       <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
                         <Package className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">制品</span>
@@ -1909,7 +1909,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                     </div>
 
                     {/* Deliverables Card 3: 访问地址 */}
-                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[135px]">
                       <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
                         <Globe className="w-3 h-3 text-emerald-700" />
                         <span className="font-bold text-[10px] text-emerald-800">访问地址</span>
