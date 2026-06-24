@@ -1090,7 +1090,7 @@ function CommunityMonitorSimulator() {
   )
 }
 
-function AppSimulator({ appId, onClose }) {
+export function AppSimulator({ appId, onClose, closeLabel = '返回研发看板' }) {
   const order = workOrders.find(o => o.id === appId)
 
   return (
@@ -1114,9 +1114,9 @@ function AppSimulator({ appId, onClose }) {
         </div>
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all hover:scale-105 active:scale-95 border border-transparent"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 border border-transparent"
         >
-          返回研发看板
+          {closeLabel}
         </button>
       </div>
 

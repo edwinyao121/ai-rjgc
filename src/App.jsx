@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { LayoutDashboard, Kanban, Bot, Settings, FileText, Shield, Network, ChevronDown, Bell, Search, Plus, Menu, Factory } from 'lucide-react'
+import { LayoutDashboard, Kanban, Bot, Settings, FileText, Shield, Network, ChevronDown, Bell, Search, Plus, Menu, Factory, ShoppingBag } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import KanbanBoard from './pages/KanbanBoard'
+import AppStore from './pages/AppStore'
 import AgentCenter from './pages/AgentCenter'
 import RuleEngine from './pages/RuleEngine'
 import EngineeringView from './pages/EngineeringView'
@@ -10,6 +11,7 @@ import SettingsPage from './pages/SettingsPage'
 const navItems = [
   { id: 'dashboard', label: '工作台大盘', icon: LayoutDashboard },
   { id: 'kanban', label: '流水线看板', icon: Kanban },
+  { id: 'appstore', label: '应用商店', icon: ShoppingBag },
   { id: 'agents', label: 'Agent中心', icon: Bot },
   { id: 'rules', label: '规则引擎', icon: Shield },
   { id: 'engineering', label: '工程链路', icon: Network },
@@ -25,6 +27,7 @@ function App() {
     switch (activePage) {
       case 'dashboard': return <Dashboard />
       case 'kanban': return <KanbanBoard sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      case 'appstore': return <AppStore />
       case 'agents': return <AgentCenter />
       case 'rules': return <RuleEngine />
       case 'engineering': return <EngineeringView />
