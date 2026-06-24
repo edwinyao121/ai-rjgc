@@ -54,25 +54,29 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <aside className={`${sidebarOpen ? 'w-64 border-r border-gray-200' : 'w-0 overflow-hidden border-none'} bg-white transition-all duration-300 flex flex-col`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+        <div className="h-16 flex items-center px-6 border-b border-gray-200 bg-white flex-shrink-0">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#2E3F4D] border border-gray-200/50 rounded-xl flex items-center justify-center">
-                <Factory className="w-5 h-5 text-blue-400" />
+              <div className="w-9 h-9 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
+                <Factory className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-800">智能软件工厂</h1>
-                <p className="text-xs text-gray-500">Smart Factory</p>
+                <h1 className="font-extrabold text-sm bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent tracking-wide leading-tight">
+                  智能软件工厂
+                </h1>
+                <p className="text-[10px] text-gray-400 tracking-wider font-semibold uppercase leading-none mt-0.5">
+                  Smart Factory
+                </p>
               </div>
             </div>
           ) : (
-            <div className="w-10 h-10 bg-[#2E3F4D] border border-gray-200/50 rounded-xl flex items-center justify-center mx-auto">
-              <Factory className="w-5 h-5 text-blue-400" />
+            <div className="w-9 h-9 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 mx-auto">
+              <Factory className="w-5 h-5 text-white" />
             </div>
           )}
         </div>
 
-        <nav className="flex-1 py-4">
+        <nav className="flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto">
           {navItems.map(item => {
             const Icon = item.icon
             const isActive = activePage === item.id
@@ -80,81 +84,42 @@ function App() {
               <button
                 key={item.id}
                 onClick={() => setActivePage(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                className={`flex items-center gap-3 px-4 py-2.5 mx-3 my-0.5 rounded-xl transition-all duration-200 group text-sm ${
                   isActive
-                    ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-blue-50/80 text-blue-600 font-semibold shadow-sm shadow-blue-500/5'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium'
                 }`}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span className="font-medium">{item.label}</span>}
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                  isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                }`} />
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
               </button>
             )
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-3 border-t border-gray-200">
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+            onClick={() => setSidebarOpen(false)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200 text-sm font-medium"
           >
-            <Menu className="w-5 h-5" />
-            {sidebarOpen && <span className="text-sm">收起菜单</span>}
+            <Menu className="w-5 h-5 text-gray-400" />
+            {sidebarOpen && <span>收起菜单</span>}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors mr-2 flex items-center justify-center border border-gray-200 shadow-sm bg-white"
-                title="展开菜单"
-              >
-                <Menu className="w-4 h-4" />
-              </button>
-            )}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="搜索工单、项目、Agent..."
-                className="w-80 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActivePage('kanban')
-                setNewWorkOrderRequest((value) => value + 1)
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              新建工单
-            </button>
-
-            <div className="flex items-center gap-2 pl-4 border-l border-gray-300">
-              <div className="w-8 h-8 bg-[#2E3F4D] border border-gray-200/50 rounded-full flex items-center justify-center">
-                <span className="text-blue-400 text-sm font-medium">A</span>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-gray-800">Admin</p>
-                <p className="text-xs text-gray-500">超级管理员</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </div>
-          </div>
-        </header>
+      <main className="flex-1 flex flex-col relative">
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="fixed top-4 left-4 z-50 p-2 bg-white hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 shadow-md flex items-center justify-center"
+            title="展开菜单"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
 
         <div className="flex-1 overflow-auto p-6">
           {renderPage()}
