@@ -594,7 +594,7 @@ function TideCalculatorSimulator() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded text-xs transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#243340] border border-blue-500/30 hover:border-blue-500/80 text-blue-400 hover:text-blue-300 font-semibold disabled:opacity-50 rounded text-xs transition-all"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           手动拉取最新数据
@@ -603,7 +603,7 @@ function TideCalculatorSimulator() {
 
       <div className="grid grid-cols-2 gap-6">
         {tides.map((port, idx) => (
-          <div key={idx} className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-4">
+          <div key={idx} className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-white">{port.name}</span>
               <span className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
@@ -614,30 +614,30 @@ function TideCalculatorSimulator() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">当前潮高</span>
+              <div className="bg-[#1B2732] rounded-lg p-3 border border-slate-700/30">
+                <span className="text-xs text-slate-300 block mb-1">当前潮高</span>
                 <span className={`text-2xl font-black ${port.tide >= 12.8 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {port.tide} 米
                 </span>
-                <span className="text-[10px] text-slate-500 block mt-1">吃水阈值: 12.8 米</span>
+                <span className="text-[10px] text-slate-400 block mt-1">吃水阈值: 12.8 米</span>
               </div>
 
-              <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex flex-col justify-center">
+              <div className="bg-[#1B2732] rounded-lg p-3 border border-slate-700/30 flex flex-col justify-center">
                 {port.status === 'open' ? (
                   <>
-                    <span className="text-xs text-slate-400 block mb-1">当前窗口截止</span>
+                    <span className="text-xs text-slate-300 block mb-1">当前窗口截止</span>
                     <span className="text-sm font-semibold text-slate-200">{port.time}</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-slate-400 block mb-1">距离下一个窗口</span>
+                    <span className="text-xs text-slate-300 block mb-1">距离下一个窗口</span>
                     <span className="text-base font-bold text-red-400 animate-pulse">{port.countdown}</span>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="h-16 relative bg-slate-900/40 rounded-lg border border-slate-800/80 overflow-hidden flex items-end">
+            <div className="h-16 relative bg-[#1B2732]/45 rounded-lg border border-slate-700/40 overflow-hidden flex items-end">
               <svg className="w-full h-full absolute inset-0" viewBox="0 0 300 60">
                 <line x1="0" y1="26" x2="300" y2="26" stroke="#ef4444" strokeWidth="1" strokeDasharray="3,3" />
                 <text x="230" y="20" fill="#ef4444" className="text-[8px]">12.8米吃水线</text>
@@ -685,7 +685,7 @@ function DeckWindCalculatorSimulator() {
 
   return (
     <div className="grid grid-cols-3 gap-6">
-      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-5 col-span-1">
+      <div className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-5 space-y-5 col-span-1">
         <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-2">
           <Sliders className="w-4 h-4 text-blue-400" />
           输入计算参数
@@ -742,7 +742,7 @@ function DeckWindCalculatorSimulator() {
         </div>
       </div>
 
-      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 flex flex-col items-center justify-center col-span-1">
+      <div className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-5 flex flex-col items-center justify-center col-span-1">
         <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 w-full text-center mb-4 flex items-center justify-center gap-2">
           <Compass className="w-4 h-4 text-purple-400" />
           甲板合成风矢量解算
@@ -790,16 +790,16 @@ function DeckWindCalculatorSimulator() {
         </div>
       </div>
 
-      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-4 col-span-1 flex flex-col justify-between">
+      <div className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-5 space-y-4 col-span-1 flex flex-col justify-between">
         <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-2">
           <Wind className="w-4 h-4 text-emerald-400" />
           解算状态输出
         </h3>
 
         <div className="space-y-3 flex-1 justify-center flex flex-col">
-          <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex justify-between items-center">
+          <div className="bg-[#1B2732] rounded-lg p-3 border border-slate-700/30 flex justify-between items-center">
             <div>
-              <span className="text-xs text-slate-400 block">合成甲板风速</span>
+              <span className="text-xs text-slate-300 block">合成甲板风速</span>
               <span className="text-2xl font-black text-white">{relativeSpeed} 节</span>
             </div>
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isSpeedOk ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'}`}>
@@ -807,9 +807,9 @@ function DeckWindCalculatorSimulator() {
             </span>
           </div>
 
-          <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex justify-between items-center">
+          <div className="bg-[#1B2732] rounded-lg p-3 border border-slate-700/30 flex justify-between items-center">
             <div>
-              <span className="text-xs text-slate-400 block">合成甲板风角</span>
+              <span className="text-xs text-slate-300 block">合成甲板风角</span>
               <span className="text-2xl font-black text-white">{relativeAngle}°</span>
             </div>
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isAngleOk ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'}`}>
@@ -823,7 +823,7 @@ function DeckWindCalculatorSimulator() {
             ? 'bg-emerald-950/60 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
             : 'bg-red-950/60 border-red-500 text-red-400'
         }`}>
-          <span className="text-xs block mb-1">舰载机安全起降状态</span>
+          <span className="text-xs text-slate-300 block mb-1">舰载机安全起降状态</span>
           <span className="text-base font-bold flex items-center justify-center gap-1.5">
             {isSafe ? (
               <>
@@ -837,7 +837,7 @@ function DeckWindCalculatorSimulator() {
               </>
             )}
           </span>
-          <span className="text-[10px] text-slate-400 block mt-1">（最小甲板风速需20节，偏角±15°内）</span>
+          <span className="text-[10px] text-slate-305/70 block mt-1">（最小甲板风速需20节，偏角±15°内）</span>
         </div>
       </div>
     </div>
@@ -882,7 +882,7 @@ function MerchantVesselAlerterSimulator() {
           </div>
           <button
             onClick={triggerRefresh}
-            className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center gap-1.5"
+            className="text-xs px-2.5 py-1 bg-[#243340] border border-blue-500/30 hover:border-blue-500/80 text-blue-400 hover:text-blue-300 font-semibold rounded flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             模拟AIS刷新
@@ -890,12 +890,12 @@ function MerchantVesselAlerterSimulator() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-400">只看异常告警网格</label>
+          <label className="text-xs text-slate-300">只看异常告警网格</label>
           <input
             type="checkbox"
             checked={filterAlerts}
             onChange={(e) => setFilterAlerts(e.target.checked)}
-            className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-blue-500 accent-blue-600 focus:ring-0 cursor-pointer"
+            className="w-4 h-4 rounded bg-[#243340] border-slate-700 text-blue-500 accent-blue-600 focus:ring-0 cursor-pointer"
           />
         </div>
       </div>
@@ -911,14 +911,14 @@ function MerchantVesselAlerterSimulator() {
           }).join(' ')
 
           return (
-            <div key={grid.id} className={`bg-slate-800/40 border rounded-xl p-4 space-y-3 transition-all ${
+            <div key={grid.id} className={`bg-[#243340]/80 border rounded-xl p-4 space-y-3 transition-all ${
               status === 'red' ? 'border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.1)]' :
               status === 'yellow' ? 'border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.1)]' :
-              'border-slate-700/80'
+              'border-slate-700/50'
             }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-slate-500 font-mono block">GRID {grid.id}</span>
+                  <span className="text-[10px] text-slate-400 font-mono block">GRID {grid.id}</span>
                   <span className="text-sm font-bold text-white">{grid.name}</span>
                 </div>
                 <span className={`w-3 h-3 rounded-full ${
@@ -928,9 +928,9 @@ function MerchantVesselAlerterSimulator() {
                 }`}></span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800">
+              <div className="grid grid-cols-2 gap-2 bg-[#1B2732] rounded-lg p-2.5 border border-slate-700/30">
                 <div>
-                  <span className="text-[10px] text-slate-500 block">当前商船</span>
+                  <span className="text-[10px] text-slate-400 block">当前商船</span>
                   <span className={`text-base font-black ${
                     status === 'red' ? 'text-red-400' :
                     status === 'yellow' ? 'text-amber-400' :
@@ -938,13 +938,13 @@ function MerchantVesselAlerterSimulator() {
                   }`}>{grid.count} 艘</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 block">30天均值</span>
+                  <span className="text-[10px] text-slate-400 block">30天均值</span>
                   <span className="text-base font-bold text-slate-300">{grid.baseline} 艘</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-800/60 pt-2 text-[10px]">
-                <span className="text-slate-400">密度比例: </span>
+              <div className="flex items-center justify-between border-t border-slate-700/30 pt-2 text-[10px]">
+                <span className="text-slate-300">密度比例: </span>
                 <span className={`font-bold ${
                   status === 'red' ? 'text-red-400' :
                   status === 'yellow' ? 'text-amber-400' :
@@ -952,7 +952,7 @@ function MerchantVesselAlerterSimulator() {
                 }`}>{grid.pct}%</span>
               </div>
 
-              <div className="h-10 w-full relative pt-2 bg-slate-900/30 rounded border border-slate-800/40">
+              <div className="h-10 w-full relative pt-2 bg-[#1B2732]/30 rounded border border-slate-700/30">
                 <svg className="w-full h-full" viewBox="0 0 144 40">
                   <line x1="0" y1="20" x2="144" y2="20" stroke="#475569" strokeWidth="0.5" strokeDasharray="2,2" />
                   <polyline
@@ -996,7 +996,7 @@ function CommunityMonitorSimulator() {
 
   return (
     <div className="grid grid-cols-3 gap-6">
-      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-4 col-span-1 space-y-4 flex flex-col">
+      <div className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-4 col-span-1 space-y-4 flex flex-col">
         <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-1.5">
           <Activity className="w-4 h-4 text-sky-400" />
           最新社交媒体抓取流
@@ -1004,15 +1004,15 @@ function CommunityMonitorSimulator() {
 
         <div className="space-y-2 overflow-y-auto max-h-80 flex-1">
           {posts.map((post) => (
-            <div key={post.id} className="bg-slate-900/60 rounded border border-slate-800 p-2.5 text-xs space-y-1.5">
+            <div key={post.id} className="bg-[#1B2732] rounded border border-slate-700/30 p-2.5 text-xs space-y-1.5">
               <div className="flex justify-between text-[10px]">
                 <span className={post.source === 'Twitter' ? 'text-sky-400 font-semibold' : 'text-pink-400 font-semibold'}>
                   @{post.source}
                 </span>
-                <span className="text-slate-500">{post.time}</span>
+                <span className="text-slate-400">{post.time}</span>
               </div>
               <p className="text-slate-300 leading-normal">{post.text}</p>
-              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+              <div className="flex items-center gap-1 text-[10px] text-slate-400">
                 <MapPin className="w-3 h-3" />
                 <span>GPS: {post.coords}</span>
               </div>
@@ -1021,7 +1021,7 @@ function CommunityMonitorSimulator() {
         </div>
       </div>
 
-      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-4 col-span-2 space-y-4 flex flex-col">
+      <div className="bg-[#243340]/80 border border-slate-700/50 rounded-xl p-4 col-span-2 space-y-4 flex flex-col">
         <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Map className="w-4 h-4 text-indigo-400" />
@@ -1069,7 +1069,7 @@ function CommunityMonitorSimulator() {
               <button
                 onClick={runClusterAnalysis}
                 disabled={analysing}
-                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-800 text-white rounded text-xs font-semibold shadow-md flex items-center gap-1 transition-all"
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded text-xs font-semibold shadow-md flex items-center gap-1 transition-all"
               >
                 <Target className="w-3.5 h-3.5" />
                 {analysing ? '正在运行聚类分析...' : '运行目击潮空间聚类'}
@@ -1077,7 +1077,7 @@ function CommunityMonitorSimulator() {
             ) : (
               <button
                 onClick={resetAnalysis}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700 flex items-center gap-1 transition-all"
+                className="px-3 py-1.5 bg-[#243340] border border-blue-500/30 hover:border-blue-500/80 text-blue-400 hover:text-blue-300 font-semibold rounded text-xs flex items-center gap-1 transition-all"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 重置地图分析
@@ -1094,12 +1094,12 @@ function AppSimulator({ appId, onClose }) {
   const order = workOrders.find(o => o.id === appId)
 
   return (
-    <div className="bg-slate-900 text-slate-100 rounded-xl border border-slate-800 p-6 flex flex-col h-full space-y-6 shadow-2xl overflow-y-auto" style={{ minHeight: 'calc(100vh - 180px)' }}>
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+    <div className="bg-[#1B2732] text-slate-100 rounded-xl border border-slate-700/50 p-6 flex flex-col h-full space-y-6 shadow-2xl overflow-y-auto" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      <div className="flex items-center justify-between border-b border-slate-700/40 pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-[#243340] rounded-lg text-slate-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -1114,7 +1114,7 @@ function AppSimulator({ appId, onClose }) {
         </div>
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all hover:scale-105 active:scale-95 border border-transparent"
         >
           返回研发看板
         </button>
