@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send } from 'lucide-react'
+import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, subscribeWorkOrderEvents } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -438,33 +439,77 @@ const stageColors = {
 const itemTypeIcons = {
   input: FileText,
   ai: Bot,
-  pending: Clock
+  pending: Clock,
+  error: AlertTriangle
 }
 
-function StageCard({ stage, index, isLast }) {
-  const colors = stageColors[stage.id]
+const stageIconById = {
+  1: Package,
+  2: GitBranch,
+  3: FileCode,
+  4: FlaskConical,
+  5: Rocket
+}
+
+const runtimeStatusMap = {
+  PENDING: 'pending',
+  RUNNING: 'active',
+  COMPLETED: 'completed',
+  FAILED: 'failed'
+}
+
+function normalizeStageStatus(status) {
+  return runtimeStatusMap[status] || status || 'pending'
+}
+
+function isRuntimeOrder(order) {
+  return typeof order?.id === 'string'
+}
+
+function normalizeRuntimeOrder(order) {
+  return {
+    ...order,
+    domain: order.domain || 'AI生成',
+    priority: order.priority || 'medium',
+    creator: order.creator || 'AI研发助手',
+    progress: order.progress ?? 0,
+    lastUpdate: order.lastUpdate || '刚刚',
+    stages: (order.stages || []).map((stage) => ({
+      ...stage,
+      icon: stageIconById[stage.id] || Bot,
+      items: stage.items?.length ? stage.items : [{ type: 'pending', label: stage.name, value: '-' }],
+      outputs: stage.outputs || [],
+      reviews: stage.reviews || []
+    }))
+  }
+}
+
+function StageCard({ stage, index, isLast, onShowLogs }) {
+  const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
   const ItemIcon = itemTypeIcons[stage.items[0]?.type] || Bot
+  const visualStatus = normalizeStageStatus(stage.status)
 
   return (
     <div className={`w-56 rounded-xl ${colors.bg} border-2 ${colors.border} flex flex-col flex-shrink-0 ${
-      stage.status === 'active' ? 'ring-2 ring-blue-400 shadow-lg' : ''
-    } ${stage.status === 'pending' ? 'opacity-70' : ''}`}>
+      visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-lg' : ''
+    } ${visualStatus === 'pending' ? 'opacity-70' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-lg' : ''}`}>
       <div className={`${colors.header} rounded-t-xl px-3 py-2 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${colors.text}`} />
           <span className={`font-semibold text-sm ${colors.text}`}>{stage.name}</span>
         </div>
-        {stage.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-500" />}
-        {stage.status === 'active' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>}
-        {stage.status === 'pending' && <Lock className="w-4 h-4 text-gray-400" />}
+        {visualStatus === 'completed' && <CheckCircle className="w-4 h-4 text-green-500" />}
+        {visualStatus === 'active' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>}
+        {visualStatus === 'pending' && <Lock className="w-4 h-4 text-gray-400" />}
+        {visualStatus === 'failed' && <AlertCircle className="w-4 h-4 text-red-500" />}
       </div>
 
       <div className="flex-1 p-3 space-y-3 overflow-y-auto">
         <div className="text-xs text-gray-500">
           <span>{stage.time}</span>
           <span className="mx-1">·</span>
-          <span className={stage.status === 'active' ? 'text-blue-600 font-medium' : ''}>{stage.duration}</span>
+          <span className={visualStatus === 'active' ? 'text-blue-600 font-medium' : visualStatus === 'failed' ? 'text-red-600 font-medium' : ''}>{stage.duration}</span>
         </div>
 
         <div className="space-y-2">
@@ -474,7 +519,7 @@ function StageCard({ stage, index, isLast }) {
             return (
               <div key={i} className="bg-white/80 rounded-lg p-2 border border-gray-200/50">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <ItemTypeIcon className={`w-3 h-3 ${item.type === 'ai' ? 'text-blue-500' : item.type === 'input' ? 'text-purple-500' : 'text-gray-400'}`} />
+                  <ItemTypeIcon className={`w-3 h-3 ${item.type === 'ai' ? 'text-blue-500' : item.type === 'input' ? 'text-purple-500' : item.type === 'error' ? 'text-red-500' : 'text-gray-400'}`} />
                   <span className="text-xs font-medium text-gray-600">{item.label}</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -538,6 +583,9 @@ function StageCard({ stage, index, isLast }) {
                 {review.status === 'in_progress' && (
                   <span className="text-xs text-blue-600">审核中</span>
                 )}
+                {review.status === 'failed' && (
+                  <span className="text-xs text-red-600">失败</span>
+                )}
                 {review.reviewer && (
                   <span className="text-xs text-gray-500">{review.reviewer}</span>
                 )}
@@ -550,6 +598,15 @@ function StageCard({ stage, index, isLast }) {
       <div className={`px-3 py-2 border-t ${colors.border} rounded-b-xl`}>
         <div className="flex items-center justify-between text-xs">
           <span className={colors.text}>准出: {stage.gate.exit}</span>
+          <button
+            type="button"
+            onClick={() => onShowLogs?.(stage)}
+            className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/80 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-white hover:text-blue-600"
+            title="查看阶段日志"
+          >
+            <Eye className="w-3 h-3" />
+            详情
+          </button>
         </div>
       </div>
     </div>
@@ -1131,6 +1188,11 @@ export function AppSimulator({ appId, onClose, closeLabel = '返回研发看板'
 }
 
 function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
+  const activeStage = order.stages.find(s => normalizeStageStatus(s.status) === 'active')
+  const hasFailedStage = order.stages.some(s => normalizeStageStatus(s.status) === 'failed')
+  const canRun = !isRuntimeOrder(order) || Boolean(order.deploymentUrl)
+  const runLabel = isRuntimeOrder(order) ? (order.deploymentUrl ? '访问' : '等待') : '运行'
+
   return (
     <div
       onClick={onClick}
@@ -1150,8 +1212,8 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-gray-800 text-sm truncate">{order.title}</h3>
-            <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${priorityTextColors[order.priority]}`}>
-              {order.priority === 'critical' ? '紧急' : order.priority === 'high' ? '高' : '中'}
+            <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${priorityTextColors[order.priority] || priorityTextColors.medium}`}>
+              {hasFailedStage ? '失败' : order.priority === 'critical' ? '紧急' : order.priority === 'high' ? '高' : '中'}
             </span>
           </div>
           <p className="text-xs text-gray-500 truncate">{order.domain} · {order.creator}</p>
@@ -1161,8 +1223,8 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="text-gray-500">当前阶段</span>
-          <span className="font-medium text-blue-600 truncate ml-2">
-            {order.stages.find(s => s.status === 'active')?.name.replace('中', '') || '已完成'}
+          <span className={`font-medium truncate ml-2 ${hasFailedStage ? 'text-red-600' : 'text-blue-600'}`}>
+            {hasFailedStage ? '执行失败' : activeStage?.name.replace('中', '') || '已完成'}
           </span>
         </div>
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -1174,17 +1236,18 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
       </div>
 
       <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>WO-{String(order.id).padStart(3, '0')}</span>
+        <span>{isRuntimeOrder(order) ? order.id : `WO-${String(order.id).padStart(3, '0')}`}</span>
         <div className="flex items-center gap-1.5">
           <span>{order.progress}%</span>
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onGoToApp(order.id)
+              if (canRun) onGoToApp(order)
             }}
-            className="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded text-[10px] font-semibold transition-all hover:scale-105"
+            disabled={!canRun}
+            className="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded text-[10px] font-semibold transition-all disabled:opacity-50 disabled:hover:scale-100 hover:scale-105"
           >
-            运行
+            {runLabel}
           </button>
         </div>
       </div>
@@ -1193,63 +1256,43 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
 }
 
 // AI Chat Panel Component
-function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'ai',
-      text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入您的系统重构或新增功能需求，我将为您自动编写方案、生成代码，并自动跑通流水线推进部署交付。`,
-      time: '刚刚'
-    }
-  ])
+function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
   const [inputValue, setInputValue] = useState('')
-  const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef(null)
+  const displayMessages = useMemo(() => {
+    if (activeOrder.messages?.length) {
+      return activeOrder.messages.map((message) => ({
+        id: message.id,
+        sender: message.sender,
+        text: message.text,
+        time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '刚刚'
+      }))
+    }
+    return [
+      {
+        id: 'demo-greeting',
+        sender: 'ai',
+        text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入新的应用需求，我会创建真实工单并交给后端流水线执行。`,
+        time: '刚刚'
+      }
+    ]
+  }, [activeOrder])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [displayMessages, error])
 
   useEffect(() => {
-    setMessages([
-      {
-        id: 1,
-        sender: 'ai',
-        text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入您的系统重构或新增功能需求，我将为您自动编写方案、生成代码，并自动跑通流水线推进部署交付。`,
-        time: '刚刚'
-      }
-    ])
-    setLoading(false)
+    setInputValue('')
   }, [activeOrder.id])
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault()
     if (!inputValue.trim() || loading) return
 
     const userText = inputValue.trim()
     setInputValue('')
-    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: userText, time: '刚刚' }])
-    setLoading(true)
-
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        sender: 'ai',
-        text: `已收到您的需求：“${userText}”。正在自动分析，启动 AI 智能研发流程重构交付...`,
-        time: '刚刚'
-      }])
-
-      onAdvanceStages(activeOrder.id, (stageMsg) => {
-        setMessages(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          sender: 'ai',
-          text: stageMsg,
-          time: '刚刚'
-        }])
-      }, () => {
-        setLoading(false)
-      })
-    }, 1000)
+    await onSendMessage(activeOrder, userText)
   }
 
   return (
@@ -1268,7 +1311,7 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
             <div className="flex items-center gap-2">
               {loading && (
                 <div className="flex items-center gap-1 text-blue-600 font-semibold text-[9px] flex-shrink-0">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
+                  <Loader2 className="w-3 h-3 animate-spin" />
                   <span>推进中...</span>
                 </div>
               )}
@@ -1284,7 +1327,7 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
-          {messages.map((msg) => (
+          {displayMessages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
                 msg.sender === 'user'
@@ -1296,6 +1339,12 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
               <span className="text-[9px] text-gray-400 mt-0.5 px-1">{msg.time}</span>
             </div>
           ))}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-red-700">
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -1313,7 +1362,7 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
             disabled={loading || !inputValue.trim()}
             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
           >
-            发送
+            <Send className="w-3.5 h-3.5" />
           </button>
         </form>
       </div>
@@ -1321,12 +1370,122 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
   )
 }
 
-function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
-  const [orders, setOrders] = useState(workOrders)
-  const [selectedOrderId, setSelectedOrderId] = useState(workOrders[0].id)
+function CreateWorkOrderModal({ open, value, onChange, onClose, onSubmit, submitting, error }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/40 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white border border-gray-200 rounded-xl shadow-2xl p-5">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+          <div>
+            <h2 className="font-bold text-gray-800 text-base">新建研发工单</h2>
+            <p className="text-xs text-gray-500 mt-1">输入应用目标、关键功能和验收口径，后端会先进行 AI 需求澄清。</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <textarea
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className="w-full min-h-40 resize-y border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="例如：做一个港口潮汐窗口计算器，支持四个母港潮高录入、12.8 米阈值判断、出港窗口倒计时和移动端看板。"
+            autoFocus
+          />
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+              取消
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !value.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold flex items-center gap-2"
+            >
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              创建工单
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function StageLogModal({ open, stage, log, loading, error, onClose }) {
+  if (!open) return null
+  const title = log?.stageName || stage?.name || '阶段日志'
+  const content = log?.content || stage?.logSummary || '暂无日志。'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl max-h-[82vh] bg-white border border-gray-200 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="font-bold text-gray-800 text-base truncate">{title} · 日志详情</h2>
+            <p className="text-xs text-gray-500 mt-1 truncate">{log?.logPath || '运行态摘要'}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 flex-shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-5 overflow-auto">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              正在读取日志...
+            </div>
+          ) : error ? (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : (
+            <pre className="whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 border border-slate-800 min-h-72">
+              {content}
+            </pre>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
+  const [runtimeOrders, setRuntimeOrders] = useState([])
+  const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [activeAppView, setActiveAppView] = useState(null)
+  const [apiError, setApiError] = useState('')
+  const [chatError, setChatError] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [createText, setCreateText] = useState('')
+  const [createError, setCreateError] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [stageLogModal, setStageLogModal] = useState({
+    open: false,
+    stage: null,
+    log: null,
+    loading: false,
+    error: ''
+  })
+  const lastCreateRequestRef = useRef(newWorkOrderRequest)
 
   const isChatOpen = !sidebarOpen
+  const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
+  const orders = useMemo(() => [...runtimeOrderList, ...workOrders], [runtimeOrderList])
+  const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
+  const completedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'completed').length
+  const activeCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'active').length
+  const pendingCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'pending').length
+  const failedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'failed').length
+  const canVisitSelected = !isRuntimeOrder(selectedOrder) || Boolean(selectedOrder.deploymentUrl)
 
   useEffect(() => {
     if (setSidebarOpen) {
@@ -1339,115 +1498,141 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
     }
   }, [setSidebarOpen])
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
-
-  const completedCount = selectedOrder.stages.filter(s => s.status === 'completed').length
-  const activeCount = selectedOrder.stages.filter(s => s.status === 'active').length
-  const pendingCount = selectedOrder.stages.filter(s => s.status === 'pending').length
-
-  const onAdvanceStages = (orderId, addAIMessage, onComplete) => {
-    const originalOrder = workOrders.find(o => o.id === orderId)
-    if (!originalOrder) return
-
-    const steps = [
-      {
-        progress: 15,
-        msg: "【需求待入厂】已分析需求规格书并重构校验规则...",
-        updater: (stages) => {
-          stages[0].status = 'active'
-          stages[0].duration = '进行中'
-          stages[1].status = 'pending'
-          stages[2].status = 'pending'
-          stages[3].status = 'pending'
-          stages[4].status = 'pending'
-        }
-      },
-      {
-        progress: 35,
-        msg: "【需求待入厂】通过审核。正在推进至【系统设计】：重构系统架构图与API接口定义...",
-        updater: (stages) => {
-          stages[0].status = 'completed'
-          stages[0].duration = '5分钟'
-          stages[1].status = 'active'
-          stages[1].duration = '进行中'
-        }
-      },
-      {
-        progress: 60,
-        msg: "【系统设计】评审通过。正在推进至【智能编码】：自动重构生成源文件，正在编译构建...",
-        updater: (stages) => {
-          stages[1].status = 'completed'
-          stages[1].duration = '20分钟'
-          stages[2].status = 'active'
-          stages[2].duration = '进行中'
-        }
-      },
-      {
-        progress: 80,
-        msg: "【智能编码】成功生成代码包。正在推进至【测试质检】：更新单元测试，自动运行测试集...",
-        updater: (stages) => {
-          stages[2].status = 'completed'
-          stages[2].duration = '40分钟'
-          stages[3].status = 'active'
-          stages[3].duration = '进行中'
-        }
-      },
-      {
-        progress: 95,
-        msg: "【测试质检】全数用例运行通过。正在推进至【部署交付】：打包全新容器镜像，开启灰度部署...",
-        updater: (stages) => {
-          stages[3].status = 'completed'
-          stages[3].duration = '30分钟'
-          stages[4].status = 'active'
-          stages[4].duration = '进行中'
-        }
-      },
-      {
-        progress: 100,
-        msg: "【部署交付】部署成功！新版本已上线至生产环境。您可以点击页面顶部的‘访问部署应用’以体验最新版系统。",
-        updater: (stages) => {
-          stages[4].status = 'completed'
-          stages[4].duration = '15分钟'
-        }
-      }
-    ]
-
-    let currentStep = 0
-
-    const executeStep = () => {
-      if (currentStep >= steps.length) {
-        onComplete()
-        return
-      }
-
-      const step = steps[currentStep]
-      addAIMessage(step.msg)
-
-      setOrders(prevOrders => {
-        return prevOrders.map(o => {
-          if (o.id === orderId) {
-            const updatedStages = o.stages.map(s => ({
-              ...s,
-              items: s.items.map(item => ({ ...item })),
-              outputs: s.outputs.map(out => ({ ...out })),
-              reviews: s.reviews.map(rev => ({ ...rev }))
-            }))
-            step.updater(updatedStages)
-            return {
-              ...o,
-              progress: step.progress,
-              stages: updatedStages
-            }
-          }
-          return o
-        })
+  useEffect(() => {
+    let cancelled = false
+    listWorkOrders()
+      .then((loadedOrders) => {
+        if (cancelled) return
+        setRuntimeOrders(loadedOrders)
+        setApiError('')
       })
+      .catch((error) => {
+        if (!cancelled) setApiError(error.message || '后端服务未连接')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-      currentStep++
-      setTimeout(executeStep, 2000)
+  useEffect(() => {
+    if (!orders.some(order => order.id === selectedOrderId)) {
+      setSelectedOrderId(orders[0]?.id ?? null)
+    }
+  }, [orders, selectedOrderId])
+
+  useEffect(() => {
+    if (newWorkOrderRequest !== lastCreateRequestRef.current) {
+      lastCreateRequestRef.current = newWorkOrderRequest
+      setCreateModalOpen(true)
+      setCreateError('')
+    }
+  }, [newWorkOrderRequest])
+
+  useEffect(() => {
+    if (!isRuntimeOrder(selectedOrder)) return undefined
+    return subscribeWorkOrderEvents(selectedOrder.id, {
+      onEvent: (event) => {
+        const updatedOrder = event.data?.workOrder
+        if (updatedOrder) {
+          setRuntimeOrders(prev => [updatedOrder, ...prev.filter(order => order.id !== updatedOrder.id)])
+          setApiError('')
+        }
+      },
+      onError: () => {
+        setApiError('实时连接中断，页面仍会保留最近一次状态。')
+      }
+    })
+  }, [selectedOrder?.id])
+
+  const handleGoToApp = (order) => {
+    if (isRuntimeOrder(order)) {
+      if (order.deploymentUrl) {
+        window.open(order.deploymentUrl, '_blank', 'noopener,noreferrer')
+      }
+      return
+    }
+    setActiveAppView(order.id)
+  }
+
+  const handleCreateSubmit = async (event) => {
+    event.preventDefault()
+    if (!createText.trim() || creating) return
+    setCreating(true)
+    setCreateError('')
+    try {
+      const created = await createWorkOrder(createText.trim())
+      setRuntimeOrders(prev => [created, ...prev.filter(order => order.id !== created.id)])
+      setSelectedOrderId(created.id)
+      setCreateText('')
+      setCreateModalOpen(false)
+      setApiError('')
+      setSidebarOpen?.(false)
+    } catch (error) {
+      setCreateError(error.message || '创建工单失败')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleChatMessage = async (order, message) => {
+    setChatLoading(true)
+    setChatError('')
+    try {
+      const updated = isRuntimeOrder(order)
+        ? await sendWorkOrderMessage(order.id, message)
+        : await createWorkOrder(`${order.title}\n\n${message}`)
+      setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
+      setSelectedOrderId(updated.id)
+      setApiError('')
+    } catch (error) {
+      setChatError(error.message || '发送失败')
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
+  const handleShowStageLogs = async (stage) => {
+    setStageLogModal({
+      open: true,
+      stage,
+      log: null,
+      loading: true,
+      error: ''
+    })
+
+    if (!isRuntimeOrder(selectedOrder)) {
+      setStageLogModal({
+        open: true,
+        stage,
+        log: {
+          stageName: stage.name,
+          logPath: null,
+          content: buildLocalStageSummary(stage)
+        },
+        loading: false,
+        error: ''
+      })
+      return
     }
 
-    executeStep()
+    try {
+      const log = await fetchStageLog(selectedOrder.id, stage.key)
+      setStageLogModal({
+        open: true,
+        stage,
+        log,
+        loading: false,
+        error: ''
+      })
+    } catch (error) {
+      setStageLogModal({
+        open: true,
+        stage,
+        log: null,
+        loading: false,
+        error: error.message || '读取日志失败'
+      })
+    }
   }
 
   if (activeAppView !== null) {
@@ -1463,7 +1648,24 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
           <h1 className="text-2xl font-bold text-gray-800">流水线看板</h1>
           <p className="text-gray-500 text-sm mt-1">软件系统生产全链路可视化</p>
         </div>
+        <button
+          onClick={() => {
+            setCreateModalOpen(true)
+            setCreateError('')
+          }}
+          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2"
+        >
+          <Package className="w-4 h-4" />
+          新建工单
+        </button>
       </div>
+
+      {apiError && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{apiError}</span>
+        </div>
+      )}
 
       <div className="flex" style={{ height: 'calc(100vh - 200px)' }}>
         <div className="w-60 flex-shrink-0 space-y-3 mr-4">
@@ -1475,7 +1677,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
                 order={order}
                 isSelected={selectedOrder?.id === order.id}
                 onClick={() => setSelectedOrderId(order.id)}
-                onGoToApp={setActiveAppView}
+                onGoToApp={handleGoToApp}
               />
             ))}
           </div>
@@ -1487,11 +1689,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
               <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
                 <button
-                  onClick={() => setActiveAppView(selectedOrder.id)}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                  onClick={() => handleGoToApp(selectedOrder)}
+                  disabled={!canVisitSelected}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all disabled:opacity-50 disabled:hover:scale-100 hover:scale-105"
                 >
                   <Globe className="w-3.5 h-3.5" />
-                  访问部署应用
+                  {isRuntimeOrder(selectedOrder) && !selectedOrder.deploymentUrl ? '等待部署' : '访问部署应用'}
                 </button>
                 {!isChatOpen && (
                   <button
@@ -1518,6 +1721,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
                 <Lock className="w-3 h-3 text-gray-500" />
                 <span className="text-gray-600">{pendingCount} 等待</span>
               </div>
+              {failedCount > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded">
+                  <AlertCircle className="w-3 h-3 text-red-600" />
+                  <span className="text-red-700">{failedCount} 失败</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1529,6 +1738,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
                   stage={stage}
                   index={index}
                   isLast={index === selectedOrder.stages.length - 1}
+                  onShowLogs={handleShowStageLogs}
                 />
               ))}
             </div>
@@ -1539,11 +1749,54 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
         <div className={`transition-all duration-300 ease-in-out flex-shrink-0 flex h-full overflow-hidden ${
           isChatOpen ? 'w-80 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
         }`}>
-          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} onClose={() => setSidebarOpen(true)} />
+          <AIChatPanel
+            activeOrder={selectedOrder}
+            onSendMessage={handleChatMessage}
+            onClose={() => setSidebarOpen(true)}
+            loading={chatLoading}
+            error={chatError}
+          />
         </div>
       </div>
+      <CreateWorkOrderModal
+        open={createModalOpen}
+        value={createText}
+        onChange={setCreateText}
+        onClose={() => setCreateModalOpen(false)}
+        onSubmit={handleCreateSubmit}
+        submitting={creating}
+        error={createError}
+      />
+      <StageLogModal
+        open={stageLogModal.open}
+        stage={stageLogModal.stage}
+        log={stageLogModal.log}
+        loading={stageLogModal.loading}
+        error={stageLogModal.error}
+        onClose={() => setStageLogModal(prev => ({ ...prev, open: false }))}
+      />
     </div>
   )
+}
+
+function buildLocalStageSummary(stage) {
+  const lines = [
+    `# ${stage.name}`,
+    `status: ${stage.status}`,
+    `duration: ${stage.duration || '-'}`,
+    '',
+    '## 环节内容',
+    ...(stage.items || []).map((item) => `- ${item.label}: ${item.value || '-'}`),
+    '',
+    '## 输出物',
+    ...(stage.outputs || []).map((output) => `- ${output.label || output.value || '-'} (${output.status || '-'})`),
+    '',
+    '## 审核环节',
+    ...(stage.reviews || []).map((review) => `- ${review.label}: ${review.status || '-'} ${review.issues || ''}`),
+    '',
+    stage.logSummary ? `## 错误摘要\n${stage.logSummary}` : ''
+  ]
+  return lines.filter(Boolean).join('\n')
 }
 
 export default KanbanBoard

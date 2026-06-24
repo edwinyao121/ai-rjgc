@@ -22,11 +22,12 @@ function App() {
   const [activePage, setActivePage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showAgentTip, setShowAgentTip] = useState(false)
+  const [newWorkOrderRequest, setNewWorkOrderRequest] = useState(0)
 
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard': return <Dashboard />
-      case 'kanban': return <KanbanBoard sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      case 'kanban': return <KanbanBoard sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} newWorkOrderRequest={newWorkOrderRequest} />
       case 'appstore': return <AppStore />
       case 'agents': return <AgentCenter />
       case 'rules': return <RuleEngine />
@@ -117,7 +118,13 @@ function App() {
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
 
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+            <button
+              onClick={() => {
+                setActivePage('kanban')
+                setNewWorkOrderRequest((value) => value + 1)
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
               <Plus className="w-4 h-4" />
               新建工单
             </button>

@@ -1,0 +1,134 @@
+import { spawn } from 'node:child_process'
+import http from 'node:http'
+import https from 'node:https'
+import net from 'node:net'
+
+export class CommandRunner {
+  run(command, options = {}) {
+    return runCommand(command, options)
+  }
+
+  start(command, options = {}) {
+    return startCommand(command, options)
+  }
+}
+
+export function runCommand(command, {
+  cwd = process.cwd(),
+  env = {},
+  timeoutMs = 10 * 60 * 1000,
+  maxOutputBytes = 1024 * 1024
+} = {}) {
+  assertCommandArray(command)
+
+  return new Promise((resolve) => {
+    const child = spawn(command[0], command.slice(1), {
+      cwd,
+      env: { ...process.env, ...env },
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    let stdout = ''
+    let stderr = ''
+    let timedOut = false
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+      setTimeout(() => child.kill('SIGKILL'), 2000).unref()
+    }, timeoutMs)
+
+    child.stdout.on('data', (chunk) => {
+      stdout = trimBufferedOutput(stdout + chunk.toString(), maxOutputBytes)
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr = trimBufferedOutput(stderr + chunk.toString(), maxOutputBytes)
+    })
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${error.message}`.trim(), timedOut })
+    })
+    child.on('close', (exitCode) => {
+      clearTimeout(timer)
+      resolve({ exitCode: timedOut ? 124 : exitCode ?? 0, stdout, stderr, timedOut })
+    })
+  })
+}
+
+export function startCommand(command, {
+  cwd = process.cwd(),
+  env = {}
+} = {}) {
+  assertCommandArray(command)
+  const child = spawn(command[0], command.slice(1), {
+    cwd,
+    env: { ...process.env, ...env },
+    stdio: ['ignore', 'pipe', 'pipe']
+  })
+  child.stdout?.on('data', () => {})
+  child.stderr?.on('data', () => {})
+  return child
+}
+
+export function assertCommandArray(command) {
+  if (!Array.isArray(command) || command.length === 0 || command.some((part) => typeof part !== 'string' || part.trim() === '')) {
+    throw new Error('Command must be a non-empty string array')
+  }
+}
+
+export function summarizeCommandResult(result) {
+  const combined = `${result.stderr || ''}\n${result.stdout || ''}`.trim()
+  if (!combined) return ''
+  return combined.split('\n').slice(-20).join('\n')
+}
+
+export async function findAvailablePort(startPort = 4101) {
+  let port = startPort
+  while (port < 65000) {
+    if (await canListen(port)) return port
+    port += 1
+  }
+  throw new Error('No available local deployment port found')
+}
+
+export async function waitForHealth(url, {
+  timeoutMs = 60 * 1000,
+  intervalMs = 1000
+} = {}) {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await probeHttp(url)) return true
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+  return false
+}
+
+function canListen(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen(port, '127.0.0.1')
+  })
+}
+
+function probeHttp(url) {
+  return new Promise((resolve) => {
+    const client = url.startsWith('https:') ? https : http
+    const request = client.get(url, { timeout: 3000 }, (response) => {
+      response.resume()
+      resolve(response.statusCode >= 200 && response.statusCode < 500)
+    })
+    request.on('timeout', () => {
+      request.destroy()
+      resolve(false)
+    })
+    request.on('error', () => resolve(false))
+  })
+}
+
+function trimBufferedOutput(value, maxOutputBytes) {
+  if (Buffer.byteLength(value, 'utf8') <= maxOutputBytes) return value
+  return value.slice(-maxOutputBytes)
+}
