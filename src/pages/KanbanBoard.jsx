@@ -1325,18 +1325,19 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
   const [orders, setOrders] = useState(workOrders)
   const [selectedOrderId, setSelectedOrderId] = useState(workOrders[0].id)
   const [activeAppView, setActiveAppView] = useState(null)
-  const [isChatOpen, setIsChatOpen] = useState(true)
+
+  const isChatOpen = !sidebarOpen
 
   useEffect(() => {
     if (setSidebarOpen) {
-      setSidebarOpen(!isChatOpen)
+      setSidebarOpen(false) // Collapse sidebar on mount to show chat
     }
     return () => {
       if (setSidebarOpen) {
-        setSidebarOpen(true)
+        setSidebarOpen(true) // Restore sidebar on unmount
       }
     }
-  }, [isChatOpen, setSidebarOpen])
+  }, [setSidebarOpen])
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
 
@@ -1494,7 +1495,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
                 </button>
                 {!isChatOpen && (
                   <button
-                    onClick={() => setIsChatOpen(true)}
+                    onClick={() => setSidebarOpen(false)}
                     className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
@@ -1538,7 +1539,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
         <div className={`transition-all duration-300 ease-in-out flex-shrink-0 flex h-full overflow-hidden ${
           isChatOpen ? 'w-80 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
         }`}>
-          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} onClose={() => setIsChatOpen(false)} />
+          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} onClose={() => setSidebarOpen(true)} />
         </div>
       </div>
     </div>
