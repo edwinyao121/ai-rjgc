@@ -24,7 +24,7 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard': return <Dashboard />
-      case 'kanban': return <KanbanBoard />
+      case 'kanban': return <KanbanBoard sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       case 'agents': return <AgentCenter />
       case 'rules': return <RuleEngine />
       case 'engineering': return <EngineeringView />

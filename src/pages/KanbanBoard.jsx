@@ -1321,11 +1321,22 @@ function AIChatPanel({ activeOrder, onAdvanceStages, onClose }) {
   )
 }
 
-function KanbanBoard() {
+function KanbanBoard({ sidebarOpen, setSidebarOpen }) {
   const [orders, setOrders] = useState(workOrders)
   const [selectedOrderId, setSelectedOrderId] = useState(workOrders[0].id)
   const [activeAppView, setActiveAppView] = useState(null)
   const [isChatOpen, setIsChatOpen] = useState(true)
+
+  useEffect(() => {
+    if (setSidebarOpen) {
+      setSidebarOpen(!isChatOpen)
+    }
+    return () => {
+      if (setSidebarOpen) {
+        setSidebarOpen(true)
+      }
+    }
+  }, [isChatOpen, setSidebarOpen])
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
 
