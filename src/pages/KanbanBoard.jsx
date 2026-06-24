@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download } from 'lucide-react'
+import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target } from 'lucide-react'
 
 const workOrders = [
   {
     id: 1,
-    title: '电商订单系统',
-    domain: '电商域',
+    title: '航母母港潮汐窗口计算器',
+    domain: '海洋域',
     priority: 'high',
     creator: '张三',
-    progress: 60,
+    progress: 80,
     lastUpdate: '5分钟前',
     currentStage: 4,
     stages: [
@@ -21,8 +21,8 @@ const workOrders = [
         duration: '5分钟',
         gate: { entry: null, exit: '需求校验' },
         items: [
-          { type: 'input', label: '原始需求', value: '电商订单全流程管理' },
-          { type: 'ai', label: 'AI 需求分析', value: '已拆解为 12 个功能模块' }
+          { type: 'input', label: '原始需求', value: '接入四大航母母港潮汐数据，根据12.8米吃水阈值计算可出港时间窗并显示倒计时。' },
+          { type: 'ai', label: 'AI 需求分析', value: '拆解为数据抓取、吃水深度校验、仪表盘展示和倒计时计算模块' }
         ],
         outputs: [
           { label: '《需求规格说明书》', status: 'done', url: '#' }
@@ -40,13 +40,11 @@ const workOrders = [
         duration: '25分钟',
         gate: { entry: '需求通过', exit: '设计完备' },
         items: [
-          { type: 'ai', label: '架构方案', value: '前后端分离架构' },
-          { type: 'ai', label: '模块划分', value: '8 个核心模块' },
-          { type: 'ai', label: '接口定义', value: '45 个 RESTful API' }
+          { type: 'ai', label: '架构方案', value: '潮汐API集成 + 四格仪表盘前端 + 10分钟刷新机制' },
+          { type: 'ai', label: '接口定义', value: '4 个港口潮汐数据对接 API' }
         ],
         outputs: [
-          { label: '《软件设计说明书》', status: 'done', url: '#' },
-          { label: '《接口设计文档》', status: 'done', url: '#' }
+          { label: '《系统设计说明书》', status: 'done', url: '#' }
         ],
         reviews: [
           { type: '人工审核', label: '设计评审', status: 'passed', reviewer: '李四', time: '10:30' }
@@ -61,13 +59,12 @@ const workOrders = [
         duration: '45分钟',
         gate: { entry: '设计完备', exit: '编译通过' },
         items: [
-          { type: 'ai', label: '代码生成', value: '125 个源文件' },
-          { type: 'ai', label: '编译构建', value: '构建成功' },
-          { type: 'ai', label: '代码规范', value: '合规检查通过' }
+          { type: 'ai', label: '代码生成', value: '生成 10 分钟轮询抓取及倒计时计算逻辑' },
+          { type: 'ai', label: '编译构建', value: '构建成功' }
         ],
         outputs: [
-          { label: '代码仓库', value: 'git@code.example.com:ecommerce-order.git', isLink: true },
-          { label: '构建产物', value: 'order-service-v1.0.0.jar', isFile: true }
+          { label: '代码仓库', value: 'git@code.example.com:tide-calculator.git', isLink: true },
+          { label: '构建产物', value: 'tide-service-v1.0.0.jar', isFile: true }
         ],
         reviews: [
           { type: '智能检视', label: 'CodeReview', status: 'passed', issues: '0 严重问题' }
@@ -82,9 +79,9 @@ const workOrders = [
         duration: '进行中',
         gate: { entry: '编译通过', exit: '质检通过' },
         items: [
-          { type: 'ai', label: '测试用例', value: '生成 86 条用例' },
-          { type: 'ai', label: '用例执行', value: '执行中 3/5', progress: 60 },
-          { type: 'ai', label: '覆盖率', value: '当前 72%' }
+          { type: 'ai', label: '测试用例', value: '生成 24 条用例（吃水深度边界、时间窗倒计时校验等）' },
+          { type: 'ai', label: '用例执行', value: '执行中 18/24', progress: 75 },
+          { type: 'ai', label: '覆盖率', value: '当前 88%' }
         ],
         outputs: [
           { label: '《测试报告》', status: 'pending', url: '#' }
@@ -103,8 +100,7 @@ const workOrders = [
         gate: { entry: '质检通过', exit: '部署成功' },
         items: [
           { type: 'pending', label: '打包部署', value: '等待测试完成' },
-          { type: 'pending', label: '环境配置', value: '-' },
-          { type: 'pending', label: '健康检查', value: '-' }
+          { type: 'pending', label: '环境配置', value: '-' }
         ],
         outputs: [
           { label: '访问地址', value: '待分配', isLink: true }
@@ -117,8 +113,8 @@ const workOrders = [
   },
   {
     id: 2,
-    title: '用户认证中心',
-    domain: '基础域',
+    title: '甲板风实时计算器',
+    domain: '航空域',
     priority: 'critical',
     creator: '李四',
     progress: 95,
@@ -127,14 +123,14 @@ const workOrders = [
     stages: [
       {
         id: 1,
-        name: '需求分析',
+        name: '需求待入厂',
         icon: Package,
         status: 'completed',
         time: '09:30',
         duration: '5分钟',
         gate: { entry: null, exit: '需求校验' },
         items: [
-          { type: 'input', label: '原始需求', value: '统一身份认证中心' }
+          { type: 'input', label: '原始需求', value: '接入全球风场数据，设定最小风速阈值20节，叠加航母30节航速计算合成甲板风。' }
         ],
         outputs: [
           { label: '《需求规格说明书》', status: 'done', url: '#' }
@@ -152,9 +148,7 @@ const workOrders = [
         duration: '20分钟',
         gate: { entry: '需求通过', exit: '设计完备' },
         items: [
-          { type: 'ai', label: '架构方案', value: 'OAuth2.0 + JWT 方案' },
-          { type: 'ai', label: '模块划分', value: '6 个核心模块' },
-          { type: 'ai', label: '接口定义', value: '32 个 RESTful API' }
+          { type: 'ai', label: '架构方案', value: '全球气象格点风场集成 + 向量合成算法 + 5分钟定时刷新' }
         ],
         outputs: [
           { label: '《软件设计说明书》', status: 'done', url: '#' }
@@ -172,12 +166,10 @@ const workOrders = [
         duration: '40分钟',
         gate: { entry: '设计完备', exit: '编译通过' },
         items: [
-          { type: 'ai', label: '代码生成', value: '98 个源文件' },
-          { type: 'ai', label: '编译构建', value: '构建成功' },
-          { type: 'ai', label: '代码规范', value: '合规检查通过' }
+          { type: 'ai', label: '代码生成', value: '向量叠加算法模块、多区域风速合成引擎' }
         ],
         outputs: [
-          { label: '代码仓库', value: 'git@code.example.com:auth-center.git', isLink: true }
+          { label: '代码仓库', value: 'git@code.example.com:deck-wind.git', isLink: true }
         ],
         reviews: [
           { type: '智能检视', label: 'CodeReview', status: 'passed', issues: '0 严重问题' }
@@ -192,9 +184,9 @@ const workOrders = [
         duration: '30分钟',
         gate: { entry: '编译通过', exit: '质检通过' },
         items: [
-          { type: 'ai', label: '测试用例', value: '生成 72 条用例' },
-          { type: 'ai', label: '用例执行', value: '执行完成 72/72' },
-          { type: 'ai', label: '覆盖率', value: '96%' }
+          { type: 'ai', label: '测试用例', value: '生成 45 条用例（覆盖顺风、逆风、临界起降风速等）' },
+          { type: 'ai', label: '用例执行', value: '执行完成 45/45' },
+          { type: 'ai', label: '覆盖率', value: '94%' }
         ],
         outputs: [
           { label: '《测试报告》', status: 'done', url: '#' }
@@ -217,11 +209,217 @@ const workOrders = [
           { type: 'ai', label: '健康检查', value: '生产环境: 检查中' }
         ],
         outputs: [
-          { label: '访问地址', value: 'https://auth.example.com', isLink: true },
-          { label: '预发地址', value: 'https://auth-pre.example.com', isLink: true }
+          { label: '访问地址', value: 'https://deck-wind.example.com', isLink: true },
+          { label: '预发地址', value: 'https://deck-wind-pre.example.com', isLink: true }
         ],
         reviews: [
           { type: '人工审核', label: '上线审批', status: 'in_progress', reviewer: '周八', time: '11:05' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: '海域网格商船密度异常告警器',
+    domain: '监控域',
+    priority: 'high',
+    creator: '王五',
+    progress: 40,
+    lastUpdate: '10分钟前',
+    currentStage: 2,
+    stages: [
+      {
+        id: 1,
+        name: '需求待入厂',
+        icon: Package,
+        status: 'completed',
+        time: '08:30',
+        duration: '10分钟',
+        gate: { entry: null, exit: '需求校验' },
+        items: [
+          { type: 'input', label: '原始需求', value: '接入AIS位置数据，按50海里网格监控，相比30天均值低于70%黄警，低于50%红警，3分钟刷新。' }
+        ],
+        outputs: [
+          { label: '《需求规格说明书》', status: 'done', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '需求完整性审核', status: 'passed', reviewer: '王五', time: '08:40' }
+        ]
+      },
+      {
+        id: 2,
+        name: '系统设计',
+        icon: GitBranch,
+        status: 'active',
+        time: '08:45',
+        duration: '进行中',
+        gate: { entry: '需求通过', exit: '设计完备' },
+        items: [
+          { type: 'ai', label: '架构方案', value: 'AIS数据流引擎 + 网格化密度统计算法 + 3分钟滑动平均比对机制' },
+          { type: 'ai', label: '算法模型', value: '网格基准线计算及突变告警规则' }
+        ],
+        outputs: [
+          { label: '《系统设计说明书》', status: 'pending', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '设计评审', status: 'pending', reviewer: '-', time: '-' }
+        ]
+      },
+      {
+        id: 3,
+        name: '智能编码',
+        icon: FileCode,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '设计完备', exit: '编译通过' },
+        items: [
+          { type: 'pending', label: '编码开发', value: '等待设计文档完成' }
+        ],
+        outputs: [
+          { label: '代码仓库', value: '未创建', isLink: false }
+        ],
+        reviews: [
+          { type: '智能检视', label: 'CodeReview', status: 'pending' }
+        ]
+      },
+      {
+        id: 4,
+        name: '测试质检',
+        icon: FlaskConical,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '编译通过', exit: '质检通过' },
+        items: [
+          { type: 'pending', label: '用例准备', value: '待编码完成后生成' }
+        ],
+        outputs: [
+          { label: '《测试报告》', status: 'pending', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '测试评审', status: 'pending', reviewer: '-', time: '-' }
+        ]
+      },
+      {
+        id: 5,
+        name: '部署交付',
+        icon: Rocket,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '质检通过', exit: '部署成功' },
+        items: [
+          { type: 'pending', label: '打包部署', value: '等待测试完成' }
+        ],
+        outputs: [
+          { label: '访问地址', value: '待分配', isLink: true }
+        ],
+        reviews: [
+          { type: '人工审核', label: '上线审批', status: 'pending', reviewer: '-', time: '-' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 4,
+    title: '开源社区异常监测',
+    domain: '情报域',
+    priority: 'medium',
+    creator: '赵六',
+    progress: 20,
+    lastUpdate: '30分钟前',
+    currentStage: 1,
+    stages: [
+      {
+        id: 1,
+        name: '需求待入厂',
+        icon: Package,
+        status: 'active',
+        time: '11:00',
+        duration: '进行中',
+        gate: { entry: null, exit: '需求校验' },
+        items: [
+          { type: 'input', label: '原始需求', value: '接入Twitter/Insta公开接口，抓取含航母军舰等位置帖子，在地图上绘制目击热度散点图，检测突发目击潮。' },
+          { type: 'ai', label: '需求分析', value: '支持关键词多语言搜索、EXIF及文本地理实体提取、同一海域目击事件多账户空间聚类。' }
+        ],
+        outputs: [
+          { label: '《需求规格说明书》', status: 'pending', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '需求完整性审核', status: 'in_progress', reviewer: '赵六', time: '11:00' }
+        ]
+      },
+      {
+        id: 2,
+        name: '系统设计',
+        icon: GitBranch,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '需求通过', exit: '设计完备' },
+        items: [
+          { type: 'pending', label: '架构设计', value: '抓取器 + 坐标解析器 + 空间聚类服务 + 散点图可视化前端' }
+        ],
+        outputs: [
+          { label: '《系统设计文档》', status: 'pending', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '设计评审', status: 'pending', reviewer: '-', time: '-' }
+        ]
+      },
+      {
+        id: 3,
+        name: '智能编码',
+        icon: FileCode,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '设计完备', exit: '编译通过' },
+        items: [
+          { type: 'pending', label: '代码生成', value: '待设计完成' }
+        ],
+        outputs: [
+          { label: '代码仓库', value: '未创建', isLink: false }
+        ],
+        reviews: [
+          { type: '智能检视', label: 'CodeReview', status: 'pending' }
+        ]
+      },
+      {
+        id: 4,
+        name: '测试质检',
+        icon: FlaskConical,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '编译通过', exit: '质检通过' },
+        items: [
+          { type: 'pending', label: '用例准备', value: '待编码完成后生成' }
+        ],
+        outputs: [
+          { label: '《测试报告》', status: 'pending', url: '#' }
+        ],
+        reviews: [
+          { type: '人工审核', label: '测试评审', status: 'pending', reviewer: '-', time: '-' }
+        ]
+      },
+      {
+        id: 5,
+        name: '部署交付',
+        icon: Rocket,
+        status: 'pending',
+        time: '-',
+        duration: '-',
+        gate: { entry: '质检通过', exit: '部署成功' },
+        items: [
+          { type: 'pending', label: '部署', value: '等待测试完成' }
+        ],
+        outputs: [
+          { label: '访问地址', value: '待分配', isLink: true }
+        ],
+        reviews: [
+          { type: '人工审核', label: '上线审批', status: 'pending', reviewer: '-', time: '-' }
         ]
       }
     ]
@@ -358,7 +556,581 @@ function StageCard({ stage, index, isLast }) {
   )
 }
 
-function WorkOrderCard({ order, isSelected, onClick }) {
+// Simulators
+function TideCalculatorSimulator() {
+  const [tides, setTides] = useState([
+    { name: '诺福克港 (Norfolk)', tide: 13.5, time: '14:00 - 18:30', status: 'open', countdown: '' },
+    { name: '圣迭戈港 (San Diego)', tide: 11.4, time: '19:40 - 23:15', status: 'closed', countdown: '01小时35分钟' },
+    { name: '布雷默顿港 (Bremerton)', tide: 14.1, time: '12:30 - 17:00', status: 'open', countdown: '' },
+    { name: '横须贺港 (Yokosuka)', tide: 12.1, time: '21:10 - 01:45', status: 'closed', countdown: '03小时12分钟' }
+  ])
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = () => {
+    setRefreshing(true)
+    setTimeout(() => {
+      setTides(prev => prev.map(t => {
+        const change = (Math.random() - 0.5) * 0.4
+        const newTide = Math.round((t.tide + change) * 10) / 10
+        const isSatisfied = newTide >= 12.8
+        return {
+          ...t,
+          tide: newTide,
+          status: isSatisfied ? 'open' : 'closed',
+          countdown: isSatisfied ? '' : `${Math.floor(Math.random() * 3) + 1}小时${Math.floor(Math.random() * 50) + 10}分钟`
+        }
+      }))
+      setRefreshing(false)
+    }, 800)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Radio className="w-4 h-4 text-green-500 animate-pulse" />
+          <span className="text-sm font-semibold text-slate-300">潮汐数据源已接入 (每10分钟自动刷新)</span>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded text-xs transition-all"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          手动拉取最新数据
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        {tides.map((port, idx) => (
+          <div key={idx} className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-bold text-white">{port.name}</span>
+              <span className={`px-2.5 py-0.5 rounded text-xs font-semibold ${
+                port.status === 'open' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'
+              }`}>
+                {port.status === 'open' ? '窗口开放' : '窗口关闭'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800">
+                <span className="text-xs text-slate-400 block mb-1">当前潮高</span>
+                <span className={`text-2xl font-black ${port.tide >= 12.8 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {port.tide} 米
+                </span>
+                <span className="text-[10px] text-slate-500 block mt-1">吃水阈值: 12.8 米</span>
+              </div>
+
+              <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex flex-col justify-center">
+                {port.status === 'open' ? (
+                  <>
+                    <span className="text-xs text-slate-400 block mb-1">当前窗口截止</span>
+                    <span className="text-sm font-semibold text-slate-200">{port.time}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs text-slate-400 block mb-1">距离下一个窗口</span>
+                    <span className="text-base font-bold text-red-400 animate-pulse">{port.countdown}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="h-16 relative bg-slate-900/40 rounded-lg border border-slate-800/80 overflow-hidden flex items-end">
+              <svg className="w-full h-full absolute inset-0" viewBox="0 0 300 60">
+                <line x1="0" y1="26" x2="300" y2="26" stroke="#ef4444" strokeWidth="1" strokeDasharray="3,3" />
+                <text x="230" y="20" fill="#ef4444" className="text-[8px]">12.8米吃水线</text>
+                <path
+                  d={`M 0 ${35 - Math.sin(0)*15} Q 75 ${35 - Math.sin(1.5)*15} 150 ${35 - Math.sin(3)*15} T 300 ${35 - Math.sin(6)*15}`}
+                  fill="none"
+                  stroke={port.status === 'open' ? '#10b981' : '#38bdf8'}
+                  strokeWidth="2"
+                />
+                <circle cx="150" cy={35 - Math.sin(3)*15} r="4" fill={port.status === 'open' ? '#10b981' : '#ef4444'} className="animate-ping" />
+                <circle cx="150" cy={35 - Math.sin(3)*15} r="3" fill={port.status === 'open' ? '#10b981' : '#ef4444'} />
+              </svg>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DeckWindCalculatorSimulator() {
+  const [windSpeed, setWindSpeed] = useState(12)
+  const [windAngle, setWindAngle] = useState(45)
+  const [carrierSpeed, setCarrierSpeed] = useState(25)
+  const [carrierHeading, setCarrierHeading] = useState(0)
+
+  const windRad = ((windAngle - carrierHeading) * Math.PI) / 180
+  const vrx = -windSpeed * Math.sin(windRad)
+  const vry = -windSpeed * Math.cos(windRad) - carrierSpeed
+  const relativeSpeed = Math.round(Math.sqrt(vrx * vrx + vry * vry) * 10) / 10
+  let relativeAngle = Math.round(Math.atan2(-vrx, -vry) * 180 / Math.PI)
+  if (relativeAngle < 0) relativeAngle += 360
+
+  const isSpeedOk = relativeSpeed >= 20
+  const isAngleOk = relativeAngle <= 15 || relativeAngle >= 345
+  const isSafe = isSpeedOk && isAngleOk
+
+  const trueWindRad = (windAngle * Math.PI) / 180
+  const twx = 100 - Math.sin(trueWindRad) * 40
+  const twy = 100 - Math.cos(trueWindRad) * 40
+
+  const relWindRad = (relativeAngle * Math.PI) / 180
+  const rwx = 100 + Math.sin(relWindRad) * 60
+  const rwy = 100 + Math.cos(relWindRad) * 60
+
+  return (
+    <div className="grid grid-cols-3 gap-6">
+      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-5 col-span-1">
+        <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-blue-400" />
+          输入计算参数
+        </h3>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-300">真风风速 (knots)</span>
+              <span className="font-bold text-blue-400">{windSpeed} 节</span>
+            </div>
+            <input
+              type="range" min="0" max="50" value={windSpeed}
+              onChange={(e) => setWindSpeed(Number(e.target.value))}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-300">真风风向 (角度)</span>
+              <span className="font-bold text-blue-400">{windAngle}°</span>
+            </div>
+            <input
+              type="range" min="0" max="360" value={windAngle}
+              onChange={(e) => setWindAngle(Number(e.target.value))}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-300">航母航速 (knots)</span>
+              <span className="font-bold text-emerald-400">{carrierSpeed} 节</span>
+            </div>
+            <input
+              type="range" min="0" max="30" value={carrierSpeed}
+              onChange={(e) => setCarrierSpeed(Number(e.target.value))}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-300">航母航向 (角度)</span>
+              <span className="font-bold text-emerald-400">{carrierHeading}°</span>
+            </div>
+            <input
+              type="range" min="0" max="360" value={carrierHeading}
+              onChange={(e) => setCarrierHeading(Number(e.target.value))}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 flex flex-col items-center justify-center col-span-1">
+        <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 w-full text-center mb-4 flex items-center justify-center gap-2">
+          <Compass className="w-4 h-4 text-purple-400" />
+          甲板合成风矢量解算
+        </h3>
+
+        <div className="relative w-48 h-48 bg-slate-900 rounded-full border border-slate-700 flex items-center justify-center">
+          <div className="absolute w-full h-px bg-slate-800"></div>
+          <div className="absolute h-full w-px bg-slate-800"></div>
+          <div className="absolute inset-4 rounded-full border border-slate-800 border-dashed"></div>
+          <span className="absolute top-1 text-[10px] text-slate-500 font-bold">N 0°</span>
+          <span className="absolute bottom-1 text-[10px] text-slate-500 font-bold">S 180°</span>
+          <span className="absolute right-1 text-[10px] text-slate-500 font-bold">E 90°</span>
+          <span className="absolute left-1 text-[10px] text-slate-500 font-bold">W 270°</span>
+
+          <svg className="w-full h-full absolute inset-0 z-10">
+            <path d="M 100 100 L 92 20 A 80 80 0 0 1 108 20 Z" fill="rgba(16, 185, 129, 0.15)" />
+
+            <g transform="translate(93, 85)">
+              <path d="M 7 0 L 14 8 L 14 26 L 0 26 L 0 8 Z" fill="#475569" stroke="#94a3b8" strokeWidth="1" />
+              <line x1="7" y1="26" x2="7" y2="2" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="2,2" />
+            </g>
+
+            <line x1="100" y1="100" x2="100" y2={100 - carrierSpeed * 1.5} stroke="#10b981" strokeWidth="2.5" markerEnd="url(#arrow-green)" />
+            <line x1={twx} y1={twy} x2="100" y2="100" stroke="#3b82f6" strokeWidth="2" strokeDasharray="3,3" markerEnd="url(#arrow-blue)" />
+            <line x1="100" y1="100" x2={rwx} y2={rwy} stroke="#ef4444" strokeWidth="3" markerEnd="url(#arrow-red)" />
+
+            <defs>
+              <marker id="arrow-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <polygon points="0 0, 6 3, 0 6" fill="#10b981" />
+              </marker>
+              <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <polygon points="0 0, 6 3, 0 6" fill="#3b82f6" />
+              </marker>
+              <marker id="arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <polygon points="0 0, 6 3, 0 6" fill="#ef4444" />
+              </marker>
+            </defs>
+          </svg>
+        </div>
+
+        <div className="flex gap-4 mt-3 text-[10px]">
+          <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-blue-500"></span> 真风</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-emerald-500"></span> 航速</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-red-500"></span> 合成甲板风</span>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-5 space-y-4 col-span-1 flex flex-col justify-between">
+        <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-2">
+          <Wind className="w-4 h-4 text-emerald-400" />
+          解算状态输出
+        </h3>
+
+        <div className="space-y-3 flex-1 justify-center flex flex-col">
+          <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex justify-between items-center">
+            <div>
+              <span className="text-xs text-slate-400 block">合成甲板风速</span>
+              <span className="text-2xl font-black text-white">{relativeSpeed} 节</span>
+            </div>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isSpeedOk ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'}`}>
+              {isSpeedOk ? '风速达标' : '风速偏低'}
+            </span>
+          </div>
+
+          <div className="bg-slate-900/60 rounded-lg p-3 border border-slate-800 flex justify-between items-center">
+            <div>
+              <span className="text-xs text-slate-400 block">合成甲板风角</span>
+              <span className="text-2xl font-black text-white">{relativeAngle}°</span>
+            </div>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isAngleOk ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'}`}>
+              {isAngleOk ? '偏角合规' : '偏角超限'}
+            </span>
+          </div>
+        </div>
+
+        <div className={`rounded-xl p-4 text-center border transition-all ${
+          isSafe
+            ? 'bg-emerald-950/60 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+            : 'bg-red-950/60 border-red-500 text-red-400'
+        }`}>
+          <span className="text-xs block mb-1">舰载机安全起降状态</span>
+          <span className="text-base font-bold flex items-center justify-center gap-1.5">
+            {isSafe ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                满足安全着舰条件
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                禁止着舰 / 需弹射辅助
+              </>
+            )}
+          </span>
+          <span className="text-[10px] text-slate-400 block mt-1">（最小甲板风速需20节，偏角±15°内）</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MerchantVesselAlerterSimulator() {
+  const [filterAlerts, setFilterAlerts] = useState(false)
+  const [grids, setGrids] = useState([
+    { id: 'A1', name: '冲绳东部海域', count: 12, baseline: 25, pct: 48, sparkline: [25, 23, 22, 19, 18, 15, 12, 12, 12, 12] },
+    { id: 'A2', name: '横须贺外海', count: 28, baseline: 30, pct: 93, sparkline: [29, 31, 30, 28, 29, 29, 30, 27, 28, 28] },
+    { id: 'B1', name: '南海北部网格', count: 14, baseline: 22, pct: 63, sparkline: [22, 21, 23, 20, 18, 17, 16, 15, 14, 14] },
+    { id: 'B2', name: '关岛周边海域', count: 9, baseline: 20, pct: 45, sparkline: [21, 19, 17, 15, 13, 11, 10, 9, 9, 9] },
+    { id: 'C1', name: '苏里高海峡', count: 19, baseline: 20, pct: 95, sparkline: [19, 21, 20, 20, 18, 19, 19, 20, 18, 19] },
+    { id: 'C2', name: '巴林塘海峡', count: 8, baseline: 12, pct: 66, sparkline: [12, 11, 10, 11, 9, 8, 9, 8, 8, 8] }
+  ])
+
+  const triggerRefresh = () => {
+    setGrids(prev => prev.map(g => {
+      const change = Math.floor((Math.random() - 0.5) * 4)
+      const newCount = Math.max(2, g.count + change)
+      const newPct = Math.round((newCount / g.baseline) * 100)
+      const newSpark = [...g.sparkline.slice(1), newCount]
+      return {
+        ...g,
+        count: newCount,
+        pct: newPct,
+        sparkline: newSpark
+      }
+    }))
+  }
+
+  const displayedGrids = filterAlerts ? grids.filter(g => g.pct < 70) : grids
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-1.5 text-slate-300">
+            <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span>AIS 位置数据流活跃 (3分钟轮询)</span>
+          </div>
+          <button
+            onClick={triggerRefresh}
+            className="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            模拟AIS刷新
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400">只看异常告警网格</label>
+          <input
+            type="checkbox"
+            checked={filterAlerts}
+            onChange={(e) => setFilterAlerts(e.target.checked)}
+            className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-blue-500 accent-blue-600 focus:ring-0 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {displayedGrids.map((grid) => {
+          const status = grid.pct < 50 ? 'red' : grid.pct < 70 ? 'yellow' : 'green'
+          const points = grid.sparkline.map((val, idx) => {
+            const x = (idx * 16).toFixed(0)
+            const maxVal = grid.baseline * 1.3
+            const y = (35 - (val / maxVal) * 30).toFixed(0)
+            return `${x},${y}`
+          }).join(' ')
+
+          return (
+            <div key={grid.id} className={`bg-slate-800/40 border rounded-xl p-4 space-y-3 transition-all ${
+              status === 'red' ? 'border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.1)]' :
+              status === 'yellow' ? 'border-amber-500/80 shadow-[0_0_15px_rgba(245,158,11,0.1)]' :
+              'border-slate-700/80'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 font-mono block">GRID {grid.id}</span>
+                  <span className="text-sm font-bold text-white">{grid.name}</span>
+                </div>
+                <span className={`w-3 h-3 rounded-full ${
+                  status === 'red' ? 'bg-red-500 animate-ping' :
+                  status === 'yellow' ? 'bg-amber-500 animate-pulse' :
+                  'bg-emerald-500'
+                }`}></span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 bg-slate-900/60 rounded-lg p-2.5 border border-slate-800">
+                <div>
+                  <span className="text-[10px] text-slate-500 block">当前商船</span>
+                  <span className={`text-base font-black ${
+                    status === 'red' ? 'text-red-400' :
+                    status === 'yellow' ? 'text-amber-400' :
+                    'text-emerald-400'
+                  }`}>{grid.count} 艘</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 block">30天均值</span>
+                  <span className="text-base font-bold text-slate-300">{grid.baseline} 艘</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-slate-800/60 pt-2 text-[10px]">
+                <span className="text-slate-400">密度比例: </span>
+                <span className={`font-bold ${
+                  status === 'red' ? 'text-red-400' :
+                  status === 'yellow' ? 'text-amber-400' :
+                  'text-emerald-400'
+                }`}>{grid.pct}%</span>
+              </div>
+
+              <div className="h-10 w-full relative pt-2 bg-slate-900/30 rounded border border-slate-800/40">
+                <svg className="w-full h-full" viewBox="0 0 144 40">
+                  <line x1="0" y1="20" x2="144" y2="20" stroke="#475569" strokeWidth="0.5" strokeDasharray="2,2" />
+                  <polyline
+                    fill="none"
+                    stroke={status === 'red' ? '#ef4444' : status === 'yellow' ? '#f59e0b' : '#10b981'}
+                    strokeWidth="1.5"
+                    points={points}
+                  />
+                </svg>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function CommunityMonitorSimulator() {
+  const [analysing, setAnalysing] = useState(false)
+  const [hasCluster, setHasCluster] = useState(false)
+  const [posts, setPosts] = useState([
+    { id: 1, source: 'Twitter', text: 'Spotted a massive navy vessel sailing east from Yokosuka Bay!', coords: '[35.281, 139.672]', time: '2分钟前' },
+    { id: 2, source: 'Instagram', text: 'Huge grey ship near Uraga canal this morning. Co-ords captured in photo.', coords: '[35.250, 139.715]', time: '5分钟前' },
+    { id: 3, source: 'Twitter', text: '横须贺外海目击到多艘军舰编队，看起来是航母群出港。', coords: '[35.295, 139.691]', time: '11分钟前' },
+    { id: 4, source: 'Twitter', text: 'Big grey carrier heading out to Eastern Sea.', coords: '[35.264, 139.734]', time: '14分钟前' },
+    { id: 5, source: 'Instagram', text: 'Relaxing day at Okinawa beach. Wait, is that a destroyer?', coords: '[26.212, 127.671]', time: '25分钟前' }
+  ])
+
+  const runClusterAnalysis = () => {
+    setAnalysing(true)
+    setTimeout(() => {
+      setHasCluster(true)
+      setAnalysing(false)
+    }, 1200)
+  }
+
+  const resetAnalysis = () => {
+    setHasCluster(false)
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-6">
+      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-4 col-span-1 space-y-4 flex flex-col">
+        <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center gap-1.5">
+          <Activity className="w-4 h-4 text-sky-400" />
+          最新社交媒体抓取流
+        </h3>
+
+        <div className="space-y-2 overflow-y-auto max-h-80 flex-1">
+          {posts.map((post) => (
+            <div key={post.id} className="bg-slate-900/60 rounded border border-slate-800 p-2.5 text-xs space-y-1.5">
+              <div className="flex justify-between text-[10px]">
+                <span className={post.source === 'Twitter' ? 'text-sky-400 font-semibold' : 'text-pink-400 font-semibold'}>
+                  @{post.source}
+                </span>
+                <span className="text-slate-500">{post.time}</span>
+              </div>
+              <p className="text-slate-300 leading-normal">{post.text}</p>
+              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                <MapPin className="w-3 h-3" />
+                <span>GPS: {post.coords}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-4 col-span-2 space-y-4 flex flex-col">
+        <h3 className="font-bold text-white text-sm border-b border-slate-700 pb-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Map className="w-4 h-4 text-indigo-400" />
+            地理空间坐标落点散点图
+          </div>
+          <span className="text-[10px] px-2 py-0.5 bg-sky-950 text-sky-400 border border-sky-800 rounded">每15分钟抓取</span>
+        </h3>
+
+        <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 relative min-h-64 overflow-hidden flex items-center justify-center">
+          <div className="absolute inset-0 grid grid-cols-8 grid-rows-6 pointer-events-none opacity-20">
+            {Array.from({ length: 48 }).map((_, i) => (
+              <div key={i} className="border-r border-b border-slate-700"></div>
+            ))}
+          </div>
+
+          <div className="absolute top-2 left-2 text-[10px] text-slate-600 font-mono">监控网格: 横须贺沿海防区</div>
+
+          <svg className="absolute inset-0 w-full h-full opacity-35" viewBox="0 0 300 200">
+            <path d="M 0 50 Q 80 80 120 40 T 200 80 T 300 30 L 300 0 L 0 0 Z" fill="#334155" stroke="#475569" strokeWidth="1" />
+            <path d="M 50 180 Q 120 150 180 180 T 270 160" fill="none" stroke="#475569" strokeWidth="1.5" />
+          </svg>
+
+          <g transform="translate(10, 10)">
+            <circle cx="150" cy="90" r="3" fill="#38bdf8" />
+            <circle cx="165" cy="105" r="3" fill="#ec4899" />
+            <circle cx="140" cy="115" r="3" fill="#38bdf8" />
+            <circle cx="170" cy="85" r="3" fill="#38bdf8" />
+            <circle cx="50" cy="150" r="3" fill="#ec4899" />
+          </g>
+
+          {hasCluster && (
+            <g transform="translate(10, 10)">
+              <circle cx="155" cy="98" r="32" fill="rgba(239, 68, 68, 0.12)" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,3" />
+              <g transform="translate(195, 80)">
+                <rect width="110" height="42" rx="4" fill="rgba(15, 23, 42, 0.9)" stroke="#ef4444" strokeWidth="1" />
+                <text x="6" y="16" fill="#ef4444" className="text-[9px] font-bold">发现目击潮聚合</text>
+                <text x="6" y="28" fill="#cbd5e1" className="text-[8px]">Yokosuka (4点重合)</text>
+                <text x="6" y="36" fill="#10b981" className="text-[7px]">置信度: 92%</text>
+              </g>
+            </g>
+          )}
+
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            {!hasCluster ? (
+              <button
+                onClick={runClusterAnalysis}
+                disabled={analysing}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-800 text-white rounded text-xs font-semibold shadow-md flex items-center gap-1 transition-all"
+              >
+                <Target className="w-3.5 h-3.5" />
+                {analysing ? '正在运行聚类分析...' : '运行目击潮空间聚类'}
+              </button>
+            ) : (
+              <button
+                onClick={resetAnalysis}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs border border-slate-700 flex items-center gap-1 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                重置地图分析
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AppSimulator({ appId, onClose }) {
+  const order = workOrders.find(o => o.id === appId)
+
+  return (
+    <div className="bg-slate-900 text-slate-100 rounded-xl border border-slate-800 p-6 flex flex-col h-full space-y-6 shadow-2xl overflow-y-auto" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+              <h1 className="text-xl font-bold text-white">{order?.title}</h1>
+              <span className="text-xs px-2 py-0.5 bg-blue-900/50 text-blue-400 border border-blue-800 rounded">已部署运行中</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">{order?.domain} · 生产环境交付界面</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors"
+        >
+          返回研发看板
+        </button>
+      </div>
+
+      <div className="flex-1">
+        {appId === 1 && <TideCalculatorSimulator />}
+        {appId === 2 && <DeckWindCalculatorSimulator />}
+        {appId === 3 && <MerchantVesselAlerterSimulator />}
+        {appId === 4 && <CommunityMonitorSimulator />}
+      </div>
+    </div>
+  )
+}
+
+function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
   return (
     <div
       onClick={onClick}
@@ -403,7 +1175,18 @@ function WorkOrderCard({ order, isSelected, onClick }) {
 
       <div className="flex items-center justify-between text-xs text-gray-500">
         <span>WO-{String(order.id).padStart(3, '0')}</span>
-        <span>{order.progress}%</span>
+        <div className="flex items-center gap-1.5">
+          <span>{order.progress}%</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onGoToApp(order.id)
+            }}
+            className="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded text-[10px] font-semibold transition-all hover:scale-105"
+          >
+            运行
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -412,10 +1195,17 @@ function WorkOrderCard({ order, isSelected, onClick }) {
 function KanbanBoard() {
   const [selectedOrder, setSelectedOrder] = useState(workOrders[0])
   const [orders] = useState(workOrders)
+  const [activeAppView, setActiveAppView] = useState(null)
 
   const completedCount = selectedOrder.stages.filter(s => s.status === 'completed').length
   const activeCount = selectedOrder.stages.filter(s => s.status === 'active').length
   const pendingCount = selectedOrder.stages.filter(s => s.status === 'pending').length
+
+  if (activeAppView !== null) {
+    return (
+      <AppSimulator appId={activeAppView} onClose={() => setActiveAppView(null)} />
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -428,7 +1218,7 @@ function KanbanBoard() {
 
       <div className="flex gap-4" style={{ height: 'calc(100vh - 200px)' }}>
         <div className="w-72 flex-shrink-0 space-y-3">
-          <h2 className="font-semibold text-gray-700 text-sm px-1">软件系统列表 ({orders.length})</h2>
+          <h2 className="font-semibold text-gray-700 text-sm px-1">应用列表 ({orders.length})</h2>
           <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
             {orders.map(order => (
               <WorkOrderCard
@@ -436,16 +1226,26 @@ function KanbanBoard() {
                 order={order}
                 isSelected={selectedOrder?.id === order.id}
                 onClick={() => setSelectedOrder(order)}
+                onGoToApp={setActiveAppView}
               />
             ))}
           </div>
         </div>
 
         <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
             <div>
-              <h2 className="font-bold text-gray-800">{selectedOrder.title}</h2>
-              <p className="text-sm text-gray-500">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
+              <div className="flex items-center gap-3">
+                <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
+                <button
+                  onClick={() => setActiveAppView(selectedOrder.id)}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  访问部署应用
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
@@ -464,7 +1264,7 @@ function KanbanBoard() {
           </div>
 
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex items-start gap-2 h-full pb-2">
+            <div className="flex items-stretch gap-4 h-full pb-2">
               {selectedOrder.stages.map((stage, index) => (
                 <StageCard
                   key={stage.id}
