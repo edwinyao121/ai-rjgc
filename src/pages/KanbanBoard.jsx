@@ -1235,7 +1235,7 @@ function AIChatPanel({ activeOrder, onAdvanceStages }) {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'ai',
-        text: `已收到您的需求：“${userText}”。正在深度解析，启动 AI 流水线自动化推进...`,
+        text: `已收到您的需求：“${userText}”。正在自动分析，启动 AI 智能研发流程重构交付...`,
         time: '刚刚'
       }])
 
@@ -1253,56 +1253,61 @@ function AIChatPanel({ activeOrder, onAdvanceStages }) {
   }
 
   return (
-    <div className="w-80 bg-white rounded-xl border border-gray-200 p-4 flex flex-col flex-shrink-0 shadow-sm" style={{ height: '100%' }}>
-      <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-3">
-        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-          <Bot className="w-4 h-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-gray-800 text-sm">AI 研发助手</h3>
-          <p className="text-[10px] text-gray-500 truncate">对当前应用: {activeOrder.title}</p>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs mb-3">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-            <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
-              msg.sender === 'user'
-                ? 'bg-blue-600 text-white rounded-tr-none font-medium'
-                : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
-            }`}>
-              {msg.text}
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-60 flex-shrink-0 w-full">
+      <div className="w-full max-w-4xl mx-auto flex flex-col h-full min-h-0">
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+          <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            <Bot className="w-3.5 h-3.5" />
+          </div>
+          <div className="min-w-0 flex-1 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-gray-800 text-xs">AI 研发助手</h3>
+              <span className="text-[10px] text-gray-400">|</span>
+              <p className="text-[10px] text-gray-500 truncate">当前应用: {activeOrder.title}</p>
             </div>
-            <span className="text-[9px] text-gray-400 mt-1 px-1">{msg.time}</span>
+            {loading && (
+              <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-[10px]">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
+                <span>AI 智能研发推进中...</span>
+              </div>
+            )}
           </div>
-        ))}
-        {loading && (
-          <div className="flex items-center gap-1.5 text-gray-400 px-1 py-1">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
-            <span className="text-[10px]">AI 智能研发自动构建中...</span>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+        </div>
 
-      <form onSubmit={handleSend} className="flex gap-2 border-t border-gray-100 pt-3">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="输入重构或调参需求..."
-          disabled={loading}
-          className="flex-1 min-w-0 text-xs px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
-        />
-        <button
-          type="submit"
-          disabled={loading || !inputValue.trim()}
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
-        >
-          发送
-        </button>
-      </form>
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[80%] rounded-lg p-2.5 leading-relaxed ${
+                msg.sender === 'user'
+                  ? 'bg-blue-600 text-white rounded-tr-none font-medium'
+                  : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
+              }`}>
+                {msg.text}
+              </div>
+              <span className="text-[9px] text-gray-400 mt-0.5 px-1">{msg.time}</span>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form onSubmit={handleSend} className="flex gap-2 border-t border-gray-100 pt-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={`请输入对于【${activeOrder.title}】的定制需求（如：优化参数、接入新数据源、配置警报规则等）...`}
+            disabled={loading}
+            className="flex-1 min-w-0 text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
+          />
+          <button
+            type="submit"
+            disabled={loading || !inputValue.trim()}
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0"
+          >
+            发送需求
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
@@ -1454,53 +1459,56 @@ function KanbanBoard() {
           </div>
         </div>
 
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
-                <button
-                  onClick={() => setActiveAppView(selectedOrder.id)}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  访问部署应用
-                </button>
+        {/* Stack the Kanban board and AI chat panel vertically */}
+        <div className="flex-1 flex flex-col gap-4 min-w-0 h-full">
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
+                  <button
+                    onClick={() => setActiveAppView(selectedOrder.id)}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    访问部署应用
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
               </div>
-              <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
+                  <CheckCircle className="w-3 h-3 text-green-600" />
+                  <span className="text-green-700">{completedCount} 完成</span>
+                </div>
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
+                  <Clock className="w-3 h-3 text-blue-600" />
+                  <span className="text-blue-700">{activeCount} 进行中</span>
+                </div>
+                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
+                  <Lock className="w-3 h-3 text-gray-500" />
+                  <span className="text-gray-600">{pendingCount} 等待</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
-                <CheckCircle className="w-3 h-3 text-green-600" />
-                <span className="text-green-700">{completedCount} 完成</span>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
-                <Clock className="w-3 h-3 text-blue-600" />
-                <span className="text-blue-700">{activeCount} 进行中</span>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
-                <Lock className="w-3 h-3 text-gray-500" />
-                <span className="text-gray-600">{pendingCount} 等待</span>
+
+            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex items-stretch gap-4 h-full pb-2">
+                {selectedOrder.stages.map((stage, index) => (
+                  <StageCard
+                    key={stage.id}
+                    stage={stage}
+                    index={index}
+                    isLast={index === selectedOrder.stages.length - 1}
+                  />
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex items-stretch gap-4 h-full pb-2">
-              {selectedOrder.stages.map((stage, index) => (
-                <StageCard
-                  key={stage.id}
-                  stage={stage}
-                  index={index}
-                  isLast={index === selectedOrder.stages.length - 1}
-                />
-              ))}
-            </div>
-          </div>
+          {/* AI R&D Assistant Panel */}
+          <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} />
         </div>
-
-        {/* AI R&D Assistant Panel */}
-        <AIChatPanel activeOrder={selectedOrder} onAdvanceStages={onAdvanceStages} />
       </div>
     </div>
   )
