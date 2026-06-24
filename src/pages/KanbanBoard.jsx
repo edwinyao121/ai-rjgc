@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { Fragment, useState, useEffect, useMemo, useRef } from 'react'
 import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send } from 'lucide-react'
 import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, subscribeWorkOrderEvents } from '../api/workOrders'
 
@@ -484,130 +484,99 @@ function normalizeRuntimeOrder(order) {
   }
 }
 
-function StageCard({ stage, index, isLast, onShowLogs }) {
+// Extract and group deliverables (产出文档, 制品, 访问地址) from order stages
+const getDeliverables = (order) => {
+  const docs = []
+  const builds = []
+  const urls = []
+
+  if (!order) return { docs, builds, urls }
+
+  if (order.deploymentUrl) {
+    urls.push({ label: '部署地址', value: order.deploymentUrl, isLink: true })
+  }
+
+  (order.stages || []).forEach(stage => {
+    (stage.outputs || []).forEach(output => {
+      if (output.isFile || (output.label && (output.label.includes('制品') || output.label.includes('产物')))) {
+        builds.push({ ...output, stageName: stage.name })
+      } else if (output.isLink || (output.value && output.value.startsWith('http')) || output.label === '访问地址' || output.label === '预发地址') {
+        urls.push({ ...output, stageName: stage.name })
+      } else {
+        docs.push({ ...output, stageName: stage.name })
+      }
+    })
+  })
+
+  return { docs, builds, urls }
+}
+
+function StageCard({ stage, onShowLogs }) {
   const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
-  const ItemIcon = itemTypeIcons[stage.items[0]?.type] || Bot
   const visualStatus = normalizeStageStatus(stage.status)
 
   return (
-    <div className={`w-56 rounded-xl ${colors.bg} border-2 ${colors.border} flex flex-col flex-shrink-0 ${
-      visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-lg' : ''
-    } ${visualStatus === 'pending' ? 'opacity-70' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-lg' : ''}`}>
-      <div className={`${colors.header} rounded-t-xl px-3 py-2 flex items-center justify-between`}>
-        <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${colors.text}`} />
-          <span className={`font-semibold text-sm ${colors.text}`}>{stage.name}</span>
+    <div className={`w-40 rounded-xl ${colors.bg} border border-gray-200 flex flex-col flex-shrink-0 transition-all ${
+      visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100 scale-[1.02]' : ''
+    } ${visualStatus === 'pending' ? 'opacity-65' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-md shadow-red-100' : ''}`}>
+      
+      {/* Header */}
+      <div className={`${colors.header} rounded-t-xl px-2 py-1.5 flex items-center justify-between border-b border-gray-200/50`}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="w-4 h-4 rounded-full bg-white/90 border border-gray-200/80 text-[10px] font-bold flex items-center justify-center text-gray-700 flex-shrink-0 font-mono">
+            {stage.id}
+          </span>
+          <Icon className={`w-3.5 h-3.5 ${colors.icon} flex-shrink-0`} />
+          <span className={`font-bold text-[11px] truncate ${colors.text}`}>{stage.name}</span>
         </div>
-        {visualStatus === 'completed' && <CheckCircle className="w-4 h-4 text-green-500" />}
-        {visualStatus === 'active' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>}
-        {visualStatus === 'pending' && <Lock className="w-4 h-4 text-gray-400" />}
-        {visualStatus === 'failed' && <AlertCircle className="w-4 h-4 text-red-500" />}
-      </div>
-
-      <div className="flex-1 p-3 space-y-3 overflow-y-auto">
-        <div className="text-xs text-gray-500">
-          <span>{stage.time}</span>
-          <span className="mx-1">·</span>
-          <span className={visualStatus === 'active' ? 'text-blue-600 font-medium' : visualStatus === 'failed' ? 'text-red-600 font-medium' : ''}>{stage.duration}</span>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">环节内容</p>
-          {stage.items.map((item, i) => {
-            const ItemTypeIcon = itemTypeIcons[item.type] || Bot
-            return (
-              <div key={i} className="bg-white/80 rounded-lg p-2 border border-gray-200/50">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <ItemTypeIcon className={`w-3 h-3 ${item.type === 'ai' ? 'text-blue-500' : item.type === 'input' ? 'text-purple-500' : item.type === 'error' ? 'text-red-500' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium text-gray-600">{item.label}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-800 truncate flex-1">{item.value}</span>
-                  {item.progress !== undefined && (
-                    <span className="text-xs text-blue-600 ml-1">{item.progress}%</span>
-                  )}
-                </div>
-                {item.progress !== undefined && (
-                  <div className="mt-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${item.progress}%` }}></div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">输出物</p>
-          {stage.outputs.map((output, i) => (
-            <div key={i} className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-gray-200/50">
-              {output.isLink ? (
-                <>
-                  <Link className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                  <span className="text-xs text-gray-800 truncate flex-1">{output.value}</span>
-                </>
-              ) : output.isFile ? (
-                <>
-                  <Download className="w-3 h-3 text-purple-500 flex-shrink-0" />
-                  <span className="text-xs text-gray-800 truncate flex-1">{output.value}</span>
-                </>
-              ) : (
-                <>
-                  <FileText className={`w-3 h-3 flex-shrink-0 ${output.status === 'done' ? 'text-green-500' : 'text-gray-400'}`} />
-                  <span className={`text-xs flex-1 ${output.status === 'done' ? 'text-gray-800' : 'text-gray-400'}`}>{output.label}</span>
-                  {output.status === 'done' && <CheckCircle className="w-3 h-3 text-green-500" />}
-                  {output.status === 'pending' && <Clock className="w-3 h-3 text-amber-500" />}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">审核环节</p>
-          {stage.reviews.map((review, i) => (
-            <div key={i} className="bg-white/80 rounded-lg p-2 border border-gray-200/50">
-              <div className="flex items-center gap-1.5 mb-1">
-                {review.type === '人工审核' && <User className="w-3 h-3 text-purple-500" />}
-                {review.type === '智能检视' && <Eye className="w-3 h-3 text-blue-500" />}
-                <span className="text-xs font-medium text-gray-600">{review.label}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                {review.status === 'passed' && (
-                  <span className="text-xs text-green-600">已通过</span>
-                )}
-                {review.status === 'pending' && (
-                  <span className="text-xs text-amber-600">待审核</span>
-                )}
-                {review.status === 'in_progress' && (
-                  <span className="text-xs text-blue-600">审核中</span>
-                )}
-                {review.status === 'failed' && (
-                  <span className="text-xs text-red-600">失败</span>
-                )}
-                {review.reviewer && (
-                  <span className="text-xs text-gray-500">{review.reviewer}</span>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {stage.time && stage.time !== '-' && (
+            <span className="text-[9px] text-gray-500 bg-white/70 px-1 py-0.5 rounded font-mono font-medium shadow-sm">
+              {stage.time}
+            </span>
+          )}
+          {visualStatus === 'completed' && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
+          {visualStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}
+          {visualStatus === 'pending' && <Lock className="w-3 h-3 text-gray-400" />}
+          {visualStatus === 'failed' && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
         </div>
       </div>
 
-      <div className={`px-3 py-2 border-t ${colors.border} rounded-b-xl`}>
-        <div className="flex items-center justify-between text-xs">
-          <span className={colors.text}>准出: {stage.gate.exit}</span>
-          <button
-            type="button"
-            onClick={() => onShowLogs?.(stage)}
-            className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/80 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-white hover:text-blue-600"
-            title="查看阶段日志"
-          >
-            <Eye className="w-3 h-3" />
-            详情
-          </button>
-        </div>
+      {/* Body: Center status and duration */}
+      <div className="flex-1 p-2 flex flex-col justify-center items-center text-center">
+        <span className={`text-[9.5px] font-bold tracking-wider mb-0.5 ${
+          visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
+          visualStatus === 'failed' ? 'text-red-500' :
+          visualStatus === 'completed' ? 'text-green-650' : 'text-gray-400'
+        }`}>
+          {visualStatus === 'completed' && '已完成'}
+          {visualStatus === 'active' && '进行中'}
+          {visualStatus === 'pending' && '等待中'}
+          {visualStatus === 'failed' && '开发失败'}
+        </span>
+        <span className={`text-xs font-bold font-mono tracking-tight ${
+          visualStatus === 'active' ? 'text-blue-600' :
+          visualStatus === 'failed' ? 'text-red-500' :
+          visualStatus === 'completed' ? 'text-gray-750' : 'text-gray-400'
+        }`}>
+          {stage.duration || '-'}
+        </span>
+      </div>
+
+      {/* Footer */}
+      <div className="px-2 py-1.5 border-t border-gray-150/60 bg-white/40 rounded-b-xl flex items-center justify-between text-[10px]">
+        <span className="text-gray-450 truncate max-w-[75px] font-medium text-[9px]">
+          {stage.gate.exit ? `准出: ${stage.gate.exit}` : '-'}
+        </span>
+        <button
+          type="button"
+          onClick={() => onShowLogs?.(stage)}
+          className="inline-flex items-center gap-0.5 rounded border border-gray-200 bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
+        >
+          <Eye className="w-2.5 h-2.5" />
+          详情
+        </button>
       </div>
     </div>
   )
@@ -1224,7 +1193,7 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="text-gray-500">当前阶段</span>
           <span className={`font-medium truncate ml-2 ${hasFailedStage ? 'text-red-600' : 'text-blue-600'}`}>
-            {hasFailedStage ? '执行失败' : activeStage?.name.replace('中', '') || '已完成'}
+            {hasFailedStage ? '执行失败' : activeStage?.name?.replace('中', '') || '已完成'}
           </span>
         </div>
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -1476,11 +1445,21 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     error: ''
   })
   const lastCreateRequestRef = useRef(newWorkOrderRequest)
+  const [activeDeliverablesType, setActiveDeliverablesType] = useState(null)
+  const [deliverablesModalOpen, setDeliverablesModalOpen] = useState(false)
 
   const isChatOpen = !sidebarOpen
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
   const orders = useMemo(() => [...runtimeOrderList, ...workOrders], [runtimeOrderList])
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
+  const { docs, builds } = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
+  const devProgress = useMemo(() => {
+    if (!selectedOrder) return 0
+    const devStages = selectedOrder.stages.filter(s => s.id >= 2 && s.id <= 5)
+    if (devStages.length === 0) return 0
+    const completedDevCount = devStages.filter(s => normalizeStageStatus(s.status) === 'completed').length
+    return Math.round((completedDevCount / devStages.length) * 100)
+  }, [selectedOrder])
   const completedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'completed').length
   const activeCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'active').length
   const pendingCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'pending').length
@@ -1645,7 +1624,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">流水线看板</h1>
+          <h1 className="text-2xl font-bold text-gray-800">应用生产线</h1>
           <p className="text-gray-500 text-sm mt-1">软件系统生产全链路可视化</p>
         </div>
         <button
@@ -1667,10 +1646,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         </div>
       )}
 
-      <div className="flex" style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="flex" style={{ height: 'calc(100vh - 150px)' }}>
         <div className="w-60 flex-shrink-0 space-y-3 mr-4">
           <h2 className="font-semibold text-gray-700 text-sm px-1">应用列表 ({orders.length})</h2>
-          <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+          <div className="space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 210px)' }}>
             {orders.map(order => (
               <WorkOrderCard
                 key={order.id}
@@ -1683,79 +1662,213 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
           </div>
         </div>
 
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0" style={{ minWidth: '600px' }}>
-          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3 flex-wrap gap-3">
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="font-bold text-gray-800 text-lg">{selectedOrder.title}</h2>
-                <button
-                  onClick={() => handleGoToApp(selectedOrder)}
-                  disabled={!canVisitSelected}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all disabled:opacity-50 disabled:hover:scale-100 hover:scale-105"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  {isRuntimeOrder(selectedOrder) && !selectedOrder.deploymentUrl ? '等待部署' : '访问部署应用'}
-                </button>
-                {!isChatOpen && (
+        <div className="flex-1 flex flex-col gap-4 min-h-0 min-w-0">
+          {/* Kanban Board Container (Top) */}
+          <div className={`bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0 transition-all duration-300 ${
+            isChatOpen ? 'h-[245px] flex-shrink-0' : 'flex-1'
+          }`}>
+            <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-2 flex-wrap gap-3">
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="font-bold text-gray-800 text-base">{selectedOrder.title}</h2>
                   <button
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                    onClick={() => handleGoToApp(selectedOrder)}
+                    disabled={!canVisitSelected}
+                    className="flex items-center gap-1 px-2.5 py-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-md text-[11px] font-semibold shadow-sm transition-all disabled:opacity-50 disabled:hover:scale-100 hover:scale-105"
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    AI 研发助手
+                    <Globe className="w-3 h-3" />
+                    {isRuntimeOrder(selectedOrder) && !selectedOrder.deploymentUrl ? '等待部署' : '访问部署应用'}
                   </button>
+                  {!isChatOpen && (
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-md text-[11px] font-semibold shadow-sm transition-all hover:scale-105"
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                      AI 研发助手
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 mt-0.5">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
+              </div>
+              <div className="flex items-center gap-2.5 text-[11px]">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-green-50 rounded">
+                  <CheckCircle className="w-2.5 h-2.5 text-green-600" />
+                  <span className="text-green-700">{completedCount} 完成</span>
+                </div>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 rounded">
+                  <Clock className="w-2.5 h-2.5 text-blue-600" />
+                  <span className="text-blue-700">{activeCount} 进行中</span>
+                </div>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded">
+                  <Lock className="w-2.5 h-2.5 text-gray-500" />
+                  <span className="text-gray-600">{pendingCount} 等待</span>
+                </div>
+                {failedCount > 0 && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-50 rounded">
+                    <AlertCircle className="w-2.5 h-2.5 text-red-600" />
+                    <span className="text-red-700">{failedCount} 失败</span>
+                  </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-1">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1 px-2 py-1 bg-green-50 rounded">
-                <CheckCircle className="w-3 h-3 text-green-600" />
-                <span className="text-green-700">{completedCount} 完成</span>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded">
-                <Clock className="w-3 h-3 text-blue-600" />
-                <span className="text-blue-700">{activeCount} 进行中</span>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
-                <Lock className="w-3 h-3 text-gray-500" />
-                <span className="text-gray-600">{pendingCount} 等待</span>
-              </div>
-              {failedCount > 0 && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded">
-                  <AlertCircle className="w-3 h-3 text-red-600" />
-                  <span className="text-red-700">{failedCount} 失败</span>
+
+            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+              <div className="flex items-stretch gap-3 h-full pb-1">
+                {/* Module 1: 需求分析 */}
+                <div className="border border-slate-205 rounded-xl p-2.5 bg-slate-50/50 flex flex-col flex-shrink-0">
+                  <div className="flex items-center gap-1.5 mb-2 px-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                    <span className="font-bold text-[11px] text-slate-700">需求分析</span>
+                  </div>
+                  <div className="flex-1 flex items-center justify-center">
+                    <StageCard
+                      stage={selectedOrder.stages[0]}
+                      onShowLogs={handleShowStageLogs}
+                    />
+                  </div>
                 </div>
-              )}
+
+                {/* Arrow */}
+                <div className="flex items-center justify-center flex-shrink-0 text-slate-300">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+
+                {/* Module 2: 智能开发 */}
+                <div className="border border-blue-100 rounded-xl p-2.5 bg-blue-50/10 flex flex-col flex-shrink-0">
+                  <div className="flex items-center justify-between mb-2 px-1 gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-550"></span>
+                      <span className="font-bold text-[11px] text-blue-800">智能开发</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-600 rounded-full" style={{ width: `${devProgress}%` }}></div>
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-600 font-mono">{devProgress}%</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 flex gap-2 items-center">
+                    {selectedOrder.stages.slice(1, 5).map((stage, sIdx) => (
+                      <Fragment key={stage.id}>
+                        <StageCard
+                          stage={stage}
+                          onShowLogs={handleShowStageLogs}
+                        />
+                        {sIdx < 3 && (
+                          <div className="flex items-center justify-center flex-shrink-0 text-blue-200">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center justify-center flex-shrink-0 text-slate-300">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+
+                {/* Module 3: 成果物 */}
+                <div className="border border-emerald-100 rounded-xl p-2.5 bg-emerald-50/10 flex flex-col flex-shrink-0">
+                  <div className="flex items-center gap-1.5 mb-2 px-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span className="font-bold text-[11px] text-emerald-800 font-semibold">成果物</span>
+                  </div>
+                  <div className="flex-1 flex gap-2 items-center">
+                    {/* Deliverables Card 1: 文档 */}
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                      <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
+                        <FileText className="w-3 h-3 text-emerald-700" />
+                        <span className="font-bold text-[10px] text-emerald-800">文档</span>
+                      </div>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
+                        <span className="text-[9px] font-bold text-emerald-600 mb-0.5">已产出</span>
+                        <span className="text-[11px] font-extrabold text-gray-700 font-mono">{docs.length} 个文档</span>
+                      </div>
+                      <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveDeliverablesType('docs')
+                            setDeliverablesModalOpen(true)
+                          }}
+                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm"
+                        >
+                          <Eye className="w-2.5 h-2.5" />
+                          详情
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Deliverables Card 2: 制品 */}
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                      <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
+                        <Package className="w-3 h-3 text-emerald-700" />
+                        <span className="font-bold text-[10px] text-emerald-800">制品</span>
+                      </div>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
+                        <span className="text-[9px] font-bold text-emerald-600 mb-0.5">已就绪</span>
+                        <span className="text-[11px] font-extrabold text-gray-700 font-mono">{builds.length} 个构建物</span>
+                      </div>
+                      <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveDeliverablesType('builds')
+                            setDeliverablesModalOpen(true)
+                          }}
+                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm"
+                        >
+                          <Eye className="w-2.5 h-2.5" />
+                          详情
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Deliverables Card 3: 访问地址 */}
+                    <div className="w-32 rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[120px]">
+                      <div className="bg-emerald-100/70 rounded-t-xl px-2 py-1 flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-emerald-700" />
+                        <span className="font-bold text-[10px] text-emerald-800">访问地址</span>
+                      </div>
+                      <div className="flex-1 p-1.5 flex flex-col justify-center items-center text-center">
+                        <span className={`text-[10px] font-bold ${canVisitSelected ? 'text-green-600 font-extrabold animate-pulse' : 'text-gray-400'}`}>
+                          {canVisitSelected ? '访问已就绪' : '等待部署'}
+                        </span>
+                      </div>
+                      <div className="px-2 py-1 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                        <button
+                          type="button"
+                          disabled={!canVisitSelected}
+                          onClick={() => handleGoToApp(selectedOrder)}
+                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Globe className="w-2.5 h-2.5" />
+                          访问
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex items-stretch gap-4 h-full pb-2">
-              {selectedOrder.stages.map((stage, index) => (
-                <StageCard
-                  key={stage.id}
-                  stage={stage}
-                  index={index}
-                  isLast={index === selectedOrder.stages.length - 1}
-                  onShowLogs={handleShowStageLogs}
-                />
-              ))}
-            </div>
+          {/* AI R&D Assistant Panel (Bottom) */}
+          <div className={`transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+            isChatOpen ? 'flex-1 opacity-100' : 'h-0 opacity-0 pointer-events-none'
+          }`}>
+            <AIChatPanel
+              activeOrder={selectedOrder}
+              onSendMessage={handleChatMessage}
+              onClose={() => setSidebarOpen(true)}
+              loading={chatLoading}
+              error={chatError}
+            />
           </div>
-        </div>
-
-        {/* AI R&D Assistant Panel with collapsible layout */}
-        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 flex h-full overflow-hidden ${
-          isChatOpen ? 'w-80 opacity-100 ml-4' : 'w-0 opacity-0 ml-0 pointer-events-none'
-        }`}>
-          <AIChatPanel
-            activeOrder={selectedOrder}
-            onSendMessage={handleChatMessage}
-            onClose={() => setSidebarOpen(true)}
-            loading={chatLoading}
-            error={chatError}
-          />
         </div>
       </div>
       <CreateWorkOrderModal
@@ -1775,6 +1888,62 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         error={stageLogModal.error}
         onClose={() => setStageLogModal(prev => ({ ...prev, open: false }))}
       />
+      <DeliverablesModal
+        open={deliverablesModalOpen}
+        type={activeDeliverablesType}
+        items={activeDeliverablesType === 'docs' ? docs : activeDeliverablesType === 'builds' ? builds : []}
+        onClose={() => {
+          setDeliverablesModalOpen(false)
+          setActiveDeliverablesType(null)
+        }}
+      />
+    </div>
+  )
+}
+
+function DeliverablesModal({ open, type, items, onClose }) {
+  if (!open) return null
+  const title = type === 'docs' ? '产出文档列表' : '制品/构建产物列表'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-white border border-gray-250 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between border-b border-gray-150/70 px-5 py-4 bg-gray-50/50">
+          <h2 className="font-bold text-gray-800 text-sm">{title}</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-400 hover:text-gray-700 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-3">
+          {items.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-6 font-medium">暂无数据</p>
+          ) : (
+            items.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200/50 hover:bg-gray-100/50 transition-colors">
+                <div className="min-w-0 flex-1 pr-3">
+                  <p className="text-xs font-bold text-gray-850 truncate select-all">{item.label || item.value}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">来源阶段: {item.stageName}</p>
+                </div>
+                {item.url && item.url !== '#' && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-shrink-0 px-2 py-1 text-[11px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded border border-blue-200 font-bold transition-colors"
+                  >
+                    查看
+                  </a>
+                )}
+                {item.value && item.value.startsWith('git@') && (
+                  <span className="flex-shrink-0 select-all px-1.5 py-0.5 text-[9px] bg-slate-100 border border-gray-300 rounded font-mono text-gray-700 font-semibold shadow-sm">
+                    {item.value}
+                  </span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   )
 }

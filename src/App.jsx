@@ -10,7 +10,7 @@ import SettingsPage from './pages/SettingsPage'
 
 const navItems = [
   { id: 'dashboard', label: '工作台大盘', icon: LayoutDashboard },
-  { id: 'kanban', label: '流水线看板', icon: Kanban },
+  { id: 'kanban', label: '应用生产线', icon: Kanban },
   { id: 'appstore', label: '应用商店', icon: ShoppingBag },
   { id: 'agents', label: 'Agent中心', icon: Bot },
   { id: 'rules', label: '规则引擎', icon: Shield },
