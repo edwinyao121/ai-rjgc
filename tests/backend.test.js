@@ -7,7 +7,7 @@ import path from 'node:path'
 import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
-import { parseClarificationResponse, buildOpencodeCommand } from '../server/lib/opencode.js'
+import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt } from '../server/lib/opencode.js'
 import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
@@ -60,8 +60,32 @@ test('parses clarification JSON from opencode JSON events and markdown fences', 
     complete: false,
     reply: '请补充目标用户和验收标准',
     requirementsMarkdown: '',
+    requirementsItems: {
+      detailedRequirements: [],
+      businessNecessity: [],
+      expectedOutcome: [],
+      targetUsers: '',
+      coreFeatures: [],
+      inputData: '',
+      mainPages: '',
+      acceptanceCriteria: []
+    },
     title: '潮汐应用'
   })
+})
+
+test('clarification prompt asks the agent to deepen scenarios into detailed requirements', () => {
+  const prompt = createClarificationPrompt([
+    { sender: 'user', text: '做一个仓库库存预警看板' }
+  ])
+
+  assert.match(prompt, /深化理解用户输入场景/)
+  assert.match(prompt, /多条细化需求/)
+  assert.match(prompt, /每条细化需求都必须包含/)
+  assert.match(prompt, /业务需求必要性/)
+  assert.match(prompt, /预期成效/)
+  assert.match(prompt, /尽量不要向用户提问题/)
+  assert.match(prompt, /每条细化需求之间必须用 \\n\\n 分隔/)
 })
 
 test('parses clarification JSON with multiline requirementsMarkdown from opencode text events', () => {

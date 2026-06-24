@@ -11,7 +11,7 @@ import {
   markStageFailed,
   markStageRunning
 } from './stages.js'
-import { fallbackRequirementsMarkdown, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, parseClarificationResponse } from './opencode.js'
+import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, parseClarificationResponse } from './opencode.js'
 import { MANIFEST_FILE, readManifest, substitutePortInCommand, substitutePortInUrl } from './manifest.js'
 import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth } from './runner.js'
 
@@ -195,6 +195,9 @@ export class WorkOrderService {
         title: state.title,
         messages: state.messages
       })
+      const requirementsItems = clarification.requirementsItems && (clarification.requirementsItems.detailedRequirements?.length || clarification.requirementsItems.businessNecessity?.length || clarification.requirementsItems.expectedOutcome?.length)
+        ? clarification.requirementsItems
+        : fallbackRequirementsItems({ title: state.title, messages: state.messages })
       const requirementsPath = await this.store.writeRequirements(id, requirementsMarkdown)
       await this.store.writeAppFile(id, 'requirements.md', requirementsMarkdown)
 
@@ -210,12 +213,27 @@ export class WorkOrderService {
           path: requirementsPath
         }
       ])
+      stage.requirementsItems = requirementsItems
       state.requirementsPath = requirementsPath
       state.requirementsMarkdown = requirementsMarkdown
+      state.requirementsItems = requirementsItems
       state.status = WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT
       state.currentStage = 2
       state.progress = getStageProgress(state.stages)
       await this.store.saveWorkOrder(state)
+      const requirementsAnnouncement = createMessage({
+        id: randomUUID(),
+        role: 'assistant',
+        content: '需求规格说明书已生成，包含业务必要性、预期成效等条目化内容。',
+        phase: 'clarification',
+        stageId: 'requirements',
+        kind: 'requirements-items',
+        metadata: { stageKey: 'requirements', requirementsItems, requirementsPath },
+        status: 'COMPLETED',
+        createdAt: now
+      })
+      state.messages.push(requirementsAnnouncement)
+      await this.emit(id, 'assistant.message.append', { message: requirementsAnnouncement, workOrder: state })
       await this.emit(id, 'assistant.message.append', { message: assistantMessage, workOrder: state })
       await this.emitStageStatus(id, state, stage, '需求澄清完成，已生成需求文档')
       await this.emit(id, 'work-order.status.changed', {

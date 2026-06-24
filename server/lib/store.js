@@ -132,6 +132,7 @@ export class WorkOrderStore {
       deploymentUrl: null,
       deploymentPort: null,
       requirementsPath: null,
+      requirementsItems: null,
       messages,
       stages: createPipelineStages(now)
     }
@@ -413,10 +414,14 @@ export function normalizeMessage(message = {}) {
     text: content,
     status: message.status || 'COMPLETED',
     kind,
-    metadata: kind === 'opencode-stream' ? normalizeMetadata(message.metadata) : null,
+    metadata: shouldPreserveMetadata(kind) ? normalizeMetadata(message.metadata) : null,
     createdAt,
     updatedAt: message.updatedAt || createdAt
   }
+}
+
+function shouldPreserveMetadata(kind) {
+  return kind === 'opencode-stream' || kind === 'requirements-items'
 }
 
 function normalizeMetadata(metadata) {

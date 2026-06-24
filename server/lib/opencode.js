@@ -19,17 +19,53 @@ export function createClarificationPrompt(messages) {
     .map((message) => `${message.sender === 'user' ? '用户' : 'AI'}: ${message.text}`)
     .join('\n')
 
-  return `你是单机版 AI 研发助手的需求澄清 Agent。请根据对话判断需求是否足够进入自动研发流水线。
+  return `你是单机版 AI 研发助手的「需求分析 Agent」，负责根据用户原始需求判断是否足够进入自动研发流水线。
 
-必须只输出一个 JSON 对象，不要输出 Markdown，不要输出额外解释。所有字符串里的换行必须写成 \\n，不能在字符串字面量中直接换行。结构如下：
+  你的目标不是审问用户，而是在用户需求基础上进行专业分析扩展，帮助用户把模糊想法转化为可研发、可验收的需求。回复应主要展示你对业务场景的深化理解，并形成多条细化需求。
+
+分析时请主动补充以下内容：
+
+业务目标：用户想解决什么问题、达成什么结果；
+目标用户：系统主要服务哪些角色；
+核心流程：用户如何完成主要业务操作；
+功能边界：哪些能力适合作为 MVP，哪些可后续扩展；
+数据与交互：需要哪些输入数据、页面或交互方式；
+验收与成效：尽量转化为可观测或可量化结果。
+
+每条细化需求必须包含：
+
+需求内容：具体业务场景或系统能力；
+需求必要性：说明该需求为什么重要；
+预期成效：优先使用可观测或可量化描述。
+
+尽量不要向用户提问题。只有当关键业务目标、使用对象或核心流程完全无法判断时，才在细化需求之后补充 1-2 个关键问题；禁止只输出追问。
+条目化展示必须有清晰换行：每条细化需求内部使用 \\n 分隔“需求内容 / 业务需求必要性 / 预期成效”，每条细化需求之间必须用 \\n\\n 分隔，方便用户阅读理解。
+
+必须只输出一个 JSON 对象，不要在 JSON 外输出 Markdown，不要输出额外解释。所有字符串里的换行必须写成 \\n，不能在字符串字面量中直接换行。结构如下：
 {
   "complete": boolean,
-  "reply": "回复用户的澄清问题或确认语",
+  "reply": "必须以“我对需求场景的理解如下：”开头，随后输出多条细化需求。每条按“1. 需求内容：...\\n业务需求必要性：...\\n预期成效：...”格式输出，条目之间用 \\n\\n 分隔；末尾用一句话提示用户确认或补充，不要优先提问题",
   "requirementsMarkdown": "complete=true 时输出完整需求规格说明书 Markdown；否则为空字符串",
+  "requirementsItems": {
+    "detailedRequirements": [
+      {
+        "requirement": "细化需求内容，描述具体业务场景和能力",
+        "businessNecessity": "该细化需求的业务必要性分析",
+        "expectedOutcome": "该细化需求的预期成效分析"
+      }
+    ],
+    "businessNecessity": ["无论 complete=true 还是 false，都尽量输出 2-5 条业务需求必要性条目；信息不确定时以初步判断表述"],
+    "expectedOutcome": ["无论 complete=true 还是 false，都尽量输出 2-5 条预期成效条目；优先使用可量化或可观测指标"],
+    "targetUsers": "已明确时输出目标用户角色描述；否则为空字符串",
+    "coreFeatures": ["已明确时输出 3-8 条核心功能条目；否则为空数组"],
+    "inputData": "已明确时输出主要输入数据来源说明；否则为空字符串",
+    "mainPages": "已明确时输出主要页面或交互说明；否则为空字符串",
+    "acceptanceCriteria": ["已明确时输出 2-6 条验收标准条目；否则为空数组"]
+  },
   "title": "不超过 24 个中文字符的应用名称"
 }
 
-进入流水线的最低条件：目标用户、业务必要性、预期成效、核心功能、输入数据、主要页面或交互、验收标准基本清楚。其中业务必要性和预期成效必须向用户提问，其他内容若缺少关键信息，complete=false 并每次只问 1-3 个最关键问题，最多2次。
+进入流水线的最低条件：目标用户、核心功能、输入数据、主要页面或交互、验收标准基本清楚。若缺少关键信息，complete=false，但仍要先输出场景深化理解和多条细化需求；最多只补充 1-2 个关键问题。complete=true 时 requirementsItems 中的 detailedRequirements 至少包含 2 条，且每条 requirement、businessNecessity、expectedOutcome 都不能为空，否则视为需求分析未完成。
 
 当前对话：
 ${conversation}`
@@ -102,12 +138,138 @@ export function parseClarificationResponse(output) {
   if (!match) {
     throw new Error('Unable to parse clarification JSON from opencode output')
   }
+  const requirementsMarkdown = String(match.requirementsMarkdown || '').trim()
+  const requirementsItems = normalizeRequirementsItems(match.requirementsItems, requirementsMarkdown, match)
   return {
     complete: Boolean(match.complete),
     reply: String(match.reply || '').trim(),
-    requirementsMarkdown: String(match.requirementsMarkdown || '').trim(),
+    requirementsMarkdown,
+    requirementsItems,
     title: String(match.title || '').trim()
   }
+}
+
+function normalizeRequirementsItems(rawItems, requirementsMarkdown, match) {
+  if (rawItems && typeof rawItems === 'object' && !Array.isArray(rawItems)) {
+    const items = {
+      detailedRequirements: toDetailedRequirementArray(rawItems.detailedRequirements),
+      businessNecessity: toStringArray(rawItems.businessNecessity),
+      expectedOutcome: toStringArray(rawItems.expectedOutcome),
+      targetUsers: String(rawItems.targetUsers || '').trim(),
+      coreFeatures: toStringArray(rawItems.coreFeatures),
+      inputData: String(rawItems.inputData || '').trim(),
+      mainPages: String(rawItems.mainPages || '').trim(),
+      acceptanceCriteria: toStringArray(rawItems.acceptanceCriteria)
+    }
+    if (items.businessNecessity.length === 0 || items.expectedOutcome.length === 0) {
+      const extracted = extractItemsFromMarkdown(requirementsMarkdown)
+      if (items.businessNecessity.length === 0) items.businessNecessity = extracted.businessNecessity
+      if (items.expectedOutcome.length === 0) items.expectedOutcome = extracted.expectedOutcome
+      if (!items.targetUsers) items.targetUsers = extracted.targetUsers
+      if (items.coreFeatures.length === 0) items.coreFeatures = extracted.coreFeatures
+      if (!items.inputData) items.inputData = extracted.inputData
+      if (!items.mainPages) items.mainPages = extracted.mainPages
+      if (items.acceptanceCriteria.length === 0) items.acceptanceCriteria = extracted.acceptanceCriteria
+    }
+    return items
+  }
+  return extractItemsFromMarkdown(requirementsMarkdown, match)
+}
+
+function toStringArray(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => String(item ?? '').trim())
+    .filter((item) => item.length > 0)
+}
+
+function toDetailedRequirementArray(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        const requirement = String(item ?? '').trim()
+        return requirement ? { requirement, businessNecessity: '', expectedOutcome: '' } : null
+      }
+      const requirement = String(item.requirement || item.name || item.title || item.description || '').trim()
+      const businessNecessity = String(item.businessNecessity || item.necessity || item.businessValue || '').trim()
+      const expectedOutcome = String(item.expectedOutcome || item.outcome || item.effect || '').trim()
+      if (!requirement && !businessNecessity && !expectedOutcome) return null
+      return { requirement, businessNecessity, expectedOutcome }
+    })
+    .filter(Boolean)
+}
+
+function extractItemsFromMarkdown(markdown, match) {
+  const text = String(markdown || '').trim()
+  const items = {
+    detailedRequirements: [],
+    businessNecessity: [],
+    expectedOutcome: [],
+    targetUsers: '',
+    coreFeatures: [],
+    inputData: '',
+    mainPages: '',
+    acceptanceCriteria: []
+  }
+  if (!text) return items
+  const sections = splitMarkdownSections(text)
+  const lookup = (keywords) => {
+    for (const keyword of keywords) {
+      for (const section of sections) {
+        if (section.heading.includes(keyword)) {
+          return section.items.length > 0 ? section.items : [section.body.trim()].filter(Boolean)
+        }
+      }
+    }
+    return []
+  }
+  items.businessNecessity = lookup(['业务需求必要性', '业务必要性', '必要性', '业务价值', '业务背景'])
+  items.expectedOutcome = lookup(['预期成效', '预期效果', '成效', '预期目标', '目标成效'])
+  items.coreFeatures = lookup(['核心功能', '功能需求', '功能列表', '主要功能'])
+  items.acceptanceCriteria = lookup(['验收标准', '验收口径', '验收'])
+  const scalarLookup = (keywords) => {
+    for (const keyword of keywords) {
+      for (const section of sections) {
+        if (section.heading.includes(keyword)) {
+          return section.body.trim() || (section.items[0] || '')
+        }
+      }
+    }
+    return ''
+  }
+  items.targetUsers = scalarLookup(['目标用户', '用户角色', '使用对象'])
+  items.inputData = scalarLookup(['输入数据', '数据来源', '数据源'])
+  items.mainPages = scalarLookup(['主要页面', '页面交互', '页面', '交互'])
+  if (items.businessNecessity.length === 0 && match?.title) {
+    items.businessNecessity = [`建设「${match.title}」以解决业务痛点`]
+  }
+  return items
+}
+
+function splitMarkdownSections(markdown) {
+  const lines = String(markdown || '').split(/\r?\n/)
+  const sections = []
+  let current = null
+  for (const line of lines) {
+    const heading = line.match(/^#{1,6}\s+(.*)$/)
+    if (heading) {
+      current = { heading: heading[1].trim(), body: '', items: [] }
+      sections.push(current)
+      continue
+    }
+    if (!current) {
+      current = { heading: '', body: '', items: [] }
+      sections.push(current)
+    }
+    const listItem = line.match(/^\s*[-*+]\s+(.*)$/)
+    if (listItem) {
+      current.items.push(listItem[1].trim())
+    } else if (line.trim()) {
+      current.body = current.body ? `${current.body}\n${line}` : line
+    }
+  }
+  return sections
 }
 
 function isClarificationObject(value) {
@@ -297,13 +459,92 @@ export function fallbackRequirementsMarkdown({ title, messages }) {
   const latestUserMessage = [...messages].reverse().find((message) => message.sender === 'user')?.text || ''
   return `# ${title || '应用需求规格说明书'}
 
-## 原始需求
+## 业务必要性
 
-${latestUserMessage}
+- 当前业务环节缺乏自动化工具支撑，需通过该应用降低人工成本与决策风险。
+- 现有流程存在信息不透明、响应滞后等问题，急需数字化手段提升协同效率。
+
+## 细化需求
+
+### 1. 需求内容：原始需求录入与澄清
+
+业务需求必要性：将用户原始业务想法转化为可研发的需求条目，降低理解偏差。
+
+预期成效：形成结构化需求说明，支撑后续设计、编码和验收闭环。
+
+### 2. 需求内容：关键指标实时展示
+
+业务需求必要性：让业务运维与研发人员快速掌握核心状态，减少人工汇总和反复沟通。
+
+预期成效：关键指标在同一页面可观测，异常定位和决策响应更及时。
+
+## 预期成效
+
+- 应用可在本机一键安装、构建、测试并启动，交付周期从天级压缩到小时级。
+- 核心流程可视化覆盖率达到 100%，关键指标实时可观测。
+
+## 目标用户
+
+业务运维与研发人员。
+
+## 核心功能
+
+- 原始需求录入与澄清
+- 关键指标实时展示
+- 阈值判断与告警
+- 历史数据回看
+
+## 输入数据
+
+${latestUserMessage || '用户描述的业务数据源。'}
+
+## 主要页面
+
+仪表盘式总览页 + 详情抽屉。
 
 ## 验收标准
 
 - 应用可以在本机安装、构建、测试和启动。
 - 交付产物包含 factory.manifest.json。
 - 页面或接口能覆盖用户描述的核心流程。`
+}
+
+export function fallbackRequirementsItems({ title, messages }) {
+  const latestUserMessage = [...messages].reverse().find((message) => message.sender === 'user')?.text || ''
+  return {
+    detailedRequirements: [
+      {
+        requirement: '原始需求录入与澄清',
+        businessNecessity: '将用户原始业务想法转化为可研发的需求条目，降低理解偏差。',
+        expectedOutcome: '形成结构化需求说明，支撑后续设计、编码和验收闭环。'
+      },
+      {
+        requirement: '关键指标实时展示',
+        businessNecessity: '让业务运维与研发人员快速掌握核心状态，减少人工汇总和反复沟通。',
+        expectedOutcome: '关键指标在同一页面可观测，异常定位和决策响应更及时。'
+      }
+    ],
+    businessNecessity: [
+      '当前业务环节缺乏自动化工具支撑，需通过该应用降低人工成本与决策风险。',
+      '现有流程存在信息不透明、响应滞后等问题，急需数字化手段提升协同效率。'
+    ],
+    expectedOutcome: [
+      '应用可在本机一键安装、构建、测试并启动，交付周期从天级压缩到小时级。',
+      '核心流程可视化覆盖率达到 100%，关键指标实时可观测。'
+    ],
+    targetUsers: '业务运维与研发人员。',
+    coreFeatures: [
+      '原始需求录入与澄清',
+      '关键指标实时展示',
+      '阈值判断与告警',
+      '历史数据回看'
+    ],
+    inputData: latestUserMessage || '用户描述的业务数据源。',
+    mainPages: '仪表盘式总览页 + 详情抽屉。',
+    acceptanceCriteria: [
+      '应用可以在本机安装、构建、测试和启动。',
+      '交付产物包含 factory.manifest.json。',
+      '页面或接口能覆盖用户描述的核心流程。'
+    ]
+  }
 }

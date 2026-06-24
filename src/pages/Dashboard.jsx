@@ -64,21 +64,21 @@ function StatCard({ data }) {
   const colors = colorMap[color]
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-500 text-sm">{title}</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
-          <div className="flex items-center gap-1 mt-2">
-            {trend === 'up' && <TrendingUp className="w-3 h-3 text-green-500" />}
-            {trend === 'down' && <TrendingUp className="w-3 h-3 text-red-500 rotate-180" />}
-            <span className={`text-xs ${trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-400'}`}>
+          <p className="text-gray-500 text-[28px]">{title}</p>
+          <p className="text-[48px] font-bold text-gray-800 mt-1">{value}</p>
+          <div className="flex items-center gap-2 mt-2">
+            {trend === 'up' && <TrendingUp className="w-6 h-6 text-green-500" />}
+            {trend === 'down' && <TrendingUp className="w-6 h-6 text-red-500 rotate-180" />}
+            <span className={`text-[24px] ${trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-400'}`}>
               {change} 较上周
             </span>
           </div>
         </div>
-        <div className={`${colors.bg} p-3 rounded-xl`}>
-          <Icon className={`w-6 h-6 ${colors.icon}`} />
+        <div className={`${colors.bg} p-6 rounded-xl`}>
+          <Icon className={`w-12 h-12 ${colors.icon}`} />
         </div>
       </div>
     </div>
@@ -87,34 +87,34 @@ function StatCard({ data }) {
 
 function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">工作台大盘</h1>
-          <p className="text-gray-500 text-sm mt-1">实时监控软件工厂生产状态</p>
+          <h1 className="text-[48px] font-bold text-gray-800">工作台大盘</h1>
+          <p className="text-gray-500 text-[28px] mt-1">实时监控软件工厂生产状态</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+        <div className="flex items-center gap-4 text-[28px] text-gray-500">
+          <span className="w-4 h-4 rounded-full bg-green-500 animate-pulse"></span>
           最后更新: 刚刚
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-6 gap-8">
         {statsData.map((stat, index) => (
           <StatCard key={index} data={stat} />
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-3 gap-12">
+        <div className="col-span-2 bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">工单完成趋势</h2>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span> 完成
+            <div className="flex items-center gap-8 text-[24px]">
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-blue-500"></span> 完成
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-red-400"></span> 拦截
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-red-400"></span> 拦截
               </span>
             </div>
           </div>
@@ -145,7 +145,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-800 mb-4">流水线分布</h2>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -171,10 +171,10 @@ function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          <div className="grid grid-cols-2 gap-4 mt-2">
             {pipelineDistData.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 text-xs">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></span>
+              <div key={index} className="flex items-center gap-4 text-[24px]">
+                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }}></span>
                 <span className="text-gray-600">{item.name}</span>
                 <span className="font-medium text-gray-800">{item.value}</span>
               </div>
@@ -183,79 +183,79 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-3 gap-12">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">最近工单</h2>
-            <button className="text-blue-600 text-sm hover:underline flex items-center gap-1">
-              查看全部 <ArrowRight className="w-3 h-3" />
+            <button className="text-blue-600 text-[28px] hover:underline flex items-center gap-2">
+              查看全部 <ArrowRight className="w-6 h-6" />
             </button>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-6">
             {recentTasks.map((task, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Code className="w-4 h-4 text-blue-600" />
+              <div key={index} className="flex items-center justify-between p-6 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Code className="w-8 h-8 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800 text-sm">{task.name}</p>
-                    <p className="text-xs text-gray-500">{task.id} · {task.creator}</p>
+                    <p className="font-medium text-gray-800 text-[28px]">{task.name}</p>
+                    <p className="text-[24px] text-gray-500">{task.id} · {task.creator}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">{task.stage}</span>
-                  <p className="text-xs text-gray-500 mt-1">{task.progress}% · {task.time}</p>
+                  <span className="text-[24px] px-4 py-2 bg-blue-50 text-blue-600 rounded-full">{task.stage}</span>
+                  <p className="text-[24px] text-gray-500 mt-1">{task.progress}% · {task.time}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">Agent 性能</h2>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Bot className="w-3 h-3" />
+            <div className="flex items-center gap-2 text-[24px] text-gray-500">
+              <Bot className="w-6 h-6" />
               4 个 Agent
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-6">
             {agentPerformance.map((agent, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+              <div key={index} className="p-6 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{agent.name}</span>
-                  <span className="text-xs text-gray-500">{agent.tasks} 任务</span>
+                  <span className="text-[28px] font-medium text-gray-700">{agent.name}</span>
+                  <span className="text-[24px] text-gray-500">{agent.tasks} 任务</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-8">
+                  <div className="flex-1 h-4 bg-gray-200 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 rounded-full" style={{ width: `${agent.success}%` }}></div>
                   </div>
-                  <span className="text-xs font-medium text-green-600">{agent.success}%</span>
+                  <span className="text-[24px] font-medium text-green-600">{agent.success}%</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">门禁拦截</h2>
-            <div className="flex items-center gap-1 text-xs text-red-500">
-              <AlertTriangle className="w-3 h-3" />
+            <div className="flex items-center gap-2 text-[24px] text-red-500">
+              <AlertTriangle className="w-6 h-6" />
               本周 17 次
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {gateBlocks.map((block, index) => (
-              <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm text-gray-700">{block.reason}</span>
+              <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                <div className="flex items-center gap-4">
+                  <Shield className="w-8 h-8 text-amber-500" />
+                  <span className="text-[28px] text-gray-700">{block.reason}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-800">{block.count}</span>
-                  <span className={`text-xs ${block.trend.startsWith('+') ? 'text-red-500' : block.trend.startsWith('-') ? 'text-green-500' : 'text-gray-400'}`}>
+                <div className="flex items-center gap-4">
+                  <span className="text-[28px] font-medium text-gray-800">{block.count}</span>
+                  <span className={`text-[24px] ${block.trend.startsWith('+') ? 'text-red-500' : block.trend.startsWith('-') ? 'text-green-500' : 'text-gray-400'}`}>
                     {block.trend}
                   </span>
                 </div>

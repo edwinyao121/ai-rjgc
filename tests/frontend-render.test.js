@@ -44,6 +44,8 @@ test('renders AI messages from new and legacy message formats', async () => {
       kind: null,
       metadata: null,
       status: 'COMPLETED',
+      stageId: null,
+      phase: null,
       time: '16:00'
     })
 
@@ -59,6 +61,8 @@ test('renders AI messages from new and legacy message formats', async () => {
       kind: null,
       metadata: null,
       status: 'COMPLETED',
+      stageId: null,
+      phase: null,
       time: '16:05'
     })
 
@@ -77,6 +81,8 @@ test('renders AI messages from new and legacy message formats', async () => {
       kind: 'opencode-stream',
       metadata: { stageKey: 'design', source: 'opencode' },
       status: 'STREAMING',
+      stageId: 'design',
+      phase: null,
       time: '16:10'
     })
   } finally {
@@ -161,7 +167,7 @@ test('AIChatPanel renders opencode-stream messages with pre-wrap and start butto
         {
           id: 'ai-1',
           role: 'assistant',
-          content: '需求已澄清，点击开始智能开发即可启动流水线。',
+          content: '我对需求场景的理解如下：\n\n1. 需求内容：潮汐窗口自动判断\n业务需求必要性：减少人工查表和口径偏差\n预期成效：出港窗口判断时间压缩到分钟级\n\n请确认以上业务需求是否准确。',
           createdAt: '2026-06-24T08:00:00.000Z'
         },
         {
@@ -192,7 +198,10 @@ test('AIChatPanel renders opencode-stream messages with pre-wrap and start butto
     assert.match(readyHtml, /opencode stdout 第一行/)
     assert.match(readyHtml, /opencode stdout 第二行/)
     assert.match(readyHtml, /帮我做一个潮汐计算器/)
-    assert.match(readyHtml, /需求已澄清，点击开始智能开发即可启动流水线。/)
+    assert.match(readyHtml, /我对需求场景的理解如下/)
+    assert.match(readyHtml, /业务需求必要性：减少人工查表和口径偏差/)
+    assert.match(readyHtml, /预期成效：出港窗口判断时间压缩到分钟级/)
+    assert.match(readyHtml, /whitespace-pre-wrap/)
     assert.match(readyHtml, /white-space:pre-wrap|white-space: pre-wrap|pre-wrap/)
     assert.doesNotMatch(readyHtml, /opencode 原始输出/)
 

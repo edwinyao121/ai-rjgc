@@ -33,33 +33,33 @@ const stageColors = { '需求待入厂': 'bg-slate-100 text-slate-700', '系统�
 
 function RuleCard({ rule, onToggle, onEdit }) {
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${rule.status ? 'bg-green-100' : 'bg-gray-100'}`}>
-            {rule.status ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-gray-400" />}
+        <div className="flex items-start gap-6">
+          <div className={`p-4 rounded-lg ${rule.status ? 'bg-green-100' : 'bg-gray-100'}`}>
+            {rule.status ? <CheckCircle className="w-10 h-10 text-green-600" /> : <XCircle className="w-10 h-10 text-gray-400" />}
           </div>
           <div>
             <h3 className="font-semibold text-gray-800">{rule.name}</h3>
-            <p className="text-sm text-gray-500 mt-1">{rule.description}</p>
+            <p className="text-[28px] text-gray-500 mt-1">{rule.description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => onToggle(rule.id)}
-            className={`p-1 rounded transition-colors ${rule.status ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+            className={`p-2 rounded transition-colors ${rule.status ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
           >
-            {rule.status ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+            {rule.status ? <ToggleRight className="w-12 h-12" /> : <ToggleLeft className="w-12 h-12" />}
           </button>
-          <button onClick={() => onEdit(rule)} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors">
-            <Edit className="w-4 h-4" />
+          <button onClick={() => onEdit(rule)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors">
+            <Edit className="w-8 h-8" />
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-sm">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${stageColors[rule.stage]}`}>{rule.stage}</span>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[rule.priority]}`}>
+      <div className="flex items-center gap-6 text-[28px]">
+        <span className={`px-4 py-2 rounded-full text-[24px] font-medium ${stageColors[rule.stage]}`}>{rule.stage}</span>
+        <span className={`px-4 py-2 rounded-full text-[24px] font-medium ${priorityColors[rule.priority]}`}>
           {rule.priority === 'critical' ? '紧急' : rule.priority === 'high' ? '高' : rule.priority === 'medium' ? '中' : '低'}
         </span>
         <span className="text-gray-500 ml-auto">通过率: <span className="font-medium text-gray-700">{rule.passRate}%</span></span>
@@ -88,46 +88,46 @@ function RuleEngine() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">规则引擎</h1>
-          <p className="text-gray-500 text-sm mt-1">配置和管理质量门禁规则、准入准出条件</p>
+          <h1 className="text-[48px] font-bold text-gray-800">规则引擎</h1>
+          <p className="text-gray-500 text-[28px] mt-1">配置和管理质量门禁规则、准入准出条件</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-6">
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className={`px-4 py-2 rounded-lg transition-colors ${showTemplates ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            className={`px-8 py-4 rounded-lg transition-colors ${showTemplates ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
           >
             规则模板
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-4 px-8 py-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-8 h-8" />
             新建规则
           </button>
         </div>
       </div>
 
       {showTemplates && (
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-800 mb-4">生产线模板</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-8">
             {templates.map(template => (
-              <div key={template.id} className="border border-gray-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
+              <div key={template.id} className="border border-gray-200 rounded-xl p-8 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
                 <h3 className="font-semibold text-gray-800 mb-2">{template.name}</h3>
-                <p className="text-sm text-gray-500 mb-3">{template.description}</p>
-                <div className="flex items-center gap-2 mb-3">
+                <p className="text-[28px] text-gray-500 mb-3">{template.description}</p>
+                <div className="flex items-center gap-4 mb-3">
                   {template.stages.map((stage, index) => (
-                    <span key={index} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">{stage}</span>
+                    <span key={index} className="text-[24px] px-4 py-2 bg-gray-100 text-gray-600 rounded">{stage}</span>
                   ))}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">{template.rules} 条规则</span>
-                  <button className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-                    <Copy className="w-3 h-3" />
+                  <span className="text-[24px] text-gray-500">{template.rules} 条规则</span>
+                  <button className="text-[24px] text-indigo-600 hover:underline flex items-center gap-2">
+                    <Copy className="w-6 h-6" />
                     应用模板
                   </button>
                 </div>
@@ -137,11 +137,11 @@ function RuleEngine() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-4">
+      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-8">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-8 py-4 rounded-lg text-[28px] font-medium transition-colors ${
               selectedCategory === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -151,7 +151,7 @@ function RuleEngine() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-8 py-4 rounded-lg text-[28px] font-medium transition-colors ${
                 selectedCategory === cat.id ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -161,72 +161,72 @@ function RuleEngine() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-8">
         {filteredRules.map(rule => (
           <RuleCard key={rule.id} rule={rule} onToggle={handleToggleRule} onEdit={() => {}} />
         ))}
       </div>
 
-      <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
         <h2 className="font-semibold text-gray-800 mb-4">门禁拦截统计</h2>
-        <div className="grid grid-cols-5 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-gray-800">326</p>
-            <p className="text-xs text-gray-500 mt-1">本周执行</p>
+        <div className="grid grid-cols-5 gap-8">
+          <div className="bg-gray-50 rounded-lg p-8 text-center">
+            <p className="text-[60px] font-bold text-gray-800">326</p>
+            <p className="text-[24px] text-gray-500 mt-1">本周执行</p>
           </div>
-          <div className="bg-green-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-green-600">289</p>
-            <p className="text-xs text-green-600 mt-1">通过</p>
+          <div className="bg-green-50 rounded-lg p-8 text-center">
+            <p className="text-[60px] font-bold text-green-600">289</p>
+            <p className="text-[24px] text-green-600 mt-1">通过</p>
           </div>
-          <div className="bg-red-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-red-600">37</p>
-            <p className="text-xs text-red-600 mt-1">拦截</p>
+          <div className="bg-red-50 rounded-lg p-8 text-center">
+            <p className="text-[60px] font-bold text-red-600">37</p>
+            <p className="text-[24px] text-red-600 mt-1">拦截</p>
           </div>
-          <div className="bg-amber-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-amber-600">89%</p>
-            <p className="text-xs text-amber-600 mt-1">通过率</p>
+          <div className="bg-amber-50 rounded-lg p-8 text-center">
+            <p className="text-[60px] font-bold text-amber-600">89%</p>
+            <p className="text-[24px] text-amber-600 mt-1">通过率</p>
           </div>
-          <div className="bg-indigo-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-indigo-600">26</p>
-            <p className="text-xs text-indigo-600 mt-1">自动修复</p>
+          <div className="bg-indigo-50 rounded-lg p-8 text-center">
+            <p className="text-[60px] font-bold text-indigo-600">26</p>
+            <p className="text-[24px] text-indigo-600 mt-1">自动修复</p>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">拦截原因分布</h3>
-          <div className="grid grid-cols-5 gap-3">
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+        <div className="mt-4 pt-8 border-t border-gray-100">
+          <h3 className="text-[28px] font-medium text-gray-700 mb-3">拦截原因分布</h3>
+          <div className="grid grid-cols-5 gap-6">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
               <div>
-                <p className="text-xs text-gray-500">需求不完整</p>
+                <p className="text-[24px] text-gray-500">需求不完整</p>
                 <p className="font-medium text-gray-800">12</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
               <div>
-                <p className="text-xs text-gray-500">编译失败</p>
+                <p className="text-[24px] text-gray-500">编译失败</p>
                 <p className="font-medium text-gray-800">8</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
               <div>
-                <p className="text-xs text-gray-500">覆盖率不足</p>
+                <p className="text-[24px] text-gray-500">覆盖率不足</p>
                 <p className="font-medium text-gray-800">10</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
               <div>
-                <p className="text-xs text-gray-500">高危漏洞</p>
+                <p className="text-[24px] text-gray-500">高危漏洞</p>
                 <p className="font-medium text-gray-800">4</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
               <div>
-                <p className="text-xs text-gray-500">其他</p>
+                <p className="text-[24px] text-gray-500">其他</p>
                 <p className="font-medium text-gray-800">3</p>
               </div>
             </div>

@@ -69,7 +69,7 @@ const typeColors = {
 function PipelineNode({ node, isActive }) {
   const Icon = node.icon
   return (
-    <div className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all w-32 ${
+    <div className={`flex flex-col items-center p-8 rounded-xl border-2 transition-all w-32 ${
       node.status === 'completed' ? 'bg-emerald-50 border-emerald-400' :
       node.status === 'active' ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200' :
       'bg-gray-50 border-gray-300'
@@ -80,25 +80,25 @@ function PipelineNode({ node, isActive }) {
         'bg-gray-400'
       }`}>
         {node.status === 'completed' ? (
-          <CheckCircle className="w-6 h-6 text-white" />
+          <CheckCircle className="w-12 h-12 text-white" />
         ) : node.status === 'active' ? (
-          <Loader className="w-6 h-6 text-white animate-spin" />
+          <Loader className="w-12 h-12 text-white animate-spin" />
         ) : (
-          <Circle className="w-6 h-6 text-white" />
+          <Circle className="w-12 h-12 text-white" />
         )}
       </div>
-      <p className={`mt-2 font-semibold text-sm ${node.status === 'completed' ? 'text-emerald-700' : node.status === 'active' ? 'text-blue-700' : 'text-gray-500'}`}>
+      <p className={`mt-2 font-semibold text-[28px] ${node.status === 'completed' ? 'text-emerald-700' : node.status === 'active' ? 'text-blue-700' : 'text-gray-500'}`}>
         {node.name}
       </p>
       
       {node.agents && node.agents.length > 0 && (
-        <div className="mt-1 flex items-center gap-1 text-[9px] font-medium text-gray-500 bg-white/70 px-1 py-0.5 rounded border border-gray-200/50 max-w-full">
-          <Bot className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+        <div className="mt-1 flex items-center gap-2 text-[18px] font-medium text-gray-500 bg-white/70 px-2 py-1 rounded border border-gray-200/50 max-w-full">
+          <Bot className="w-5 h-5 text-indigo-500 flex-shrink-0" />
           <span className="truncate">{node.agents[0]}</span>
         </div>
       )}
 
-      <p className="text-[10px] text-gray-450 mt-1">{node.count} 个工单</p>
+      <p className="text-[20px] text-gray-450 mt-1">{node.count} 个工单</p>
     </div>
   )
 }
@@ -108,60 +108,60 @@ function EngineeringView() {
   const [viewMode, setViewMode] = useState('pipeline')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">工程链路可视化</h1>
-          <p className="text-gray-500 text-sm mt-1">展示需求→设计→代码→测试→部署的完整工程链路</p>
+          <h1 className="text-[48px] font-bold text-gray-800">工程链路可视化</h1>
+          <p className="text-gray-500 text-[28px] mt-1">展示需求→设计→代码→测试→部署的完整工程链路</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-6">
           <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('pipeline')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'pipeline' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`px-8 py-4 text-[28px] font-medium transition-colors ${viewMode === 'pipeline' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               流水线视图
             </button>
             <button
               onClick={() => setViewMode('timeline')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`px-8 py-4 text-[28px] font-medium transition-colors ${viewMode === 'timeline' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               时间轴视图
             </button>
             <button
               onClick={() => setViewMode('dependency')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'dependency' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`px-8 py-4 text-[28px] font-medium transition-colors ${viewMode === 'dependency' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               依赖链路图
             </button>
           </div>
-          <div className="flex items-center gap-1">
-            <button className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <ZoomOut className="w-4 h-4 text-gray-600" />
+          <div className="flex items-center gap-2">
+            <button className="p-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <ZoomOut className="w-8 h-8 text-gray-600" />
             </button>
-            <button className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <ZoomIn className="w-4 h-4 text-gray-600" />
+            <button className="p-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <ZoomIn className="w-8 h-8 text-gray-600" />
             </button>
-            <button className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Maximize2 className="w-4 h-4 text-gray-600" />
+            <button className="p-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <Maximize2 className="w-8 h-8 text-gray-600" />
             </button>
           </div>
         </div>
       </div>
 
       {viewMode === 'pipeline' && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-semibold text-gray-800">软件生产线</h2>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-emerald-500"></span> 已完成
+            <div className="flex items-center gap-8 text-[24px]">
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-emerald-500"></span> 已完成
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span> 进行中
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-blue-500"></span> 进行中
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-gray-400"></span> 等待中
+              <span className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-gray-400"></span> 等待中
               </span>
             </div>
           </div>
@@ -171,7 +171,7 @@ function EngineeringView() {
               <div key={node.id} className="flex items-center">
                 <PipelineNode node={node} />
                 {index < pipelineNodes.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-2 mt-[-40px] ${
+                  <div className={`w-16 h-1 mx-2 mt-[-40px] ${
                     pipelineNodes[index + 1].status !== 'pending' ? 'bg-emerald-400' : 'bg-gray-300'
                   }`}></div>
                 )}
@@ -179,15 +179,15 @@ function EngineeringView() {
             ))}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="grid grid-cols-5 gap-4">
+          <div className="mt-8 pt-12 border-t border-gray-100">
+            <div className="grid grid-cols-5 gap-8">
               {pipelineNodes.map(node => (
-                <div key={node.id} className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <node.icon className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">{node.name}</span>
+                <div key={node.id} className="bg-gray-50 rounded-lg p-6">
+                  <div className="flex items-center gap-4 mb-2">
+                    <node.icon className="w-8 h-8 text-gray-500" />
+                    <span className="text-[28px] font-medium text-gray-700">{node.name}</span>
                   </div>
-                  <div className="space-y-1 text-xs text-gray-500">
+                  <div className="space-y-2 text-[24px] text-gray-500">
                     <p>平均耗时: {node.avgTime}</p>
                     <p>执行Agent: {node.agents[0]}</p>
                   </div>
@@ -199,29 +199,29 @@ function EngineeringView() {
       )}
 
       {viewMode === 'timeline' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="space-y-8">
+          <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
             <h2 className="font-semibold text-gray-800 mb-4">工单全生命周期时间轴</h2>
-            <div className="space-y-4">
+            <div className="space-y-8">
               {taskDetails.map(task => (
                 <div
                   key={task.id}
                   onClick={() => setSelectedTask(selectedTask?.id === task.id ? null : task)}
-                  className={`p-4 border rounded-xl cursor-pointer transition-all ${
+                  className={`p-8 border rounded-xl cursor-pointer transition-all ${
                     selectedTask?.id === task.id ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm text-gray-600">{task.id}</span>
+                    <div className="flex items-center gap-6">
+                      <span className="font-mono text-[28px] text-gray-600">{task.id}</span>
                       <span className="font-semibold text-gray-800">{task.name}</span>
                     </div>
-                    <span className="text-xs text-gray-500">当前阶段: 第 {task.currentStage} 步 / 5</span>
+                    <span className="text-[24px] text-gray-500">当前阶段: 第 {task.currentStage} 步 / 5</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4">
                     {task.stages.map((stage, index) => (
                       <div key={index} className="flex items-center">
-                        <div className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                        <div className={`px-6 py-3 rounded-lg text-[24px] font-medium ${
                           stage.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
                           stage.status === 'active' ? 'bg-blue-100 text-blue-700' :
                           'bg-gray-100 text-gray-500'
@@ -229,19 +229,19 @@ function EngineeringView() {
                           {stage.stage}
                         </div>
                         {index < task.stages.length - 1 && (
-                          <ArrowRight className="w-4 h-4 text-gray-300 mx-1" />
+                          <ArrowRight className="w-8 h-8 text-gray-300 mx-1" />
                         )}
                       </div>
                     ))}
                   </div>
 
                   {selectedTask?.id === task.id && (
-                    <div className="mt-4 pt-4 border-t border-indigo-200">
-                      <div className="grid grid-cols-5 gap-2">
+                    <div className="mt-4 pt-8 border-t border-indigo-200">
+                      <div className="grid grid-cols-5 gap-4">
                         {task.stages.map((stage, index) => (
                           <div key={index} className="text-center">
-                            <p className="text-xs text-gray-500">{stage.time}</p>
-                            <p className={`text-sm font-medium ${stage.status === 'completed' ? 'text-emerald-600' : stage.status === 'active' ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <p className="text-[24px] text-gray-500">{stage.time}</p>
+                            <p className={`text-[28px] font-medium ${stage.status === 'completed' ? 'text-emerald-600' : stage.status === 'active' ? 'text-blue-600' : 'text-gray-400'}`}>
                               {stage.duration}
                             </p>
                           </div>
@@ -257,7 +257,7 @@ function EngineeringView() {
       )}
 
       {viewMode === 'dependency' && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-800 mb-4">工程依赖链路图</h2>
           <div className="relative h-96 border border-gray-200 rounded-xl overflow-hidden">
             <svg className="w-full h-full" viewBox="0 0 900 350">
@@ -294,12 +294,12 @@ function EngineeringView() {
                       className={`${colors.bg} ${colors.border}`}
                       strokeWidth="2"
                     />
-                    <Icon className={`w-5 h-5 ${colors.text} mx-auto mt-2`} />
+                    <Icon className={`w-10 h-10 ${colors.text} mx-auto mt-2`} />
                     <text
                       x="40"
                       y="35"
                       textAnchor="middle"
-                      className={`text-xs ${colors.text}`}
+                      className={`text-[24px] ${colors.text}`}
                       fill="currentColor"
                     >
                       {node.name}
@@ -309,13 +309,13 @@ function EngineeringView() {
               })}
             </svg>
           </div>
-          <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center justify-center gap-12 mt-4">
             {Object.entries(typeColors).map(([type, colors]) => {
               const Icon = colors.icon
               return (
-                <div key={type} className="flex items-center gap-2">
-                  <div className={`w-4 h-4 rounded ${colors.bg} border ${colors.border}`}></div>
-                  <span className="text-xs text-gray-600 capitalize">{type}</span>
+                <div key={type} className="flex items-center gap-4">
+                  <div className={`w-8 h-8 rounded ${colors.bg} border ${colors.border}`}></div>
+                  <span className="text-[24px] text-gray-600 capitalize">{type}</span>
                 </div>
               )
             })}
@@ -323,56 +323,56 @@ function EngineeringView() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-2 gap-12">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-800 mb-4">链路统计</h2>
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-gray-800">26</p>
-              <p className="text-xs text-gray-500">总工单</p>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <p className="text-[48px] font-bold text-gray-800">26</p>
+              <p className="text-[24px] text-gray-500">总工单</p>
             </div>
-            <div className="bg-emerald-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-emerald-600">12</p>
-              <p className="text-xs text-emerald-600">已完成</p>
+            <div className="bg-emerald-50 rounded-lg p-6 text-center">
+              <p className="text-[48px] font-bold text-emerald-600">12</p>
+              <p className="text-[24px] text-emerald-600">已完成</p>
             </div>
-            <div className="bg-blue-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-blue-600">8</p>
-              <p className="text-xs text-blue-600">进行中</p>
+            <div className="bg-blue-50 rounded-lg p-6 text-center">
+              <p className="text-[48px] font-bold text-blue-600">8</p>
+              <p className="text-[24px] text-blue-600">进行中</p>
             </div>
-            <div className="bg-amber-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-amber-600">6</p>
-              <p className="text-xs text-amber-600">等待中</p>
+            <div className="bg-amber-50 rounded-lg p-6 text-center">
+              <p className="text-[48px] font-bold text-amber-600">6</p>
+              <p className="text-[24px] text-amber-600">等待中</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100">
           <h2 className="font-semibold text-gray-800 mb-4">平均耗时</h2>
           <div className="flex items-end justify-between h-24">
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 bg-slate-200 rounded-t" style={{ height: '8px' }}></div>
-              <span className="text-xs text-gray-500">5m</span>
-              <span className="text-xs text-gray-600">需求</span>
+              <span className="text-[24px] text-gray-500">5m</span>
+              <span className="text-[24px] text-gray-600">需求</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 bg-indigo-300 rounded-t" style={{ height: '35px' }}></div>
-              <span className="text-xs text-gray-500">25m</span>
-              <span className="text-xs text-gray-600">设计</span>
+              <span className="text-[24px] text-gray-500">25m</span>
+              <span className="text-[24px] text-gray-600">设计</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 bg-purple-300 rounded-t" style={{ height: '60px' }}></div>
-              <span className="text-xs text-gray-500">45m</span>
-              <span className="text-xs text-gray-600">开发</span>
+              <span className="text-[24px] text-gray-500">45m</span>
+              <span className="text-[24px] text-gray-600">开发</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 bg-amber-300 rounded-t" style={{ height: '40px' }}></div>
-              <span className="text-xs text-gray-500">30m</span>
-              <span className="text-xs text-gray-600">测试</span>
+              <span className="text-[24px] text-gray-500">30m</span>
+              <span className="text-[24px] text-gray-600">测试</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-2">
               <div className="w-12 bg-emerald-300 rounded-t" style={{ height: '20px' }}></div>
-              <span className="text-xs text-gray-500">15m</span>
-              <span className="text-xs text-gray-600">部署</span>
+              <span className="text-[24px] text-gray-500">15m</span>
+              <span className="text-[24px] text-gray-600">部署</span>
             </div>
           </div>
         </div>
