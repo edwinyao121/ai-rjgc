@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect, useMemo, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send } from 'lucide-react'
-import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, subscribeWorkOrderEvents } from '../api/workOrders'
+import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle } from 'lucide-react'
+import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -492,6 +492,8 @@ export function normalizeChatMessage(message = {}) {
     id: message.id || `${sender}-${message.createdAt || Date.now()}`,
     sender,
     text,
+    kind: message.kind || null,
+    metadata: message.metadata || null,
     status: message.status || 'COMPLETED',
     time: message.createdAt ? new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '刚刚'
   }
@@ -502,7 +504,7 @@ function upsertRuntimeOrder(orders, nextOrder) {
   return [nextOrder, ...orders.filter(order => order.id !== nextOrder.id)]
 }
 
-function applyGranularEventToOrder(order, event) {
+export function applyGranularEventToOrder(order, event) {
   if (!order || order.id !== event.workOrderId) return order
 
   if (event.type === 'stage.status.changed') {
@@ -525,9 +527,10 @@ function applyGranularEventToOrder(order, event) {
   if (event.type === 'assistant.message.append' && event.message) {
     const existing = order.messages || []
     const exists = existing.some(message => message.id === event.message.id)
+    const incoming = { ...event.message, kind: event.message.kind || null, metadata: event.message.metadata || null }
     return {
       ...order,
-      messages: exists ? existing.map(message => message.id === event.message.id ? event.message : message) : [...existing, event.message],
+      messages: exists ? existing.map(message => message.id === event.message.id ? { ...message, ...incoming } : message) : [...existing, incoming],
       lastUpdate: '刚刚'
     }
   }
@@ -538,13 +541,29 @@ function applyGranularEventToOrder(order, event) {
       messages: (order.messages || []).map(message => {
         if (message.id !== event.messageId) return message
         const content = `${message.content ?? message.text ?? ''}${event.delta || ''}`
+        const incomingMetadata = event.metadata && typeof event.metadata === 'object'
+          ? { ...(message.metadata || {}), ...event.metadata }
+          : message.metadata || null
         return {
           ...message,
           content,
           text: content,
+          kind: message.kind || null,
+          metadata: incomingMetadata,
           status: event.status || message.status || 'STREAMING'
         }
       }),
+      lastUpdate: '刚刚'
+    }
+  }
+
+  if (event.type === 'work-order.status.changed' || event.type === 'development.run.started') {
+    const next = event.workOrder || null
+    return {
+      ...order,
+      ...(next ? next : {}),
+      status: next?.status || event.status || order.status,
+      progress: next?.progress ?? event.progress ?? order.progress,
       lastUpdate: '刚刚'
     }
   }
@@ -1420,7 +1439,7 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
 }
 
 // AI Chat Panel Component
-function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
+export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, onClose, loading, error, startingDevelopment }) {
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef(null)
   const displayMessages = useMemo(() => {
@@ -1454,6 +1473,9 @@ function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
     await onSendMessage(activeOrder, userText)
   }
 
+  const isRuntime = isRuntimeOrder(activeOrder)
+  const canStartDevelopment = isRuntime && activeOrder.status === 'READY_FOR_DEVELOPMENT' && !startingDevelopment
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-full w-full">
       <div className="w-full flex flex-col h-full min-h-0">
@@ -1468,6 +1490,23 @@ function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
               <p className="text-[10px] text-gray-500 truncate" title={activeOrder.title}>当前应用: {activeOrder.title}</p>
             </div>
             <div className="flex items-center gap-2">
+              {canStartDevelopment && (
+                <button
+                  onClick={() => onStartDevelopment?.(activeOrder)}
+                  disabled={startingDevelopment}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-md text-[10px] font-bold shadow-sm transition-all hover:scale-105 disabled:opacity-60 disabled:hover:scale-100 flex-shrink-0"
+                  title="需求澄清已完成，点击启动智能开发流水线"
+                >
+                  <PlayCircle className="w-3 h-3" />
+                  开始智能开发
+                </button>
+              )}
+              {startingDevelopment && (
+                <div className="flex items-center gap-1 text-emerald-600 font-semibold text-[9px] flex-shrink-0">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>启动中...</span>
+                </div>
+              )}
               {loading && (
                 <div className="flex items-center gap-1 text-blue-600 font-semibold text-[9px] flex-shrink-0">
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -1486,20 +1525,71 @@ function AIChatPanel({ activeOrder, onSendMessage, onClose, loading, error }) {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs mb-2">
-          {displayMessages.map((msg) => (
-            <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[85%] rounded-lg p-2.5 leading-relaxed ${
-                msg.sender === 'user'
-                  ? 'bg-blue-600 text-white rounded-tr-none font-medium'
-                  : msg.status === 'FAILED'
-                    ? 'bg-red-50 text-red-750 rounded-tl-none border border-red-200'
+          {displayMessages.map((msg) => {
+            const isStream = msg.kind === 'opencode-stream'
+            const isStreaming = isStream && msg.status === 'STREAMING'
+            const isFailed = isStream && msg.status === 'FAILED'
+            const activity = msg.metadata?.activity
+            const isToolActivity = isStreaming && activity === 'tool'
+            const isThinkingActivity = isStreaming && (activity === 'thinking' || !activity)
+            const bubbleClass = isStream
+              ? isFailed
+                ? 'bg-red-50 text-red-800 rounded-tl-none border border-red-200'
+                : isStreaming
+                  ? 'bg-slate-50 text-slate-800 rounded-tl-none border border-slate-300'
+                  : 'bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200/50'
+              : msg.sender === 'user'
+                ? 'bg-blue-600 text-white rounded-tr-none font-medium'
+                : msg.status === 'FAILED'
+                  ? 'bg-red-50 text-red-750 rounded-tl-none border border-red-200'
                   : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
-              }`}>
-                {msg.text}
+            return (
+              <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`max-w-[90%] rounded-lg p-2.5 leading-relaxed ${bubbleClass}`}>
+                  {!isStream && msg.text && (
+                    <span>{msg.text}</span>
+                  )}
+                  {isStream && msg.text && (
+                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '280px', overflowY: 'auto' }}>
+                      {msg.text}
+                    </div>
+                  )}
+                  {isStream && !msg.text && isStreaming && (
+                    <span className="text-slate-500 italic">等待 AI 输出...</span>
+                  )}
+                  {isStream && isFailed && (
+                    <div className="flex items-center gap-1 mt-1 pt-1 border-t border-red-200 text-[10px] text-red-600 font-semibold">
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      <span>执行失败</span>
+                    </div>
+                  )}
+                  {isStream && isThinkingActivity && (
+                    <div className="flex items-center gap-1 mt-1 pt-1 border-t border-slate-200 text-[10px] text-blue-600 font-semibold">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      <span>正在思考</span>
+                      <span className="inline-flex">
+                        <span className="animate-pulse">·</span>
+                        <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>·</span>
+                        <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>·</span>
+                      </span>
+                    </div>
+                  )}
+                  {isStream && isToolActivity && (
+                    <div className="flex items-center gap-1 mt-1 pt-1 border-t border-slate-200 text-[10px] text-indigo-600 font-semibold">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      <span>{`正在执行 ${msg.metadata?.tool || '工具'}`}</span>
+                      {msg.metadata?.toolDescription && (
+                        <span className="text-slate-500 font-normal truncate max-w-[160px]">
+                          {msg.metadata.toolDescription}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[9px] text-gray-400 mt-0.5 px-1">{msg.time}</span>
               </div>
-              <span className="text-[9px] text-gray-400 mt-0.5 px-1">{msg.time}</span>
-            </div>
-          ))}
+            )
+          })}
           {error && (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-red-700">
               <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -1685,6 +1775,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [apiError, setApiError] = useState('')
   const [chatError, setChatError] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [developmentStarting, setDevelopmentStarting] = useState(false)
+  const [developmentError, setDevelopmentError] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createText, setCreateText] = useState('')
   const [createError, setCreateError] = useState('')
@@ -1863,10 +1955,27 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
       setSelectedOrderId(updated.id)
       setApiError('')
+      setDevelopmentError('')
     } catch (error) {
       setChatError(error.message || '发送失败')
     } finally {
       setChatLoading(false)
+    }
+  }
+
+  const handleStartDevelopment = async (order) => {
+    if (!isRuntimeOrder(order)) return
+    setDevelopmentStarting(true)
+    setDevelopmentError('')
+    try {
+      const updated = await startDevelopmentRun(order.id)
+      setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
+      setSelectedOrderId(updated.id)
+      setApiError('')
+    } catch (error) {
+      setDevelopmentError(error.message || '启动智能开发失败')
+    } finally {
+      setDevelopmentStarting(false)
     }
   }
 
@@ -2207,12 +2316,14 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
             <AIChatPanel
               activeOrder={selectedOrder}
               onSendMessage={handleChatMessage}
+              onStartDevelopment={handleStartDevelopment}
               onClose={() => {
                 setIsChatOpen(false)
                 setSidebarOpen?.(true)
               }}
               loading={chatLoading}
-              error={chatError}
+              error={developmentError || chatError}
+              startingDevelopment={developmentStarting}
             />
           </div>
         </div>

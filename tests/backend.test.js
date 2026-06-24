@@ -7,8 +7,9 @@ import path from 'node:path'
 import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
-import { parseClarificationResponse } from '../server/lib/opencode.js'
+import { parseClarificationResponse, buildOpencodeCommand } from '../server/lib/opencode.js'
 import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
+import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
 import { STAGE_STATUS, WORK_ORDER_STATUS } from '../server/lib/stages.js'
 
@@ -403,6 +404,457 @@ test('missing manifest fails the coding stage only and exposes stage logs', asyn
   }
 })
 
+test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does not auto-run pipeline', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认，等待用户启动智能开发。',
+        requirementsMarkdown: '# 准备就绪需求',
+        title: '准备就绪应用'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个准备就绪的应用' }, { startClarification: false })
+    const clarified = await service.processClarification(state.id)
+
+    assert.equal(clarified.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
+    assert.equal(clarified.stages[0].status, STAGE_STATUS.COMPLETED)
+    assert.equal(clarified.stages[1].status, STAGE_STATUS.PENDING)
+    assert.equal(runner.runs.length, 1, 'clarification should not auto-run design/coding stages')
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    assert.equal(persisted.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
+    assert.ok(persisted.requirementsPath)
+    assert.ok(persisted.messages.some((message) => /准备就绪/.test(message.content)))
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('startDevelopmentRun only launches the pipeline when ready and rejects conflicting states', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 启动按钮需求',
+        title: '启动按钮应用'
+      }),
+      async () => ok('design ok'),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'mock-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install ok'),
+      async () => ok('build ok'),
+      async () => ok('test ok'),
+      async () => ok('deployment prep ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4101,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个启动按钮应用' }, { startClarification: false })
+    assert.equal(state.status, WORK_ORDER_STATUS.CLARIFYING)
+
+    await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
+
+    await service.processClarification(state.id)
+    const ready = await fixture.store.readWorkOrder(state.id)
+    assert.equal(ready.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
+
+    const started = await service.startDevelopmentRun(state.id)
+    assert.equal(started.status, WORK_ORDER_STATUS.RUNNING)
+
+    await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
+
+    let deployed
+    for (let i = 0; i < 50; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      deployed = await fixture.store.readWorkOrder(state.id)
+      if (deployed.status === WORK_ORDER_STATUS.DEPLOYED || deployed.status === WORK_ORDER_STATUS.FAILED) break
+    }
+    assert.equal(deployed.status, WORK_ORDER_STATUS.DEPLOYED)
+    assert.equal(deployed.deploymentUrl, 'http://127.0.0.1:4101')
+
+    await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
+
+    const events = await fixture.store.readEvents(state.id)
+    assert.ok(events.some((event) => event.type === 'development.run.started'))
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('startDevelopmentRun on a failed work order is rejected with CONFLICT', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 失败启动需求',
+        title: '失败启动应用'
+      }),
+      async () => ({ exitCode: 1, stdout: '', stderr: 'design exploded' })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个会失败的启动应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.startDevelopmentRun(state.id)
+
+    let failed
+    for (let i = 0; i < 50; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      failed = await fixture.store.readWorkOrder(state.id)
+      if (failed.status === WORK_ORDER_STATUS.FAILED) break
+    }
+    assert.equal(failed.status, WORK_ORDER_STATUS.FAILED)
+
+    await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('opencode stdout/stderr lines produce assistant.message.append + assistant.message.delta persisted to messages.json', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 流式输出需求',
+        title: '流式输出应用'
+      }),
+      streamingHandler([
+        'opencode design line 1',
+        'opencode design line 2',
+        'opencode design line 3'
+      ], { exitCode: 0 })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个流式输出应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.runOpencodePipelineStage(state.id, 'design')
+
+    const events = await fixture.store.readEvents(state.id)
+    const appendEvents = events.filter((event) => event.type === 'assistant.message.append')
+    const streamAppended = appendEvents.find((event) => event.message?.kind === 'opencode-stream' && event.message?.metadata?.stageKey === 'design')
+    assert.ok(streamAppended, 'expected a design-stage opencode-stream message append event')
+    assert.equal(streamAppended.message.status, 'STREAMING')
+    assert.equal(streamAppended.message.metadata?.stageKey, 'design')
+
+    const deltaEvents = events.filter((event) => event.type === 'assistant.message.delta' && event.messageId === streamAppended.message.id)
+    assert.ok(deltaEvents.length >= 3, `expected at least 3 delta events, got ${deltaEvents.length}`)
+    assert.equal(deltaEvents.at(-1).status, 'COMPLETED')
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessage = persisted.messages.find((message) => message.id === streamAppended.message.id)
+    assert.ok(streamMessage, 'streaming message should be persisted to messages.json')
+    assert.equal(streamMessage.kind, 'opencode-stream')
+    assert.match(streamMessage.content, /opencode design line 1/)
+    assert.match(streamMessage.content, /opencode design line 2/)
+    assert.match(streamMessage.content, /opencode design line 3/)
+    assert.equal(streamMessage.status, 'COMPLETED')
+
+    const designLog = await service.getStageLog(state.id, 'design')
+    assert.match(designLog.content, /opencode design line 1/)
+    assert.match(designLog.content, /opencode design line 3/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('opencode failure marks the streaming message FAILED and keeps stage logs consistent', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 失败流式需求',
+        title: '失败流式应用'
+      }),
+      streamingHandler(['good line 1', 'good line 2'], { exitCode: 1, stderr: ['boom stderr'] })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个失败流式应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await assert.rejects(() => service.runOpencodePipelineStage(state.id, 'design'), /系统设计 failed/)
+
+    const events = await fixture.store.readEvents(state.id)
+    const streamAppend = events.find((event) => event.type === 'assistant.message.append' && event.message?.kind === 'opencode-stream' && event.message?.metadata?.stageKey === 'design')
+    assert.ok(streamAppend)
+    const streamDeltas = events.filter((event) => event.type === 'assistant.message.delta' && event.messageId === streamAppend.message.id)
+    assert.equal(streamDeltas.at(-1).status, 'FAILED')
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessage = persisted.messages.find((message) => message.id === streamAppend.message.id)
+    assert.equal(streamMessage.status, 'FAILED')
+    assert.match(streamMessage.content, /good line 1/)
+    assert.match(streamMessage.content, /boom stderr/)
+
+    const designLog = await service.getStageLog(state.id, 'design')
+    assert.match(designLog.content, /good line 1/)
+    assert.match(designLog.content, /boom stderr/)
+    assert.ok(designLog.entries.some((entry) => entry.level === 'ERROR'))
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('install/build/test commands only write to stage logs and never create opencode-stream messages', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 非opencode需求',
+        title: '非opencode应用'
+      }),
+      streamingHandler(['design ok'], { exitCode: 0 }),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'mock-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      streamingHandler(['testing prep ok'], { exitCode: 0 }),
+      streamingHandler(['install ok'], { exitCode: 0 }),
+      streamingHandler(['build ok'], { exitCode: 0 }),
+      streamingHandler(['test ok'], { exitCode: 0 }),
+      streamingHandler(['deployment prep ok'], { exitCode: 0 })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4102,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个非opencode应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.runPipeline(state.id)
+
+    const events = await fixture.store.readEvents(state.id)
+    const streamAppends = events.filter((event) => event.type === 'assistant.message.append' && event.message?.kind === 'opencode-stream')
+    const streamStages = new Set(streamAppends.map((event) => event.message.metadata?.stageKey))
+    assert.deepEqual([...streamStages].sort(), ['coding', 'deployment', 'design', 'requirements', 'testing'])
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessages = persisted.messages.filter((message) => message.kind === 'opencode-stream')
+    assert.equal(streamMessages.length, 5)
+
+    const testingLog = await service.getStageLog(state.id, 'testing')
+    assert.match(testingLog.content, /install ok/)
+    assert.match(testingLog.content, /build ok/)
+    assert.match(testingLog.content, /test ok/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('buildOpencodeCommand adds --thinking flag when thinking option is true', () => {
+  const base = buildOpencodeCommand('prompt', '/tmp/app', { thinking: false })
+  assert.ok(!base.includes('--thinking'), 'should not include --thinking when thinking is false')
+
+  const withThinking = buildOpencodeCommand('prompt', '/tmp/app', { thinking: true })
+  assert.ok(withThinking.includes('--thinking'), 'should include --thinking when thinking is true')
+})
+
+test('opencode JSON events are parsed: only text/thinking content and tool summaries appear in stream message', async () => {
+  const fixture = await createFixture()
+  try {
+    const jsonEvents = [
+      JSON.stringify({ type: 'step_start', part: { type: 'step-start', id: 'p1' } }),
+      JSON.stringify({ type: 'thinking', part: { type: 'thinking', text: 'Let me plan the design.' } }),
+      JSON.stringify({ type: 'text', part: { type: 'text', text: 'I will create the theme file.' } }),
+      JSON.stringify({ type: 'tool_use', part: { type: 'tool', tool: 'bash', state: { input: { command: 'npm install', description: 'Install dependencies' } } } }),
+      JSON.stringify({ type: 'tool_use', part: { type: 'tool', tool: 'edit', state: { input: { path: 'src/App.vue' } } } }),
+      JSON.stringify({ type: 'step_finish', part: { type: 'step-finish', reason: 'tool-calls' } }),
+      'a non-JSON stderr line'
+    ]
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# JSON 事件需求',
+        title: 'JSON事件应用'
+      }),
+      async (_command, options) => {
+        for (const line of jsonEvents) {
+          if (options.onStdoutLine) await options.onStdoutLine(line)
+        }
+        if (options.onStderrLine) await options.onStderrLine(jsonEvents[6])
+        return { exitCode: 0, stdout: jsonEvents.slice(0, 6).join('\n'), stderr: jsonEvents[6] }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个 JSON 事件应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.runOpencodePipelineStage(state.id, 'design')
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessage = persisted.messages.find((message) => message.kind === 'opencode-stream' && message.metadata?.stageKey === 'design')
+    assert.ok(streamMessage, 'design-stage opencode-stream message should exist')
+
+    assert.match(streamMessage.content, /Let me plan the design\./)
+    assert.match(streamMessage.content, /I will create the theme file\./)
+    assert.match(streamMessage.content, /▸ 执行 bash: Install dependencies/)
+    assert.match(streamMessage.content, /▸ 执行 edit: src\/App\.vue/)
+    assert.match(streamMessage.content, /a non-JSON stderr line/)
+
+    assert.doesNotMatch(streamMessage.content, /step_start/)
+    assert.doesNotMatch(streamMessage.content, /step_finish/)
+    assert.doesNotMatch(streamMessage.content, /"type":"tool"/)
+
+    assert.equal(streamMessage.metadata.activity, null)
+    assert.equal(streamMessage.status, 'COMPLETED')
+
+    const events = await fixture.store.readEvents(state.id)
+    const deltaEvents = events.filter((event) => event.type === 'assistant.message.delta' && event.messageId === streamMessage.id)
+    const toolDelta = deltaEvents.find((event) => event.metadata?.activity === 'tool')
+    assert.ok(toolDelta, 'expected a delta event with activity=tool')
+    assert.equal(toolDelta.metadata.tool, 'bash')
+    assert.equal(toolDelta.metadata.toolDescription, 'Install dependencies')
+
+    const designLog = await service.getStageLog(state.id, 'design')
+    assert.match(designLog.content, /step_start/)
+    assert.match(designLog.content, /"type":"tool"/)
+    assert.match(designLog.content, /a non-JSON stderr line/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('clarification stage skips text events that look like JSON response', async () => {
+  const fixture = await createFixture()
+  try {
+    const clarificationJson = JSON.stringify({
+      complete: true,
+      reply: '需求已确认。',
+      requirementsMarkdown: '# 澄清跳过需求',
+      title: '澄清跳过应用'
+    })
+    const events = [
+      JSON.stringify({ type: 'step_start', part: { type: 'step-start' } }),
+      JSON.stringify({ type: 'text', part: { type: 'text', text: clarificationJson } }),
+      JSON.stringify({ type: 'step_finish', part: { type: 'step-finish' } })
+    ]
+    const runner = new FakeRunner([
+      async (_command, options) => {
+        for (const line of events) {
+          if (options.onStdoutLine) await options.onStdoutLine(line)
+        }
+        return { exitCode: 0, stdout: events.join('\n'), stderr: '' }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个澄清跳过应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessage = persisted.messages.find((message) => message.kind === 'opencode-stream' && message.metadata?.stageKey === 'requirements')
+    assert.ok(streamMessage, 'requirements-stage opencode-stream message should exist')
+    assert.equal(streamMessage.content, '', 'clarification JSON text should be skipped, content should be empty')
+    assert.doesNotMatch(streamMessage.content, /complete/)
+    assert.equal(streamMessage.status, 'COMPLETED')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('summarizeCommandResult returns a readable timeout message when timedOut is true', () => {
+  const summary = summarizeCommandResult({ exitCode: 124, stdout: '{"type":"text"}', stderr: '', timedOut: true })
+  assert.match(summary, /执行超时/)
+  assert.match(summary, /124/)
+})
+
+test('summarizeCommandResult parses opencode JSON events into readable summary', () => {
+  const stdout = [
+    JSON.stringify({ type: 'step_start', part: { type: 'step-start' } }),
+    JSON.stringify({ type: 'thinking', part: { type: 'thinking', text: 'Planning the design.' } }),
+    JSON.stringify({ type: 'text', part: { type: 'text', text: 'Creating theme file.' } }),
+    JSON.stringify({ type: 'tool_use', part: { type: 'tool', tool: 'bash', state: { input: { command: 'npm install', description: 'Install deps' } } } }),
+    JSON.stringify({ type: 'step_finish', part: { type: 'step-finish' } })
+  ].join('\n')
+  const summary = summarizeCommandResult({ exitCode: 0, stdout, stderr: '', timedOut: false })
+  assert.match(summary, /Planning the design\./)
+  assert.match(summary, /Creating theme file\./)
+  assert.match(summary, /▸ 执行 bash: Install deps/)
+  assert.doesNotMatch(summary, /step_start/)
+  assert.doesNotMatch(summary, /step_finish/)
+  assert.doesNotMatch(summary, /"type":"tool"/)
+})
+
+test('summarizeCommandResult keeps non-JSON lines as-is', () => {
+  const summary = summarizeCommandResult({ exitCode: 1, stdout: 'plain line 1\nplain line 2', stderr: 'boom stderr', timedOut: false })
+  assert.match(summary, /plain line 1/)
+  assert.match(summary, /plain line 2/)
+  assert.match(summary, /boom stderr/)
+})
+
 async function createFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'factory-backend-'))
   const store = new WorkOrderStore({
@@ -448,6 +900,22 @@ class FakeRunner {
       stderr: { on() {} }
     }
   }
+}
+
+function streamingHandler(lines, { exitCode = 0, stderr = [] } = {}) {
+  return async (_command, options) => {
+    for (const line of lines) {
+      if (options.onStdoutLine) await options.onStdoutLine(line)
+    }
+    for (const line of stderr) {
+      if (options.onStderrLine) await options.onStderrLine(line)
+    }
+    return { exitCode, stdout: lines.join('\n'), stderr: stderr.join('\n') }
+  }
+}
+
+function clarificationHandler(payload) {
+  return async () => ok(JSON.stringify(payload))
 }
 
 class FakeResponse extends EventEmitter {

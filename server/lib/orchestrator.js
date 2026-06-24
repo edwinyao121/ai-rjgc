@@ -129,7 +129,7 @@ export class WorkOrderService {
     return state
   }
 
-  async processClarification(id, { startPipeline = this.autoStart } = {}) {
+  async processClarification(id, { startPipeline = false } = {}) {
     if (this.activeClarifications.has(id)) return this.requireWorkOrder(id)
     this.activeClarifications.add(id)
     try {
@@ -146,7 +146,7 @@ export class WorkOrderService {
       await this.emitStageStatus(id, state, requirementsStage, 'AI 正在分析需求完整性')
 
       const prompt = createClarificationPrompt(state.messages)
-      const command = buildOpencodeCommand(prompt, state.appDir)
+      const command = buildOpencodeCommand(prompt, state.appDir, { thinking: false })
       const result = await this.runCommandWithStageLogging(id, 'requirements', {
         label: '需求澄清',
         command,
@@ -212,12 +212,17 @@ export class WorkOrderService {
       ])
       state.requirementsPath = requirementsPath
       state.requirementsMarkdown = requirementsMarkdown
-      state.status = WORK_ORDER_STATUS.RUNNING
+      state.status = WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT
       state.currentStage = 2
       state.progress = getStageProgress(state.stages)
       await this.store.saveWorkOrder(state)
       await this.emit(id, 'assistant.message.append', { message: assistantMessage, workOrder: state })
       await this.emitStageStatus(id, state, stage, '需求澄清完成，已生成需求文档')
+      await this.emit(id, 'work-order.status.changed', {
+        status: state.status,
+        progress: state.progress,
+        workOrder: state
+      })
 
       if (startPipeline) {
         queueMicrotask(() => {
@@ -250,6 +255,34 @@ export class WorkOrderService {
     }
   }
 
+  async startDevelopmentRun(id) {
+    const state = await this.requireWorkOrder(id)
+    if (this.activePipelines.has(id) || this.activeClarifications.has(id)) {
+      const error = new Error('开发流水线正在运行，无法重复启动')
+      error.code = 'CONFLICT'
+      throw error
+    }
+    if (state.status !== WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT) {
+      const error = new Error(`当前工单状态为 ${state.status}，无法启动智能开发`)
+      error.code = 'CONFLICT'
+      throw error
+    }
+    state.status = WORK_ORDER_STATUS.RUNNING
+    state.progress = getStageProgress(state.stages)
+    await this.store.saveWorkOrder(state)
+    await this.emit(id, 'development.run.started', { workOrder: state })
+    await this.appendVisibleMessage(state, {
+      content: '已启动智能开发流水线，opencode 原始输出将实时同步到本面板。',
+      phase: 'execution',
+      stageId: 'design',
+      status: 'COMPLETED'
+    })
+    queueMicrotask(() => {
+      this.runPipeline(id).catch((error) => this.failFromUnexpectedError(id, 'design', error))
+    })
+    return state
+  }
+
   async runOpencodePipelineStage(id, stageKey) {
     let state = await this.requireWorkOrder(id)
     const stage = getStageByKey(state.stages, stageKey)
@@ -274,12 +307,12 @@ export class WorkOrderService {
       title: state.title,
       requirementsMarkdown: await this.getRequirementsMarkdown(state)
     })
-    const command = buildOpencodeCommand(prompt, state.appDir)
+    const command = buildOpencodeCommand(prompt, state.appDir, { thinking: true })
     const result = await this.runCommandWithStageLogging(id, stageKey, {
       label: stage.name,
       command,
       cwd: state.appDir,
-      timeoutMs: 20 * 60 * 1000,
+      timeoutMs: 40 * 60 * 1000,
       source: 'opencode'
     })
     const logPath = await this.getStageLogPath(id, stageKey)
@@ -600,7 +633,9 @@ export class WorkOrderService {
     content,
     phase = 'execution',
     stageId = null,
-    status = 'COMPLETED'
+    status = 'COMPLETED',
+    kind = null,
+    metadata = null
   }) {
     const message = createMessage({
       role,
@@ -608,6 +643,8 @@ export class WorkOrderService {
       phase,
       stageId,
       status,
+      kind,
+      metadata,
       createdAt: new Date().toISOString()
     })
     state.messages = [...(state.messages || []), message]
@@ -619,6 +656,34 @@ export class WorkOrderService {
     return message
   }
 
+  async appendOpencodeStreamDelta(id, messageId, delta, status = null, metadataPatch = null) {
+    if (!messageId) return null
+    const updated = await this.store.appendMessageDelta(id, messageId, delta, status, metadataPatch)
+    if (!updated) return null
+    await this.emit(id, 'assistant.message.delta', {
+      messageId,
+      delta,
+      status: updated.status,
+      metadata: updated.metadata,
+      workOrderId: id
+    })
+    return updated
+  }
+
+  async finalizeOpencodeStreamMessage(id, messageId, status, metadataPatch = null) {
+    if (!messageId) return null
+    const updated = await this.store.appendMessageDelta(id, messageId, '', status, metadataPatch)
+    if (!updated) return null
+    await this.emit(id, 'assistant.message.delta', {
+      messageId,
+      delta: '',
+      status,
+      metadata: updated.metadata,
+      workOrderId: id
+    })
+    return updated
+  }
+
   async runCommandWithStageLogging(id, stageKey, {
     label,
     command,
@@ -628,11 +693,58 @@ export class WorkOrderService {
     source = 'command'
   }) {
     let streamedLineCount = 0
+    let streamMessageId = null
     await this.appendStageLogEntry(id, stageKey, {
       level: 'INFO',
       source,
       text: `${label}: ${formatCommand(command)}`
     })
+
+    if (source === 'opencode') {
+      const state = await this.requireWorkOrder(id)
+      const streamMessage = await this.appendVisibleMessage(state, {
+        content: '',
+        phase: 'execution',
+        stageId: stageKey,
+        status: 'STREAMING',
+        kind: 'opencode-stream',
+        metadata: { stageKey, label, source, activity: 'thinking' }
+      })
+      streamMessageId = streamMessage.id
+    }
+
+    const isClarificationStage = stageKey === 'requirements'
+    const handleOpencodeLine = async (line, lineLevel) => {
+      const parsed = parseOpencodeLine(line)
+      if (!parsed) return
+      if (parsed.kind === 'text' || parsed.kind === 'thinking') {
+        const text = parsed.text || ''
+        if (!text) return
+        if (isClarificationStage && text.trimStart().startsWith('{')) {
+          return
+        }
+        await this.appendOpencodeStreamDelta(id, streamMessageId, `${text}\n`, 'STREAMING', { activity: 'thinking' })
+        return
+      }
+      if (parsed.kind === 'tool') {
+        const summary = formatToolSummary(parsed.tool, parsed.description)
+        if (summary) {
+          await this.appendOpencodeStreamDelta(id, streamMessageId, `${summary}\n`, 'STREAMING', {
+            activity: 'tool',
+            tool: parsed.tool || null,
+            toolDescription: parsed.description || null
+          })
+        }
+        return
+      }
+      if (parsed.kind === 'step') {
+        await this.appendOpencodeStreamDelta(id, streamMessageId, '', 'STREAMING', { activity: 'thinking' })
+        return
+      }
+      if (parsed.kind === 'raw') {
+        await this.appendOpencodeStreamDelta(id, streamMessageId, `${line}\n`, 'STREAMING', { activity: 'thinking' })
+      }
+    }
 
     const result = await this.runner.run(command, {
       cwd,
@@ -645,6 +757,9 @@ export class WorkOrderService {
           source,
           text: line
         })
+        if (streamMessageId) {
+          await handleOpencodeLine(line, 'INFO')
+        }
       },
       onStderrLine: async (line) => {
         streamedLineCount += 1
@@ -653,6 +768,9 @@ export class WorkOrderService {
           source,
           text: line
         })
+        if (streamMessageId) {
+          await handleOpencodeLine(line, 'WARN')
+        }
       }
     })
 
@@ -663,6 +781,9 @@ export class WorkOrderService {
           source,
           text: line
         })
+        if (streamMessageId) {
+          await handleOpencodeLine(line, 'INFO')
+        }
       }
       for (const line of splitOutputLines(result.stderr)) {
         await this.appendStageLogEntry(id, stageKey, {
@@ -670,6 +791,9 @@ export class WorkOrderService {
           source,
           text: line
         })
+        if (streamMessageId) {
+          await handleOpencodeLine(line, 'WARN')
+        }
       }
     }
 
@@ -678,6 +802,11 @@ export class WorkOrderService {
       source,
       text: `${label} exitCode=${result.exitCode}${result.timedOut ? ' timedOut=true' : ''}`
     })
+
+    if (streamMessageId) {
+      const finalStatus = result.exitCode === 0 ? 'COMPLETED' : 'FAILED'
+      await this.finalizeOpencodeStreamMessage(id, streamMessageId, finalStatus, { activity: null })
+    }
     return result
   }
 
@@ -759,6 +888,54 @@ function splitOutputLines(content) {
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0)
+}
+
+function parseOpencodeLine(line) {
+  const raw = String(line || '')
+  if (!raw.trim()) return null
+  let obj
+  try {
+    obj = JSON.parse(raw)
+  } catch {
+    return { kind: 'raw', text: raw }
+  }
+  if (!obj || typeof obj !== 'object') return { kind: 'raw', text: raw }
+
+  const type = obj.type
+  const part = obj.part || {}
+
+  if (type === 'text') {
+    const text = typeof part.text === 'string' ? part.text : ''
+    return { kind: 'text', text }
+  }
+  if (type === 'thinking') {
+    const text = typeof part.text === 'string' ? part.text : ''
+    return { kind: 'thinking', text }
+  }
+  if (type === 'tool_use' || part.type === 'tool') {
+    const tool = part.tool || obj.tool || null
+    const state = part.state || obj.state || {}
+    const input = state.input || {}
+    const description = input.description || input.command || input.path || input.pattern || input.query || ''
+    return { kind: 'tool', tool, description: typeof description === 'string' ? description : '' }
+  }
+  if (type === 'step_start' || type === 'step_finish' || part.type === 'step-start' || part.type === 'step-finish') {
+    return { kind: 'step' }
+  }
+  return { kind: 'skip' }
+}
+
+function formatToolSummary(tool, description) {
+  const trimmedTool = String(tool || '').trim()
+  const trimmedDesc = String(description || '').trim()
+  if (!trimmedTool && !trimmedDesc) return ''
+  if (trimmedTool && trimmedDesc) {
+    return `▸ 执行 ${trimmedTool}: ${trimmedDesc}`
+  }
+  if (trimmedTool) {
+    return `▸ 执行 ${trimmedTool}`
+  }
+  return `▸ ${trimmedDesc}`
 }
 
 async function listRelativeFiles(rootDir) {

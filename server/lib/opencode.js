@@ -1,16 +1,17 @@
 import path from 'node:path'
 
-export function buildOpencodeCommand(prompt, appDir) {
-  return [
+export function buildOpencodeCommand(prompt, appDir, { thinking = false } = {}) {
+  const command = [
     'opencode',
     'run',
     '--format',
-    'json',
-    '--dangerously-skip-permissions',
-    '--dir',
-    path.resolve(appDir),
-    prompt
+    'json'
   ]
+  if (thinking) {
+    command.push('--thinking')
+  }
+  command.push('--dangerously-skip-permissions', '--dir', path.resolve(appDir), prompt)
+  return command
 }
 
 export function createClarificationPrompt(messages) {
@@ -28,7 +29,7 @@ export function createClarificationPrompt(messages) {
   "title": "不超过 24 个中文字符的应用名称"
 }
 
-进入流水线的最低条件：目标用户、核心功能、输入数据、主要页面或交互、验收标准基本清楚。若缺少关键信息，complete=false 并只问 1-3 个最关键问题。
+进入流水线的最低条件：目标用户、业务必要性、预期成效、核心功能、输入数据、主要页面或交互、验收标准基本清楚。其中业务必要性和预期成效必须向用户提问，其他内容若缺少关键信息，complete=false 并每次只问 1-3 个最关键问题，最多2次。
 
 当前对话：
 ${conversation}`
@@ -59,7 +60,7 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：智能编码。
-请生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
+请根据docs/design.md文档，生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
 {
   "name": "app-name",
   "install": ["npm", "install"],

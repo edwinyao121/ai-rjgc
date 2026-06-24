@@ -106,9 +106,51 @@ export function assertCommandArray(command) {
 }
 
 export function summarizeCommandResult(result) {
+  if (result.timedOut) {
+    return `执行超时（exitCode=${result.exitCode}），opencode 在限定时间内未完成。`
+  }
   const combined = `${result.stderr || ''}\n${result.stdout || ''}`.trim()
   if (!combined) return ''
-  return combined.split('\n').slice(-20).join('\n')
+  const lines = combined.split('\n')
+  const parsed = []
+  let jsonCount = 0
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    let obj
+    try {
+      obj = JSON.parse(trimmed)
+    } catch {
+      parsed.push(trimmed)
+      continue
+    }
+    jsonCount += 1
+    const summary = summarizeOpencodeEvent(obj)
+    if (summary) parsed.push(summary)
+  }
+  if (jsonCount === 0) {
+    return lines.slice(-20).join('\n')
+  }
+  return parsed.slice(-20).join('\n') || `opencode 退出（exitCode=${result.exitCode}），未产生可读输出。`
+}
+
+function summarizeOpencodeEvent(obj) {
+  if (!obj || typeof obj !== 'object') return ''
+  const type = obj.type
+  const part = obj.part || {}
+  if (type === 'text' && typeof part.text === 'string') {
+    return part.text
+  }
+  if (type === 'thinking' && typeof part.text === 'string') {
+    return `[思考] ${part.text}`
+  }
+  if (type === 'tool_use' || part.type === 'tool') {
+    const tool = part.tool || obj.tool || ''
+    const input = (part.state || obj.state || {}).input || {}
+    const desc = input.description || input.command || input.path || input.pattern || input.query || ''
+    return `▸ 执行 ${tool}${desc ? `: ${desc}` : ''}`
+  }
+  return ''
 }
 
 export async function findAvailablePort(startPort = 4101) {

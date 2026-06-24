@@ -5,6 +5,8 @@ const EVENT_TYPES = [
   'assistant.message.delta',
   'deployment.updated',
   'work-order.created',
+  'work-order.status.changed',
+  'development.run.started',
   'message.created',
   'clarification.started',
   'clarification.completed',
@@ -30,6 +32,13 @@ export async function sendWorkOrderMessage(id, message) {
   const payload = await apiFetch(`/api/work-orders/${id}/messages`, {
     method: 'POST',
     body: JSON.stringify({ message })
+  })
+  return payload.workOrder
+}
+
+export async function startDevelopmentRun(id) {
+  const payload = await apiFetch(`/api/work-orders/${id}/development-runs`, {
+    method: 'POST'
   })
   return payload.workOrder
 }

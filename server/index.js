@@ -54,6 +54,14 @@ async function routeRequest({ request, response, service, eventBus }) {
     return
   }
 
+  const developmentRunMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})\/development-runs$/)
+  if (developmentRunMatch && request.method === 'POST') {
+    const [, id] = developmentRunMatch
+    const workOrder = await service.startDevelopmentRun(id)
+    sendJson(response, 202, { workOrder })
+    return
+  }
+
   const workOrderMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})(?:\/(messages|events))?$/)
   if (workOrderMatch) {
     const [, id, child] = workOrderMatch
@@ -134,6 +142,10 @@ function handleError(response, error) {
   }
   if (error.code === 'NOT_FOUND') {
     sendError(response, 404, 'NOT_FOUND', error.message)
+    return
+  }
+  if (error.code === 'CONFLICT') {
+    sendError(response, 409, 'CONFLICT', error.message)
     return
   }
   console.error(error)

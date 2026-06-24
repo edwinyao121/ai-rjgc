@@ -270,6 +270,28 @@ export class WorkOrderStore {
     return next
   }
 
+  async appendMessageDelta(workOrderId, messageId, delta, status = null, metadataPatch = null) {
+    assertWorkOrderId(workOrderId)
+    const messages = (await this.readMessages(workOrderId)) || []
+    const index = messages.findIndex((message) => message.id === messageId)
+    if (index === -1) return null
+    const current = normalizeMessage(messages[index])
+    const nextContent = `${current.content ?? ''}${delta || ''}`
+    const nextStatus = status || current.status || 'STREAMING'
+    const nextMetadata = mergeMetadata(current.metadata, metadataPatch)
+    const updated = {
+      ...current,
+      content: nextContent,
+      text: nextContent,
+      status: nextStatus,
+      metadata: nextMetadata,
+      updatedAt: new Date().toISOString()
+    }
+    messages[index] = updated
+    await this.writeMessages(workOrderId, messages)
+    return updated
+  }
+
   async appendStageLogEntry(workOrderId, stageKey, entry) {
     assertWorkOrderId(workOrderId)
     assertStageKey(stageKey)
@@ -354,6 +376,8 @@ export function createMessage({
   phase = 'execution',
   stageId = null,
   status = 'COMPLETED',
+  kind = null,
+  metadata = null,
   createdAt = new Date().toISOString(),
   updatedAt = createdAt
 } = {}) {
@@ -366,6 +390,8 @@ export function createMessage({
     phase,
     stageId,
     status,
+    kind,
+    metadata,
     createdAt,
     updatedAt
   })
@@ -376,6 +402,7 @@ export function normalizeMessage(message = {}) {
   const content = String(message.content ?? message.text ?? '')
   const createdAt = message.createdAt || new Date().toISOString()
   const normalizedRole = ['user', 'assistant', 'system', 'tool'].includes(role) ? role : 'assistant'
+  const kind = message.kind || null
   return {
     id: message.id || randomUUID(),
     role: normalizedRole,
@@ -385,9 +412,48 @@ export function normalizeMessage(message = {}) {
     content,
     text: content,
     status: message.status || 'COMPLETED',
+    kind,
+    metadata: kind === 'opencode-stream' ? normalizeMetadata(message.metadata) : null,
     createdAt,
     updatedAt: message.updatedAt || createdAt
   }
+}
+
+function normalizeMetadata(metadata) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null
+  const result = {}
+  for (const [key, value] of Object.entries(metadata)) {
+    if (typeof value === 'undefined') continue
+    if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      result[key] = value
+    } else {
+      try {
+        result[key] = JSON.parse(JSON.stringify(value))
+      } catch {
+        // Ignore non-serializable values.
+      }
+    }
+  }
+  return Object.keys(result).length > 0 ? result : null
+}
+
+function mergeMetadata(current, patch) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return current || null
+  const base = current && typeof current === 'object' && !Array.isArray(current) ? current : {}
+  const merged = { ...base }
+  for (const [key, value] of Object.entries(patch)) {
+    if (typeof value === 'undefined') continue
+    if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      merged[key] = value
+    } else {
+      try {
+        merged[key] = JSON.parse(JSON.stringify(value))
+      } catch {
+        // Ignore non-serializable values.
+      }
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : null
 }
 
 function senderToRole(sender) {
