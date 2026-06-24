@@ -140,6 +140,59 @@ test('renders structured stage log modal with controls and empty state', async (
   }
 })
 
+test('StageCard shows estimated remaining while running and actual elapsed when completed', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { StageCard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const Icon = () => React.createElement('span', { 'aria-hidden': true })
+
+    const runningHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 2,
+        key: 'design',
+        name: '系统设计',
+        icon: Icon,
+        status: 'RUNNING',
+        time: '16:00',
+        duration: '进行中',
+        estimatedRemaining: '12分钟',
+        gate: { exit: '设计完备' },
+        items: []
+      },
+      onShowLogs: () => {}
+    }))
+
+    assert.match(runningHtml, /预计剩余/)
+    assert.match(runningHtml, /12分钟/)
+
+    const completedHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 2,
+        key: 'design',
+        name: '系统设计',
+        icon: Icon,
+        status: 'COMPLETED',
+        time: '16:00',
+        duration: '1分30秒',
+        actualDuration: '1分30秒',
+        gate: { exit: '设计完备' },
+        items: []
+      },
+      onShowLogs: () => {}
+    }))
+
+    assert.match(completedHtml, /实际耗时/)
+    assert.match(completedHtml, /1分30秒/)
+  } finally {
+    await server.close()
+  }
+})
+
 test('AIChatPanel renders opencode-stream messages with pre-wrap and start button only when ready', async () => {
   const server = await createServer({
     server: { middlewareMode: true },

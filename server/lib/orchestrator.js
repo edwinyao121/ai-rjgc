@@ -9,7 +9,8 @@ import {
   getStageProgress,
   markStageCompleted,
   markStageFailed,
-  markStageRunning
+  markStageRunning,
+  refreshStageTiming
 } from './stages.js'
 import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, parseClarificationResponse } from './opencode.js'
 import { MANIFEST_FILE, readManifest, substitutePortInCommand, substitutePortInUrl } from './manifest.js'
@@ -377,14 +378,11 @@ export class WorkOrderService {
     for (const [, label, command] of commands) {
       state = await this.requireWorkOrder(id)
       const currentStage = getStageByKey(state.stages, 'testing')
-      currentStage.status = STAGE_STATUS.RUNNING
-      currentStage.items = [
-        {
-          type: 'ai',
-          label,
-          value: '执行中'
-        }
-      ]
+      markStageRunning(currentStage, new Date(), {
+        type: 'ai',
+        label,
+        value: '执行中'
+      })
       await this.store.saveWorkOrder(state)
       await this.emitStageStatus(id, state, currentStage, `${label}开始`)
 
@@ -503,19 +501,23 @@ export class WorkOrderService {
     getStageByKey(state.stages, 'deployment').logPath = logPath
     getStageByKey(state.stages, 'deployment').logSummary = `部署成功：${healthUrl}`
     state.deploymentUrl = healthUrl
-    state.status = WORK_ORDER_STATUS.DEPLOYED
     state.progress = 100
     await this.store.saveWorkOrder(state)
     await this.emitStageStatus(id, state, getStageByKey(state.stages, 'deployment'), `部署成功：${healthUrl}`)
-    await this.emit(id, 'deployment.updated', {
-      deploymentUrl: healthUrl,
-      status: WORK_ORDER_STATUS.DEPLOYED,
-      workOrder: state
-    })
     await this.appendVisibleMessage(state, {
       content: `部署交付已完成：${healthUrl}`,
       phase: 'execution',
       stageId: 'deployment'
+    })
+    state = await this.requireWorkOrder(id)
+    state.deploymentUrl = healthUrl
+    state.status = WORK_ORDER_STATUS.DEPLOYED
+    state.progress = 100
+    await this.store.saveWorkOrder(state)
+    await this.emit(id, 'deployment.updated', {
+      deploymentUrl: healthUrl,
+      status: WORK_ORDER_STATUS.DEPLOYED,
+      workOrder: state
     })
     return state
   }
@@ -636,6 +638,7 @@ export class WorkOrderService {
   }
 
   async emitStageStatus(id, state, stage, message) {
+    refreshStageTiming(stage)
     return this.emit(id, 'stage.status.changed', {
       stageId: stage.key,
       status: stage.status,

@@ -11,7 +11,7 @@ import { parseClarificationResponse, buildOpencodeCommand, createClarificationPr
 import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
-import { STAGE_STATUS, WORK_ORDER_STATUS } from '../server/lib/stages.js'
+import { STAGE_STATUS, WORK_ORDER_STATUS, createPipelineStages, markStageCompleted, markStageRunning } from '../server/lib/stages.js'
 
 test('allocates work order ids and persists state and requirements files', async () => {
   const fixture = await createFixture()
@@ -38,6 +38,33 @@ test('allocates work order ids and persists state and requirements files', async
   } finally {
     await fixture.cleanup()
   }
+})
+
+test('stage timing exposes estimated remaining while running and actual elapsed when completed', () => {
+  const stages = createPipelineStages(new Date('2026-06-24T08:00:00.000Z'))
+  const designStage = stages.find((stage) => stage.key === 'design')
+
+  markStageRunning(designStage, new Date('2026-06-24T08:10:00.000Z'), {
+    type: 'ai',
+    label: '系统设计',
+    value: 'opencode 正在执行该阶段'
+  })
+
+  assert.equal(designStage.status, STAGE_STATUS.RUNNING)
+  assert.equal(designStage.estimatedDuration, '25分钟')
+  assert.equal(designStage.estimatedRemaining, '25分钟')
+  assert.equal(designStage.estimatedCompletedAt, '2026-06-24T08:35:00.000Z')
+
+  markStageCompleted(designStage, new Date('2026-06-24T08:11:30.000Z'), {
+    type: 'ai',
+    label: '系统设计',
+    value: '阶段执行完成'
+  })
+
+  assert.equal(designStage.status, STAGE_STATUS.COMPLETED)
+  assert.equal(designStage.actualDuration, '1分30秒')
+  assert.equal(designStage.duration, '1分30秒')
+  assert.equal(designStage.estimatedRemaining, '0秒')
 })
 
 test('parses clarification JSON from opencode JSON events and markdown fences', () => {

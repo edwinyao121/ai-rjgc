@@ -18,13 +18,13 @@ body {
   font-family: 'OPPO Sans 4.0', 'OPPOSans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #243340 !important;
   color: #E5EAFF !important;
-  font-size: 28px !important;
+  font-size: 16px !important;
 }
 
 /* Base Headings & Titles */
 h1 {
   font-family: 'YouSheBiaoTiHei', sans-serif !important;
-  font-size: 52px !important;
+  font-size: 32px !important;
   font-weight: normal !important;
   color: #E5EAFF !important;
 }
@@ -40,14 +40,14 @@ h1 {
 
 h2 {
   font-family: 'OPPO Sans 4.0', 'OPPOSans', sans-serif !important;
-  font-size: 32px !important;
+  font-size: 22px !important;
   font-weight: 600 !important;
   color: #E5EAFF !important;
 }
 
 h3 {
   font-family: 'OPPO Sans 4.0', 'OPPOSans', sans-serif !important;
-  font-size: 28px !important;
+  font-size: 18px !important;
   font-weight: 500 !important;
   color: #C9D2D9 !important;
 }
@@ -82,7 +82,7 @@ select, .select-custom {
   border-radius: 4px !important;
   padding: 16px 24px !important;
   font-family: 'OPPO Sans 4.0', sans-serif !important;
-  font-size: 28px !important;
+  font-size: 16px !important;
   appearance: none !important;
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23C9D2D9' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E") !important;
   background-position: right 1rem center !important;
@@ -109,7 +109,7 @@ input[type="text"], input[type="search"], textarea {
   border-radius: 6px !important;
   padding: 16px 24px !important;
   font-family: 'OPPO Sans 4.0', sans-serif !important;
-  font-size: 28px !important;
+  font-size: 16px !important;
 }
 
 input[type="text"]:focus, input[type="search"]:focus, textarea:focus {
@@ -159,6 +159,48 @@ button:not(.bg-transparent):not(.p-1):not(.p-2):not(.w-10):not(.w-12) {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
+}
+
+.text-\[48px\] {
+  font-size: 2rem !important;
+  line-height: 2.25rem !important;
+}
+
+.text-\[40px\] {
+  font-size: 1.75rem !important;
+  line-height: 2rem !important;
+}
+
+.text-\[32px\] {
+  font-size: 1.5rem !important;
+  line-height: 1.9rem !important;
+}
+
+.text-\[28px\] {
+  font-size: 1.125rem !important;
+  line-height: 1.5rem !important;
+}
+
+.text-\[24px\] {
+  font-size: 0.95rem !important;
+  line-height: 1.3rem !important;
+}
+
+.text-\[22px\] {
+  font-size: 0.9rem !important;
+  line-height: 1.2rem !important;
+}
+
+.text-\[20px\],
+.text-\[19px\] {
+  font-size: 0.8125rem !important;
+  line-height: 1.1rem !important;
+}
+
+.text-\[18px\],
+.text-\[17px\] {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
 }
 
 .animate-pulse {

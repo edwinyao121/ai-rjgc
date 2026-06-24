@@ -30,7 +30,7 @@ function App() {
   if (simulatorAppIdStr) {
     const appId = parseInt(simulatorAppIdStr, 10)
     return (
-      <div className="min-h-screen bg-gray-100 p-12 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
         <div className="w-full h-full max-w-6xl">
           <AppSimulator appId={appId} onClose={() => window.close()} closeLabel="关闭模拟器窗口" />
         </div>
@@ -53,30 +53,30 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <aside className={`${sidebarOpen ? 'w-64 border-r border-gray-200' : 'w-0 overflow-hidden border-none'} bg-white transition-all duration-300 flex flex-col`}>
-        <div className="h-16 flex items-center px-12 border-b border-gray-200 bg-white flex-shrink-0">
+      <aside className={`${sidebarOpen ? 'w-56 border-r border-gray-200' : 'w-0 overflow-hidden border-none'} bg-white transition-all duration-300 flex flex-col`}>
+        <div className="h-16 flex items-center px-4 border-b border-gray-200 bg-white flex-shrink-0">
           {sidebarOpen ? (
-            <div className="flex items-center gap-6">
-              <div className="w-18 h-18 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
-                <Factory className="w-10 h-10 text-white" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
+                <Factory className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="font-extrabold text-[28px] bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent tracking-wide leading-tight">
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-[20px] bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent tracking-wide leading-tight truncate">
                   智能软件工厂
                 </h1>
-                <p className="text-[20px] text-gray-400 tracking-wider font-semibold uppercase leading-none mt-0.5">
+                <p className="text-[18px] text-gray-400 tracking-wider font-semibold uppercase leading-none mt-0.5 truncate">
                   Smart Factory
                 </p>
               </div>
             </div>
           ) : (
-            <div className="w-18 h-18 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 mx-auto">
-              <Factory className="w-10 h-10 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20 mx-auto">
+              <Factory className="w-5 h-5 text-white" />
             </div>
           )}
         </div>
 
-        <nav className="flex-1 py-8 flex flex-col gap-1 overflow-y-auto">
+        <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
           {navItems.map(item => {
             const Icon = item.icon
             const isActive = activePage === item.id
@@ -84,13 +84,13 @@ function App() {
               <button
                 key={item.id}
                 onClick={() => setActivePage(item.id)}
-                className={`flex items-center gap-6 px-8 py-5 mx-3 my-0.5 rounded-xl transition-all duration-200 group text-[28px] ${
+                className={`flex items-center gap-3 px-4 py-3 mx-3 my-0.5 rounded-lg transition-all duration-200 group text-[20px] ${
                   isActive
                     ? 'bg-blue-50/80 text-blue-600 font-semibold shadow-sm shadow-blue-500/5'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium'
                 }`}
               >
-                <Icon className={`w-10 h-10 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
                   isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
                 }`} />
                 {sidebarOpen && <span className="truncate">{item.label}</span>}
@@ -99,29 +99,29 @@ function App() {
           })}
         </nav>
 
-        <div className="p-6 border-t border-gray-200">
+        <div className="p-3 border-t border-gray-200">
           <button
             onClick={() => setSidebarOpen(false)}
-            className="w-full flex items-center justify-center gap-4 px-6 py-5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200 text-[28px] font-medium"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 text-[20px] font-medium"
           >
-            <Menu className="w-10 h-10 text-gray-400" />
+            <Menu className="w-5 h-5 text-gray-400" />
             {sidebarOpen && <span>收起菜单</span>}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col relative">
+      <main className="flex-1 min-w-0 flex flex-col relative">
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="fixed top-4 left-4 z-50 p-4 bg-white hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 shadow-md flex items-center justify-center"
+            className="fixed top-4 left-4 z-50 p-3 bg-white hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 shadow-md flex items-center justify-center"
             title="展开菜单"
           >
-            <Menu className="w-10 h-10" />
+            <Menu className="w-5 h-5" />
           </button>
         )}
 
-        <div className="flex-1 overflow-auto p-12">
+        <div className={`flex-1 overflow-auto p-4 lg:p-6 ${sidebarOpen ? '' : 'pl-20 lg:pl-20'}`}>
           {renderPage()}
         </div>
       </main>

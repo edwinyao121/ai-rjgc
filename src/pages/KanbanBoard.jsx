@@ -1,5 +1,5 @@
-import { Fragment, useState, useEffect, useMemo, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, ChevronRight, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle } from 'lucide-react'
 import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
 
 const workOrders = [
@@ -495,8 +495,67 @@ const runtimeStatusMap = {
   FAILED: 'failed'
 }
 
+const stageEstimateMsById = {
+  1: 5 * 60 * 1000,
+  2: 25 * 60 * 1000,
+  3: 45 * 60 * 1000,
+  4: 30 * 60 * 1000,
+  5: 15 * 60 * 1000
+}
+
 function normalizeStageStatus(status) {
   return runtimeStatusMap[status] || status || 'pending'
+}
+
+function formatDurationForUi(ms) {
+  const safeMs = Math.max(0, Number(ms) || 0)
+  const totalSeconds = Math.ceil(safeMs / 1000)
+  if (totalSeconds < 60) return `${totalSeconds}秒`
+  const totalMinutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (totalMinutes < 60) return seconds > 0 ? `${totalMinutes}分${seconds}秒` : `${totalMinutes}分钟`
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return minutes > 0 ? `${hours}小时${minutes}分钟` : `${hours}小时`
+}
+
+function getStageEstimateMs(stage) {
+  return Number(stage?.estimatedDurationMs || stageEstimateMsById[stage?.id] || 0)
+}
+
+function getStageTimingDisplay(stage, visualStatus, progress, nowMs = Date.now()) {
+  if (visualStatus === 'active') {
+    const estimateMs = getStageEstimateMs(stage)
+    if (stage?.startedAt && estimateMs > 0) {
+      const startedAtMs = new Date(stage.startedAt).getTime()
+      if (Number.isFinite(startedAtMs)) {
+        return {
+          label: '预计剩余',
+          value: formatDurationForUi(Math.max(0, startedAtMs + estimateMs - nowMs))
+        }
+      }
+    }
+    if (stage?.estimatedRemaining && stage.estimatedRemaining !== '-') {
+      return { label: '预计剩余', value: stage.estimatedRemaining }
+    }
+    if (estimateMs > 0 && progress > 0) {
+      return {
+        label: '预计剩余',
+        value: formatDurationForUi(Math.max(0, estimateMs * (100 - progress) / 100))
+      }
+    }
+    return { label: '预计剩余', value: '计算中' }
+  }
+
+  if (visualStatus === 'completed') {
+    return { label: '实际耗时', value: stage?.actualDuration || stage?.duration || '-' }
+  }
+
+  if (visualStatus === 'failed') {
+    return { label: '已耗时', value: stage?.actualDuration || stage?.duration || '-' }
+  }
+
+  return { label: '计划耗时', value: stage?.estimatedDuration || (getStageEstimateMs(stage) ? formatDurationForUi(getStageEstimateMs(stage)) : '-') }
 }
 
 function isRuntimeOrder(order) {
@@ -695,10 +754,11 @@ const getDeliverables = (order) => {
   return { docs, builds, urls, reqDocs, userDocs, sourceCode, installPacks }
 }
 
-function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
+export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
   const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
   const visualStatus = normalizeStageStatus(stage.status)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const stageAgents = {
     1: '需求设计 Agent',
@@ -754,6 +814,14 @@ function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
     return 50
   })()
 
+  useEffect(() => {
+    if (visualStatus !== 'active') return undefined
+    const timer = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [visualStatus, stage.startedAt, stage.estimatedDurationMs])
+
+  const timing = getStageTimingDisplay(stage, visualStatus, progress, nowMs)
+
   const handleCardClick = () => {
     if (onSelect) onSelect(stage)
   }
@@ -766,39 +834,41 @@ function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
   return (
     <div
       onClick={handleCardClick}
-      className={`w-[320px] h-[360px] rounded-xl ${colors.bg} border border-gray-200 flex flex-col flex-shrink-0 transition-all ${
-        onSelect ? 'cursor-pointer hover:shadow-lg hover:scale-[1.03]' : ''
+      className={`w-full min-w-0 h-[220px] rounded-lg ${colors.bg} border border-gray-200 flex flex-col transition-all ${
+        onSelect ? 'cursor-pointer hover:shadow-lg' : ''
       } ${
-        isSelected ? 'ring-2 ring-blue-500 shadow-md shadow-blue-200 scale-[1.03]' :
-        visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100 scale-[1.02]' : ''
+        isSelected ? 'ring-2 ring-blue-500 shadow-md shadow-blue-200' :
+        visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100' : ''
       } ${visualStatus === 'pending' ? 'opacity-65' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-md shadow-red-100' : ''}`}
       title={onSelect ? `点击查看「${stage.name}」阶段思考过程` : undefined}
     >
 
       {/* Header */}
-      <div className={`${colors.header} rounded-t-xl px-4 py-3 flex items-center justify-between border-b border-gray-200/50`}>
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="w-8 h-8 rounded-full bg-white/90 border border-gray-200/80 text-[20px] font-bold flex items-center justify-center text-gray-700 flex-shrink-0 font-mono">
-            {stage.id}
-          </span>
-          <Icon className={`w-7 h-7 ${colors.icon} flex-shrink-0`} />
-          <span className={`font-bold text-[22px] truncate ${colors.text}`}>{stage.name}</span>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {stage.time && stage.time !== '-' && (
-            <span className="text-[18px] text-gray-500 bg-white/70 px-2 py-1 rounded font-mono font-medium shadow-sm">
-              {stage.time}
+      <div className={`${colors.header} rounded-t-lg px-3 py-2 border-b border-gray-200/50`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-6 h-6 rounded-full bg-white/90 border border-gray-200/80 text-[18px] font-bold flex items-center justify-center text-gray-700 flex-shrink-0 font-mono">
+              {stage.id}
             </span>
-          )}
-          {visualStatus === 'completed' && <CheckCircle className="w-7 h-7 text-green-500" />}
-          {visualStatus === 'active' && <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>}
-          {visualStatus === 'pending' && <Lock className="w-6 h-6 text-gray-400" />}
-          {visualStatus === 'failed' && <AlertCircle className="w-7 h-7 text-red-500" />}
+            <Icon className={`w-5 h-5 ${colors.icon} flex-shrink-0`} />
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {stage.time && stage.time !== '-' && (
+              <span className="text-[18px] text-gray-500 bg-white/70 px-2 py-0.5 rounded font-mono font-medium shadow-sm">
+                {stage.time}
+              </span>
+            )}
+            {visualStatus === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
+            {visualStatus === 'active' && <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>}
+            {visualStatus === 'pending' && <Lock className="w-5 h-5 text-gray-400" />}
+            {visualStatus === 'failed' && <AlertCircle className="w-5 h-5 text-red-500" />}
+          </div>
         </div>
+        <span className={`mt-1 block font-bold text-[20px] truncate ${colors.text}`} title={stage.name}>{stage.name}</span>
       </div>
 
       {/* Body: Center status and duration */}
-      <div className="flex-1 p-4 flex flex-col justify-center items-center text-center gap-4">
+      <div className="flex-1 p-2.5 flex flex-col justify-center items-center text-center gap-2 min-h-0">
         <span className={`text-[19px] font-bold tracking-wider ${
           visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
           visualStatus === 'failed' ? 'text-red-500' :
@@ -811,14 +881,14 @@ function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
         </span>
 
         {/* Used Agent badge */}
-        <div className="flex items-center gap-2 px-3 py-1 bg-white/80 rounded-md text-[18px] font-medium text-gray-600 border border-gray-150/50 shadow-sm max-w-full">
-          <Bot className="w-7 h-7 text-indigo-500 flex-shrink-0" />
+        <div className="flex items-center gap-2 px-2 py-1 bg-white/80 rounded-md text-[18px] font-medium text-gray-600 border border-gray-150/50 shadow-sm max-w-full">
+          <Bot className="w-4 h-4 text-indigo-500 flex-shrink-0" />
           <span className="truncate">{stageAgents[stage.id] || 'AI Agent'}</span>
         </div>
 
         {/* Progress Bar (Only show if stage.id >= 2 && stage.id <= 5, i.e., in intelligent development template cards) */}
         {stage.id >= 2 && stage.id <= 5 && (
-          <div className="w-full px-2">
+          <div className="w-full px-1">
             <div className="w-full h-2 bg-gray-200/80 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
@@ -836,26 +906,29 @@ function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
           </div>
         )}
 
-        <span className={`text-[20px] font-bold font-mono tracking-tight ${
+        <div className="w-full rounded-md border border-white/70 bg-white/70 px-2.5 py-1.5 text-left shadow-sm">
+          <span className="block text-[17px] font-semibold text-gray-500">{timing.label}</span>
+          <span className={`block text-[20px] font-bold font-mono tracking-tight ${
           visualStatus === 'active' ? 'text-blue-600' :
           visualStatus === 'failed' ? 'text-red-500' :
           visualStatus === 'completed' ? 'text-gray-500' : 'text-gray-400'
-        }`}>
-          {stage.duration || '-'}
-        </span>
+          }`}>
+            {timing.value}
+          </span>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-150/60 bg-white/40 rounded-b-xl flex items-center justify-between text-[20px]">
-        <span className="text-gray-450 truncate max-w-[75px] font-medium text-[18px]">
+      <div className="px-3 py-1.5 border-t border-gray-150/60 bg-white/40 rounded-b-lg flex items-center justify-between text-[18px] gap-2">
+        <span className="text-gray-450 truncate max-w-[96px] font-medium text-[18px]">
           {stage.gate.exit ? `准出: ${stage.gate.exit}` : '-'}
         </span>
         <button
           type="button"
           onClick={handleDetailsClick}
-          className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/90 px-3 py-1 text-[18px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
+          className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/90 px-2 py-1 text-[18px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
         >
-          <Eye className="w-5 h-5" />
+          <Eye className="w-4 h-4" />
           详情
         </button>
       </div>
@@ -1446,18 +1519,18 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
   return (
     <div
       onClick={onClick}
-      className={`rounded-lg p-6 cursor-pointer transition-all ${
+      className={`rounded-lg p-4 cursor-pointer transition-all ${
         isSelected
           ? 'bg-blue-50 border-2 border-blue-500 shadow-sm'
           : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
     >
-      <div className="flex items-center gap-6 mb-2">
-        <div className={`w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 ${
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
           order.priority === 'critical' ? 'bg-gradient-to-br from-red-500 to-orange-600' :
           'bg-gradient-to-br from-blue-500 to-purple-600'
         }`}>
-          <span className="text-white font-bold text-[28px]">{order.title[0]}</span>
+          <span className="text-white font-bold text-[24px]">{order.title[0]}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-4">
@@ -1485,7 +1558,7 @@ function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[24px] text-gray-500">
+      <div className="flex items-center justify-between text-[24px] text-gray-500 gap-2">
         <span>{isRuntimeOrder(order) ? order.id : `WO-${String(order.id).padStart(3, '0')}`}</span>
         <div className="flex items-center gap-3">
           <span>{order.progress}%</span>
@@ -1693,11 +1766,11 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
   const canStartDevelopment = isRuntime && activeOrder.status === 'READY_FOR_DEVELOPMENT' && !startingDevelopment
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-8 flex flex-col shadow-sm h-full w-full">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-full w-full">
       <div className="w-full flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-4 border-b border-gray-100 pb-4 mb-2">
-          <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-            <Bot className="w-7 h-7" />
+        <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-2">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            <Bot className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -1705,7 +1778,7 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
               <span className="text-[20px] text-gray-400">|</span>
               <p className="text-[20px] text-gray-500 truncate" title={activeOrder.title}>当前应用: {activeOrder.title}</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {canStartDevelopment && (
                 <button
                   onClick={() => onStartDevelopment?.(activeOrder)}
@@ -1774,7 +1847,7 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 text-[24px] mb-2">
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 text-[20px] mb-2">
           {showRequirementsCard && (
             <RequirementsItemsCard items={effectiveRequirementsItems} title={activeOrder.title} />
           )}
@@ -1806,12 +1879,12 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
                   : 'bg-gray-100 text-gray-850 rounded-tl-none border border-gray-200/50'
             return (
               <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`max-w-[90%] rounded-lg p-5 leading-relaxed ${bubbleClass}`}>
+                <div className={`max-w-[90%] rounded-lg p-3 leading-relaxed ${bubbleClass}`}>
                   {!isStream && msg.text && (
                     <span className="whitespace-pre-wrap break-words">{msg.text}</span>
                   )}
                   {isStream && msg.text && (
-                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '280px', overflowY: 'auto' }}>
+                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '180px', overflowY: 'auto' }}>
                       {msg.text}
                     </div>
                   )}
@@ -1860,21 +1933,21 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSend} className="flex gap-4 border-t border-gray-100 pt-4">
+        <form onSubmit={handleSend} className="flex gap-3 border-t border-gray-100 pt-3">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={`给【${activeOrder.title}】提需求...`}
             disabled={loading}
-            className="flex-1 min-w-0 text-[24px] px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
+            className="flex-1 min-w-0 text-[20px] px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
           />
           <button
             type="submit"
             disabled={loading || !inputValue.trim()}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[24px] font-semibold rounded-lg transition-colors flex-shrink-0"
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[20px] font-semibold rounded-lg transition-colors flex-shrink-0"
           >
-            <Send className="w-7 h-7" />
+            <Send className="w-5 h-5" />
           </button>
         </form>
       </div>
@@ -2074,7 +2147,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [activeDeliverablesType, setActiveDeliverablesType] = useState(null)
   const [deliverablesModalOpen, setDeliverablesModalOpen] = useState(false)
 
-  const [isChatOpen, setIsChatOpen] = useState(true)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedStageKey, setSelectedStageKey] = useState('all')
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
   const orders = useMemo(() => [...runtimeOrderList, ...workOrders.map(normalizeMockOrder)], [runtimeOrderList])
@@ -2094,12 +2167,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const canVisitSelected = !isRuntimeOrder(selectedOrder) || Boolean(selectedOrder.deploymentUrl)
 
   useEffect(() => {
-    if (setSidebarOpen) {
-      setSidebarOpen(false) // Collapse sidebar on mount to show chat
-    }
     return () => {
       if (setSidebarOpen) {
-        setSidebarOpen(true) // Restore sidebar on unmount
+        setSidebarOpen(true)
       }
     }
   }, [setSidebarOpen])
@@ -2316,10 +2386,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <div className="h-16 w-2 bg-gradient-to-b from-blue-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+          <div className="h-12 w-1.5 bg-gradient-to-b from-blue-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
           <div>
             <div className="flex items-center gap-4">
               <h1 className="text-[48px] font-bold text-gray-800 title-gradient">应用生产线</h1>
@@ -2339,9 +2409,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
             setCreateModalOpen(true)
             setCreateError('')
           }}
-          className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[28px] font-semibold flex items-center gap-4"
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[24px] font-semibold flex items-center gap-3"
         >
-          <Package className="w-8 h-8" />
+          <Package className="w-5 h-5" />
           新建工单
         </button>
       </div>
@@ -2353,10 +2423,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         </div>
       )}
 
-      <div className="flex" style={{ height: 'calc(100vh - 100px)' }}>
-        <div className="w-96 flex-shrink-0 space-y-6 mr-4">
+      <div className="flex min-h-0" style={{ height: 'calc(100vh - 112px)' }}>
+        <div className="w-56 flex-shrink-0 space-y-3 mr-4 min-h-0">
           <h2 className="font-semibold text-gray-700 text-[24px] px-2">应用列表 ({orders.length})</h2>
-          <div className="space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+          <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: 'calc(100vh - 156px)' }}>
             {orders.map(order => (
               <WorkOrderCard
                 key={order.id}
@@ -2369,12 +2439,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col gap-8 min-h-0 min-w-0">
+        <div className="flex-1 flex flex-col gap-4 min-h-0 min-w-0">
           {/* Kanban Board Container (Top) */}
-          <div className={`bg-white rounded-xl border border-gray-200 p-8 flex flex-col min-h-0 transition-all duration-300 ${
-            isChatOpen ? 'h-[680px] flex-shrink-0' : 'flex-1'
+          <div className={`bg-white rounded-xl border border-gray-200 p-4 flex flex-col min-h-0 transition-all duration-300 ${
+            isChatOpen ? 'basis-[48%] min-h-[300px] flex-shrink-0' : 'flex-1'
           }`}>
-            <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-4 flex-wrap gap-6">
+            <div className="flex items-center justify-between mb-3 border-b border-gray-100 pb-3 flex-wrap gap-4">
               <div>
                 <div className="flex items-center gap-6 flex-wrap">
                   <h2 className="font-bold text-gray-800 text-[32px]">{selectedOrder.title}</h2>
@@ -2401,7 +2471,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                 </div>
                 <p className="text-[22px] text-gray-500 mt-0.5">{selectedOrder.domain} · {selectedOrder.creator} · {selectedOrder.lastUpdate}</p>
               </div>
-              <div className="flex items-center gap-5 text-[22px]">
+              <div className="flex items-center gap-2 text-[22px] flex-wrap">
                 <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-green-700">{completedCount} 完成</span>
@@ -2423,150 +2493,113 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
-              <div className="flex items-stretch gap-6 h-full pb-2">
-                {/* Module 1: 需求分析 */}
-                <div className="border border-slate-205 rounded-xl p-5 bg-slate-50/50 flex flex-col flex-shrink-0">
-                  <div className="flex items-center gap-3 mb-2 px-2">
-                    <span className="w-3 h-3 rounded-full bg-slate-400"></span>
-                    <span className="font-bold text-[22px] text-slate-700">需求分析</span>
-                  </div>
-                  <div className="flex-1 flex items-center justify-center">
-                    <StageCard
-                      stage={selectedOrder.stages[0]}
-                      onShowLogs={handleShowStageLogs}
-                      isSelected={selectedStageKey === selectedOrder.stages[0].key}
-                      onSelect={(stage) => setSelectedStageKey(stage.key)}
-                    />
-                  </div>
-                </div>
-
-                {/* Arrow */}
-                <div className="flex items-center justify-center flex-shrink-0 text-slate-300">
-                  <ChevronRight className="w-10 h-10" />
-                </div>
-
-                {/* Module 2: 智能开发 */}
-                <div className="border border-blue-100 rounded-xl p-5 bg-blue-50/10 flex flex-col flex-shrink-0">
-                  <div className="flex items-center justify-between mb-2 px-2 gap-8">
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
-                      <span className="font-bold text-[22px] text-blue-800 uppercase tracking-wider">智能开发</span>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_280px] gap-4 min-h-full">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3 flex flex-col min-w-0">
+                  <div className="flex items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0"></span>
+                      <span className="font-bold text-[22px] text-slate-700 truncate">阶段流转</span>
                     </div>
-                    <div className="flex-1 flex items-center gap-6">
-                      <div className="flex-1 h-4 bg-blue-200 rounded-full overflow-hidden relative shadow-inner">
-                        <div 
-                          className="h-full bg-gradient-to-r from-blue-500 via-sky-500 to-teal-400 rounded-full transition-all duration-500 relative"
+                    <div className="flex items-center gap-3 min-w-[220px]">
+                      <div className="flex-1 h-2.5 bg-blue-100 rounded-full overflow-hidden relative shadow-inner">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 via-sky-500 to-teal-400 rounded-full transition-all duration-500"
                           style={{ width: `${devProgress}%` }}
-                        >
-                          <div className="absolute right-0 top-0 bottom-0 w-3 bg-white/40 animate-pulse rounded-full"></div>
-                        </div>
+                        ></div>
                       </div>
-                      <span className="text-[20px] font-bold text-blue-600 font-mono flex-shrink-0 bg-blue-550/10 px-3 py-1 rounded border border-blue-200/50">
+                      <span className="text-[20px] font-bold text-blue-600 font-mono flex-shrink-0">
                         {devProgress}%
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 flex gap-4 items-center">
-                    {selectedOrder.stages.slice(1, 5).map((stage, sIdx) => (
-                      <Fragment key={stage.id}>
-                        <StageCard
-                          stage={stage}
-                          onShowLogs={handleShowStageLogs}
-                          isSelected={selectedStageKey === stage.key}
-                          onSelect={(s) => setSelectedStageKey(s.key)}
-                        />
-                        {sIdx < 3 && (
-                          <div className="flex items-center justify-center flex-shrink-0 text-blue-200">
-                            <ChevronRight className="w-7 h-7" />
-                          </div>
-                        )}
-                      </Fragment>
+
+                  <div className="grid grid-cols-5 gap-3 flex-1 items-stretch min-h-[224px]">
+                    {selectedOrder.stages.slice(0, 5).map((stage) => (
+                      <StageCard
+                        key={stage.id}
+                        stage={stage}
+                        onShowLogs={handleShowStageLogs}
+                        isSelected={selectedStageKey === stage.key}
+                        onSelect={(s) => setSelectedStageKey(s.key)}
+                      />
                     ))}
                   </div>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center justify-center flex-shrink-0 text-slate-300">
-                  <ChevronRight className="w-10 h-10" />
-                </div>
-
-                {/* Module 3: 成果物 */}
-                <div className="border border-emerald-100 rounded-xl p-5 bg-emerald-50/10 flex flex-col flex-shrink-0">
-                  <div className="flex items-center gap-3 mb-2 px-2">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                    <span className="font-bold text-[22px] text-emerald-800 font-semibold">成果物</span>
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50/20 p-3 flex flex-col min-w-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span className="font-bold text-[22px] text-emerald-800">成果物</span>
                   </div>
-                  <div className="flex-1 flex gap-4 items-center">
-                    {/* Deliverables Card 1: 文档 */}
-                    <div className="w-[260px] rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[270px]">
-                      <div className="bg-emerald-100/70 rounded-t-xl px-4 py-2 flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-emerald-700" />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 2xl:grid-cols-1 gap-3">
+                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
+                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-emerald-700" />
                         <span className="font-bold text-[20px] text-emerald-800">文档</span>
                       </div>
-                      <div className="flex-1 p-3 flex flex-col justify-center items-stretch text-left px-5 gap-3">
+                      <div className="flex-1 p-3 space-y-2">
                         <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">需求文档:</span>
-                          <span className="font-bold text-emerald-700 font-mono">{reqDocs.length} 份</span>
+                          <span className="text-gray-500 font-semibold">需求文档</span>
+                          <span className="font-bold text-emerald-700 font-mono">{reqDocs.length}</span>
                         </div>
                         <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">用户文档:</span>
-                          <span className="font-bold text-emerald-700 font-mono">{userDocs.length} 份</span>
+                          <span className="text-gray-500 font-semibold">用户文档</span>
+                          <span className="font-bold text-emerald-700 font-mono">{userDocs.length}</span>
                         </div>
                       </div>
-                      <div className="px-4 py-2 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
                         <button
                           type="button"
                           onClick={() => {
                             setActiveDeliverablesType('docs')
                             setDeliverablesModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-4 py-1 text-[18px] font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-sm shadow-emerald-600/15"
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1 text-[18px] font-bold text-white transition-colors"
                         >
-                          <Eye className="w-5 h-5" />
+                          <Eye className="w-4 h-4" />
                           详情
                         </button>
                       </div>
                     </div>
 
-                    {/* Deliverables Card 2: 制品 */}
-                    <div className="w-[260px] rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[270px]">
-                      <div className="bg-emerald-100/70 rounded-t-xl px-4 py-2 flex items-center gap-2">
-                        <Package className="w-6 h-6 text-emerald-700" />
+                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
+                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-emerald-700" />
                         <span className="font-bold text-[20px] text-emerald-800">制品</span>
                       </div>
-                      <div className="flex-1 p-3 flex flex-col justify-center items-stretch text-left px-5 gap-3">
+                      <div className="flex-1 p-3 space-y-2">
                         <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">源码地址:</span>
-                          <span className="font-bold text-emerald-700 font-mono">{sourceCode.length} 个</span>
+                          <span className="text-gray-500 font-semibold">源码地址</span>
+                          <span className="font-bold text-emerald-700 font-mono">{sourceCode.length}</span>
                         </div>
                         <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">安装包:</span>
-                          <span className="font-bold text-emerald-700 font-mono">{installPacks.length} 个</span>
+                          <span className="text-gray-500 font-semibold">安装包</span>
+                          <span className="font-bold text-emerald-700 font-mono">{installPacks.length}</span>
                         </div>
                       </div>
-                      <div className="px-4 py-2 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
                         <button
                           type="button"
                           onClick={() => {
                             setActiveDeliverablesType('builds')
                             setDeliverablesModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-4 py-1 text-[18px] font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-sm shadow-emerald-600/15"
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1 text-[18px] font-bold text-white transition-colors"
                         >
-                          <Eye className="w-5 h-5" />
+                          <Eye className="w-4 h-4" />
                           详情
                         </button>
                       </div>
                     </div>
 
-                    {/* Deliverables Card 3: 访问地址 */}
-                    <div className="w-[260px] rounded-xl bg-emerald-50/80 border border-emerald-200 flex flex-col flex-shrink-0 transition-all hover:shadow-md h-[270px]">
-                      <div className="bg-emerald-100/70 rounded-t-xl px-4 py-2 flex items-center gap-2">
-                        <Globe className="w-6 h-6 text-emerald-700" />
+                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
+                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-emerald-700" />
                         <span className="font-bold text-[20px] text-emerald-800">访问地址</span>
                       </div>
-                      <div className="flex-1 p-3 flex flex-col justify-center items-center text-center gap-4">
+                      <div className="flex-1 p-3 flex items-center justify-center">
                         {canVisitSelected ? (
                           <button
                             type="button"
@@ -2577,16 +2610,16 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                                 window.open(`${window.location.origin}${window.location.pathname}?simulator=${selectedOrder.id}`, '_blank', 'noopener,noreferrer')
                               }
                             }}
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-md text-[19px] font-extrabold shadow-sm transition-all hover:scale-105 flex items-center justify-center gap-2"
+                            className="px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-md text-[19px] font-extrabold shadow-sm transition-colors flex items-center justify-center gap-2"
                           >
-                            <Globe className="w-6 h-6" />
+                            <Globe className="w-5 h-5" />
                             访问应用
                           </button>
                         ) : (
                           <span className="text-[20px] font-bold text-gray-400">等待部署就绪</span>
                         )}
                       </div>
-                      <div className="px-4 py-2 border-t border-emerald-100/60 rounded-b-xl flex justify-end">
+                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
                         <span className="text-[18px] font-semibold text-gray-500 truncate max-w-full">
                           {canVisitSelected ? '部署就绪' : '等待中'}
                         </span>
@@ -2594,7 +2627,6 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
