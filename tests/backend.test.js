@@ -7,7 +7,7 @@ import path from 'node:path'
 import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
-import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt } from '../server/lib/opencode.js'
+import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt, createStagePrompt } from '../server/lib/opencode.js'
 import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
@@ -377,6 +377,154 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
   }
 })
 
+test('testing failure triggers one automatic repair attempt before deployment', async () => {
+  const fixture = await createFixture()
+  try {
+    const repairPrompts = []
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 自动返修需求',
+        title: '自动返修应用'
+      }),
+      async () => ok('design ok'),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'repair-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install ok'),
+      async () => ok('build ok'),
+      async () => ({ exitCode: 1, stdout: 'unit output', stderr: 'vitest failed' }),
+      async (command) => {
+        repairPrompts.push(command.at(-1))
+        return ok('repair applied')
+      },
+      async () => ok('install ok after repair'),
+      async () => ok('build ok after repair'),
+      async () => ok('test ok after repair'),
+      async () => ok('deployment prep ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4103,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个自动返修应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    const completed = await service.runPipeline(state.id)
+
+    assert.equal(completed.status, WORK_ORDER_STATUS.DEPLOYED)
+    assert.equal(completed.repairAttempts?.testing, 1)
+    assert.equal(repairPrompts.length, 1)
+    assert.match(repairPrompts[0], /智能编码\/修复/)
+    assert.match(repairPrompts[0], /第 1\/3 次/)
+    assert.match(repairPrompts[0], /vitest failed/)
+    assert.match(repairPrompts[0], /repair-context\/testing-failure-attempt-1\.md/)
+
+    const repairContext = await readFile(path.join(state.appDir, 'repair-context/testing-failure-attempt-1.md'), 'utf8')
+    assert.match(repairContext, /运行测试失败/)
+    assert.match(repairContext, /vitest failed/)
+
+    const testingLog = await service.getStageLog(state.id, 'testing')
+    assert.match(testingLog.content, /第 1\/3 次返修中/)
+    assert.match(testingLog.content, /test ok after repair/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('testing failure fails only after three automatic repair attempts', async () => {
+  const fixture = await createFixture()
+  try {
+    const repairPrompts = []
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 返修上限需求',
+        title: '返修上限应用'
+      }),
+      async () => ok('design ok'),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'retry-limit-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install 1'),
+      async () => ok('build 1'),
+      async () => ({ exitCode: 1, stdout: '', stderr: 'test fail 1' }),
+      async (command) => {
+        repairPrompts.push(command.at(-1))
+        return ok('repair 1')
+      },
+      async () => ok('install 2'),
+      async () => ok('build 2'),
+      async () => ({ exitCode: 1, stdout: '', stderr: 'test fail 2' }),
+      async (command) => {
+        repairPrompts.push(command.at(-1))
+        return ok('repair 2')
+      },
+      async () => ok('install 3'),
+      async () => ok('build 3'),
+      async () => ({ exitCode: 1, stdout: '', stderr: 'test fail 3' }),
+      async (command) => {
+        repairPrompts.push(command.at(-1))
+        return ok('repair 3')
+      },
+      async () => ok('install 4'),
+      async () => ok('build 4'),
+      async () => ({ exitCode: 1, stdout: '', stderr: 'test fail 4' })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4104,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个返修上限应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    await assert.rejects(() => service.runPipeline(state.id), /测试质检超过最大重试次数 3/)
+
+    const failed = await fixture.store.readWorkOrder(state.id)
+    assert.equal(failed.status, WORK_ORDER_STATUS.FAILED)
+    assert.equal(failed.repairAttempts?.testing, 3)
+    assert.equal(failed.stages.find((stage) => stage.key === 'testing').status, STAGE_STATUS.FAILED)
+    assert.equal(repairPrompts.length, 3)
+    assert.match(repairPrompts[2], /第 3\/3 次/)
+    assert.equal(runner.starts.length, 0)
+
+    const testingLog = await service.getStageLog(state.id, 'testing')
+    assert.match(testingLog.content, /测试质检超过最大重试次数 3/)
+    assert.match(testingLog.content, /test fail 4/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('marks a stage as failed and keeps a log summary when a stage command fails', async () => {
   const fixture = await createFixture()
   try {
@@ -484,7 +632,16 @@ test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does
     const persisted = await fixture.store.readWorkOrder(state.id)
     assert.equal(persisted.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
     assert.ok(persisted.requirementsPath)
+    assert.ok(persisted.handoffPath)
+    assert.equal(persisted.stages[0].items[0].label, '需求澄清结果')
+    assert.equal(persisted.stages[0].outputs.length, 0)
+    assert.ok(!persisted.messages.some((message) => /需求规格说明书/.test(message.content)))
     assert.ok(persisted.messages.some((message) => /准备就绪/.test(message.content)))
+
+    const handoff = await readFile(persisted.handoffPath, 'utf8')
+    assert.match(handoff, /# 阶段交接文档/)
+    assert.match(handoff, /准备就绪应用/)
+    assert.match(handoff, /## 第一阅读项/)
   } finally {
     await fixture.cleanup()
   }
@@ -760,6 +917,40 @@ test('buildOpencodeCommand adds --thinking flag when thinking option is true', (
 
   const withThinking = buildOpencodeCommand('prompt', '/tmp/app', { thinking: true })
   assert.ok(withThinking.includes('--thinking'), 'should include --thinking when thinking is true')
+})
+
+test('coding prompt requires Python dependencies to use a project virtual environment', () => {
+  const prompt = createStagePrompt({
+    stageKey: 'coding',
+    title: 'Python 应用',
+    requirementsMarkdown: '# Python 应用需求'
+  })
+
+  assert.match(prompt, /项目内.*虚拟环境/)
+  assert.match(prompt, /不得.*(?:pip|系统).*安装/)
+})
+
+test('coding prompt requires manifest commands to target subproject directories explicitly', () => {
+  const prompt = createStagePrompt({
+    stageKey: 'coding',
+    title: '前后端分离应用',
+    requirementsMarkdown: '# 前后端分离应用需求'
+  })
+
+  assert.match(prompt, /子项目目录/)
+  assert.match(prompt, /npm.*--prefix/)
+})
+
+test('stage prompt requires handoff.md as first reading item before full context fallback', () => {
+  const prompt = createStagePrompt({
+    stageKey: 'design',
+    title: '交接应用',
+    requirementsMarkdown: '# 交接应用需求'
+  })
+
+  assert.match(prompt, /第一阅读项.*handoff\.md/s)
+  assert.match(prompt, /handoff\.md.*不存在.*requirements\.md/s)
+  assert.match(prompt, /不要向用户请求.*是否继续/s)
 })
 
 test('opencode JSON events are parsed: only text/thinking content and tool summaries appear in stream message', async () => {

@@ -17,6 +17,7 @@ test('renders application production line page without runtime errors', async ()
 
     assert.match(html, /应用生产线/)
     assert.match(html, /航母母港潮汐窗口计算器/)
+    assert.doesNotMatch(html, /需求规格说明书/)
   } finally {
     await server.close()
   }
@@ -85,6 +86,38 @@ test('renders AI messages from new and legacy message formats', async () => {
       phase: null,
       time: '16:10'
     })
+  } finally {
+    await server.close()
+  }
+})
+
+test('RequirementsItemsCard does not label the internal requirements document as a standalone spec', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { RequirementsItemsCard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+
+    const emptyHtml = renderToString(React.createElement(RequirementsItemsCard, {
+      items: null,
+      title: '测试应用'
+    }))
+    assert.doesNotMatch(emptyHtml, /需求规格说明书/)
+    assert.match(emptyHtml, /条目化需求/)
+
+    const filledHtml = renderToString(React.createElement(RequirementsItemsCard, {
+      title: '',
+      items: {
+        businessNecessity: ['降低测试流程中断率'],
+        expectedOutcome: ['自动返修后继续质检'],
+        detailedRequirements: []
+      }
+    }))
+    assert.doesNotMatch(filledHtml, /需求规格说明书/)
+    assert.match(filledHtml, /需求澄清结果/)
   } finally {
     await server.close()
   }
@@ -188,6 +221,28 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
 
     assert.match(completedHtml, /实际耗时/)
     assert.match(completedHtml, /1分30秒/)
+
+    const repairingHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 4,
+        key: 'testing',
+        name: '测试质检',
+        icon: Icon,
+        status: 'RUNNING',
+        time: '16:05',
+        duration: '进行中',
+        estimatedRemaining: '8分钟',
+        gate: { exit: '质检通过' },
+        items: [
+          { type: 'ai', label: '自动返修', value: '第 1/3 次返修中', progress: 40 }
+        ],
+        repairAttempts: { current: 1, max: 3 }
+      },
+      onShowLogs: () => {}
+    }))
+
+    assert.match(repairingHtml, /第 1\/3 次返修中/)
+    assert.doesNotMatch(repairingHtml, /开发失败/)
   } finally {
     await server.close()
   }

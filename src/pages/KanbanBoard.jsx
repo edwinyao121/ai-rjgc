@@ -51,7 +51,7 @@ const workOrders = [
           { type: 'ai', label: 'AI 需求分析', value: '拆解为数据抓取、吃水深度校验、仪表盘展示和倒计时计算模块' }
         ],
         outputs: [
-          { label: '《需求规格说明书》', status: 'done', url: '#' }
+          { label: '需求澄清结果', status: 'done', url: '#' }
         ],
         reviews: [
           { type: '人工审核', label: '需求完整性审核', status: 'passed', reviewer: '张三', time: '10:00' }
@@ -159,7 +159,7 @@ const workOrders = [
           { type: 'input', label: '原始需求', value: '接入全球风场数据，设定最小风速阈值20节，叠加航母30节航速计算合成甲板风。' }
         ],
         outputs: [
-          { label: '《需求规格说明书》', status: 'done', url: '#' }
+          { label: '需求澄清结果', status: 'done', url: '#' }
         ],
         reviews: [
           { type: '人工审核', label: '需求完整性审核', status: 'passed', reviewer: '李四', time: '09:30' }
@@ -266,7 +266,7 @@ const workOrders = [
           { type: 'input', label: '原始需求', value: '接入AIS位置数据，按50海里网格监控，相比30天均值低于70%黄警，低于50%红警，3分钟刷新。' }
         ],
         outputs: [
-          { label: '《需求规格说明书》', status: 'done', url: '#' }
+          { label: '需求澄清结果', status: 'done', url: '#' }
         ],
         reviews: [
           { type: '人工审核', label: '需求完整性审核', status: 'passed', reviewer: '王五', time: '08:40' }
@@ -370,7 +370,7 @@ const workOrders = [
           { type: 'ai', label: '需求分析', value: '支持关键词多语言搜索、EXIF及文本地理实体提取、同一海域目击事件多账户空间聚类。' }
         ],
         outputs: [
-          { label: '《需求规格说明书》', status: 'pending', url: '#' }
+          { label: '需求澄清结果', status: 'pending', url: '#' }
         ],
         reviews: [
           { type: '人工审核', label: '需求完整性审核', status: 'in_progress', reviewer: '赵六', time: '11:00' }
@@ -821,6 +821,16 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
   }, [visualStatus, stage.startedAt, stage.estimatedDurationMs])
 
   const timing = getStageTimingDisplay(stage, visualStatus, progress, nowMs)
+  const repairStatusText = (() => {
+    const repairItem = (stage.items || []).find((item) =>
+      String(item.label || '').includes('返修') || String(item.value || '').includes('返修')
+    )
+    if (repairItem?.value) return String(repairItem.value)
+    const current = Number(stage.repairAttempts?.current || 0)
+    const max = Number(stage.repairAttempts?.max || 0)
+    if (current > 0 && max > 0) return `第 ${current}/${max} 次返修中`
+    return ''
+  })()
 
   const handleCardClick = () => {
     if (onSelect) onSelect(stage)
@@ -879,6 +889,12 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
           {visualStatus === 'pending' && '等待中'}
           {visualStatus === 'failed' && '开发失败'}
         </span>
+
+        {visualStatus === 'active' && repairStatusText && (
+          <div className="max-w-full rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[18px] font-bold text-amber-700 truncate">
+            {repairStatusText}
+          </div>
+        )}
 
         {/* Used Agent badge */}
         <div className="flex items-center gap-2 px-2 py-1 bg-white/80 rounded-md text-[18px] font-medium text-gray-600 border border-gray-150/50 shadow-sm max-w-full">
@@ -1589,7 +1605,7 @@ export function RequirementsItemsCard({ items, title }) {
     return (
       <div className="w-full rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-6 text-center">
         <FileText className="w-8 h-8 text-blue-400 mx-auto mb-1" />
-        <span className="text-[20px] text-gray-500 font-medium">需求规格说明书尚未生成</span>
+        <span className="text-[20px] text-gray-500 font-medium">条目化需求尚未生成</span>
         <p className="text-[18px] text-gray-400 mt-0.5">完成需求澄清后将自动展示条目化需求内容</p>
       </div>
     )
@@ -1621,8 +1637,8 @@ export function RequirementsItemsCard({ items, title }) {
           <FileText className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-[22px] text-gray-800 truncate">{title || '需求规格说明书'}</h4>
-          <p className="text-[18px] text-gray-500">条目化需求内容 · 含业务必要性与预期成效</p>
+          <h4 className="font-bold text-[22px] text-gray-800 truncate">{title || '需求澄清结果'}</h4>
+          <p className="text-[18px] text-gray-500">条目化需求摘要 · 含业务必要性与预期成效</p>
         </div>
         <span className="text-[18px] px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-semibold border border-emerald-200 flex-shrink-0">
           已生成

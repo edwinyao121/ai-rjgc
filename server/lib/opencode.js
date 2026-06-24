@@ -73,7 +73,13 @@ ${conversation}`
 
 export function createStagePrompt({ stageKey, title, requirementsMarkdown }) {
   const shared = `你正在 .runtime/work-orders/<id>/app 目录中为「${title}」生成一个可本机运行的软件应用。
-需求文档如下：
+阶段上下文读取规则：
+- 第一阅读项必须是 app 根目录的 handoff.md。
+- 如果 handoff.md 不存在或信息不足，再读取 requirements.md、docs/design.md 和当前项目完整上下文。
+- 进入开发阶段后不要向用户请求“是否继续”；以不中断流水线为主要目标，自行修复可恢复的问题。
+- 只有超过系统重试上限、缺少外部凭据、需要破坏性操作或无法在本机范围内处理时，才明确失败退出。
+
+需求文档备用内容如下：
 
 ${requirementsMarkdown}
 
@@ -82,6 +88,8 @@ ${requirementsMarkdown}
 - 第一版必须可通过本机命令安装、构建、测试并启动。
 - 设计/编码完成后必须生成 factory.manifest.json。
 - factory.manifest.json 中 install/build/test/start 必须是命令参数数组，不能是 shell 字符串。
+- manifest 命令始终从 app 根目录执行；若源码位于子项目目录，命令必须显式指定子项目目录，例如使用 npm --prefix frontend run build，而不能假设当前目录中存在 package.json。
+- 若项目包含 Python 依赖，必须使用项目内虚拟环境（如 .venv）安装和运行依赖。不得直接用系统 pip 安装，也不得使用 --break-system-packages；请提供创建 .venv 并调用 .venv/bin/pip 的项目脚本，测试和启动命令也必须使用该虚拟环境中的 Python 工具。
 - start 命令中端口使用 "\${PORT}" 占位符，健康检查使用 healthUrl。
 - 不要依赖远程部署服务。`
 
@@ -122,6 +130,45 @@ ${requirementsMarkdown}
   }
 
   return shared
+}
+
+export function createTestingRepairPrompt({
+  title,
+  requirementsMarkdown,
+  attempt,
+  maxAttempts,
+  failedLabel,
+  failedCommand,
+  logSummary,
+  repairContextPath
+}) {
+  const shared = createStagePrompt({
+    stageKey: 'coding',
+    title,
+    requirementsMarkdown
+  })
+  return `${shared}
+
+当前阶段：智能编码/修复。
+测试质检未通过，正在进行第 ${attempt}/${maxAttempts} 次自动返修。
+
+第一阅读项：
+- handoff.md
+- ${repairContextPath}
+
+失败命令：
+- 步骤：${failedLabel}
+- 命令：${Array.isArray(failedCommand) ? failedCommand.map((part) => JSON.stringify(part)).join(' ') : String(failedCommand || '')}
+
+失败日志摘要：
+${logSummary || '<empty>'}
+
+修复要求：
+- 读取 handoff.md 与 ${repairContextPath} 后定位失败原因。
+- 可以修改源码、测试、依赖脚本、factory.manifest.json 或本机启动脚本。
+- 修复后不要启动长期运行进程，不要部署。
+- 不要绕过测试，不要删除有价值的测试，不要使用破坏系统环境的参数。
+- 完成后更新 handoff.md，说明修复内容和下一步质检注意事项。`
 }
 
 export function parseClarificationResponse(output) {

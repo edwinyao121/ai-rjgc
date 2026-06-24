@@ -12,9 +12,12 @@ import {
   markStageRunning,
   refreshStageTiming
 } from './stages.js'
-import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, parseClarificationResponse } from './opencode.js'
+import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, createTestingRepairPrompt, parseClarificationResponse } from './opencode.js'
 import { MANIFEST_FILE, readManifest, substitutePortInCommand, substitutePortInUrl } from './manifest.js'
 import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth } from './runner.js'
+
+const HANDOFF_FILE = 'handoff.md'
+const TESTING_MAX_REPAIR_RETRIES = 3
 
 export class WorkOrderService {
   constructor({
@@ -205,15 +208,10 @@ export class WorkOrderService {
       const stage = getStageByKey(state.stages, 'requirements')
       markStageCompleted(stage, new Date(), {
         type: 'ai',
-        label: '需求规格说明书',
-        value: '需求澄清完成，已生成可追溯需求文档'
-      }, [
-        {
-          label: '《需求规格说明书》',
-          status: 'done',
-          path: requirementsPath
-        }
-      ])
+        label: '需求澄清结果',
+        value: '需求澄清完成，已生成条目化需求摘要'
+      }, [])
+      stage.outputs = []
       stage.requirementsItems = requirementsItems
       state.requirementsPath = requirementsPath
       state.requirementsMarkdown = requirementsMarkdown
@@ -221,22 +219,10 @@ export class WorkOrderService {
       state.status = WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT
       state.currentStage = 2
       state.progress = getStageProgress(state.stages)
+      await this.writeHandoffDocument(state, '需求澄清完成，后续阶段优先阅读本交接文档。')
       await this.store.saveWorkOrder(state)
-      const requirementsAnnouncement = createMessage({
-        id: randomUUID(),
-        role: 'assistant',
-        content: '需求规格说明书已生成，包含业务必要性、预期成效等条目化内容。',
-        phase: 'clarification',
-        stageId: 'requirements',
-        kind: 'requirements-items',
-        metadata: { stageKey: 'requirements', requirementsItems, requirementsPath },
-        status: 'COMPLETED',
-        createdAt: now
-      })
-      state.messages.push(requirementsAnnouncement)
-      await this.emit(id, 'assistant.message.append', { message: requirementsAnnouncement, workOrder: state })
       await this.emit(id, 'assistant.message.append', { message: assistantMessage, workOrder: state })
-      await this.emitStageStatus(id, state, stage, '需求澄清完成，已生成需求文档')
+      await this.emitStageStatus(id, state, stage, '需求澄清完成，已生成需求摘要')
       await this.emit(id, 'work-order.status.changed', {
         status: state.status,
         progress: state.progress,
@@ -291,7 +277,7 @@ export class WorkOrderService {
     await this.store.saveWorkOrder(state)
     await this.emit(id, 'development.run.started', { workOrder: state })
     await this.appendVisibleMessage(state, {
-      content: '已启动智能开发流水线，opencode 原始输出将实时同步到本面板。',
+      content: `已启动自动研发流水线；测试失败会自动返修，超过 ${TESTING_MAX_REPAIR_RETRIES} 次才中断。opencode 原始输出将实时同步到本面板。`,
       phase: 'execution',
       stageId: 'design',
       status: 'COMPLETED'
@@ -355,6 +341,9 @@ export class WorkOrderService {
     completedStage.logPath = logPath
     completedStage.logSummary = summarizeCommandResult(result) || '阶段执行完成'
     state.progress = getStageProgress(state.stages)
+    if (stageKey !== 'testing') {
+      await this.writeHandoffDocument(state, `${completedStage.name}阶段已完成：${completedStage.logSummary}`)
+    }
     await this.store.saveWorkOrder(state)
     await this.emitStageStatus(id, state, completedStage, `${completedStage.name}阶段完成`)
     await this.appendVisibleMessage(state, {
@@ -366,41 +355,35 @@ export class WorkOrderService {
   }
 
   async runTestingStage(id) {
-    let state = await this.runOpencodePipelineStage(id, 'testing')
-    const stage = getStageByKey(state.stages, 'testing')
-    const manifest = await this.ensureManifest(id)
-    const commands = [
-      ['install', '安装依赖', manifest.install],
-      ['build', '构建应用', manifest.build],
-      ['test', '运行测试', manifest.test]
-    ]
+    await this.runOpencodePipelineStage(id, 'testing')
+    let repairAttempts = 0
 
-    for (const [, label, command] of commands) {
-      state = await this.requireWorkOrder(id)
-      const currentStage = getStageByKey(state.stages, 'testing')
-      markStageRunning(currentStage, new Date(), {
-        type: 'ai',
-        label,
-        value: '执行中'
-      })
-      await this.store.saveWorkOrder(state)
-      await this.emitStageStatus(id, state, currentStage, `${label}开始`)
+    while (true) {
+      const commandResult = await this.runTestingCommandChain(id)
+      if (commandResult.ok) break
 
-      const result = await this.runCommandWithStageLogging(id, 'testing', {
-        label,
-        command,
-        cwd: state.appDir,
-        timeoutMs: 15 * 60 * 1000,
-        source: label === '运行测试' ? 'test' : 'command'
-      })
-      const logPath = await this.getStageLogPath(id, 'testing')
-      if (result.exitCode !== 0) {
-        await this.failStage(id, 'testing', `${label}失败`, summarizeCommandResult(result), logPath)
-        throw new Error(`${label} failed`)
+      if (repairAttempts >= TESTING_MAX_REPAIR_RETRIES) {
+        const message = `测试质检超过最大重试次数 ${TESTING_MAX_REPAIR_RETRIES}`
+        const summary = [commandResult.summary, `最后失败步骤：${commandResult.label}`].filter(Boolean).join('\n')
+        await this.failStage(id, 'testing', message, summary, commandResult.logPath)
+        throw new Error(message)
       }
+
+      repairAttempts += 1
+      const repairContextPath = await this.writeTestingRepairContext(id, {
+        ...commandResult,
+        attempt: repairAttempts,
+        maxAttempts: TESTING_MAX_REPAIR_RETRIES
+      })
+      await this.runTestingRepairAttempt(id, {
+        ...commandResult,
+        attempt: repairAttempts,
+        maxAttempts: TESTING_MAX_REPAIR_RETRIES,
+        repairContextPath
+      })
     }
 
-    state = await this.requireWorkOrder(id)
+    let state = await this.requireWorkOrder(id)
     const testingStage = stageFromState(state, 'testing')
     markStageCompleted(testingStage, new Date(), {
       type: 'ai',
@@ -415,6 +398,7 @@ export class WorkOrderService {
     testingStage.logPath = await this.getStageLogPath(id, 'testing')
     testingStage.logSummary = '安装、构建、测试全部通过'
     state.progress = getStageProgress(state.stages)
+    await this.writeHandoffDocument(state, '测试质检已完成：安装、构建、测试全部通过。')
     await this.store.saveWorkOrder(state)
     await this.emitStageStatus(id, state, getStageByKey(state.stages, 'testing'), '安装、构建、测试全部通过')
     await this.appendVisibleMessage(state, {
@@ -422,6 +406,158 @@ export class WorkOrderService {
       phase: 'execution',
       stageId: 'testing'
     })
+    return state
+  }
+
+  async runTestingCommandChain(id) {
+    const state = await this.requireWorkOrder(id)
+    const manifest = await this.ensureManifest(id)
+    const commands = [
+      ['install', '安装依赖', manifest.install],
+      ['build', '构建应用', manifest.build],
+      ['test', '运行测试', manifest.test]
+    ]
+
+    for (const [, label, command] of commands) {
+      const latestState = await this.requireWorkOrder(id)
+      const currentStage = getStageByKey(latestState.stages, 'testing')
+      markStageRunning(currentStage, new Date(), {
+        type: 'ai',
+        label,
+        value: '执行中'
+      })
+      latestState.status = WORK_ORDER_STATUS.RUNNING
+      latestState.currentStage = currentStage.id
+      latestState.progress = getStageProgress(latestState.stages)
+      await this.store.saveWorkOrder(latestState)
+      await this.emitStageStatus(id, latestState, currentStage, `${label}开始`)
+
+      const result = await this.runCommandWithStageLogging(id, 'testing', {
+        label,
+        command,
+        cwd: state.appDir,
+        timeoutMs: 15 * 60 * 1000,
+        source: label === '运行测试' ? 'test' : 'command'
+      })
+      const logPath = await this.getStageLogPath(id, 'testing')
+      if (result.exitCode !== 0) {
+        return {
+          ok: false,
+          label,
+          command,
+          result,
+          summary: summarizeCommandResult(result),
+          logPath
+        }
+      }
+    }
+
+    return { ok: true }
+  }
+
+  async writeTestingRepairContext(id, {
+    attempt,
+    maxAttempts,
+    label,
+    command,
+    result,
+    summary,
+    logPath
+  }) {
+    const state = await this.requireWorkOrder(id)
+    const relativePath = `repair-context/testing-failure-attempt-${attempt}.md`
+    await fs.mkdir(path.join(state.appDir, 'repair-context'), { recursive: true })
+    const content = [
+      `# ${label}失败`,
+      '',
+      `- 返修次数：第 ${attempt}/${maxAttempts} 次`,
+      `- 失败步骤：${label}`,
+      `- 失败命令：${formatCommand(command)}`,
+      `- 退出码：${result?.exitCode ?? '-'}`,
+      `- 日志路径：${logPath || '-'}`,
+      '',
+      '## 失败日志摘要',
+      '',
+      summary || '<empty>',
+      '',
+      '## stdout',
+      '',
+      result?.stdout || '<empty>',
+      '',
+      '## stderr',
+      '',
+      result?.stderr || '<empty>',
+      ''
+    ].join('\n')
+    await this.store.writeAppFile(id, relativePath, content)
+    return relativePath
+  }
+
+  async runTestingRepairAttempt(id, {
+    attempt,
+    maxAttempts,
+    label,
+    command: failedCommand,
+    summary,
+    repairContextPath
+  }) {
+    let state = await this.requireWorkOrder(id)
+    const stage = getStageByKey(state.stages, 'testing')
+    const repairMessage = `第 ${attempt}/${maxAttempts} 次返修中`
+    markStageRunning(stage, new Date(), {
+      type: 'ai',
+      label: '自动返修',
+      value: repairMessage,
+      progress: Math.min(85, 35 + attempt * 15)
+    })
+    stage.repairAttempts = { current: attempt, max: maxAttempts }
+    state.repairAttempts = {
+      ...(state.repairAttempts || {}),
+      testing: attempt
+    }
+    state.status = WORK_ORDER_STATUS.RUNNING
+    state.currentStage = stage.id
+    state.progress = getStageProgress(state.stages)
+    await this.store.saveWorkOrder(state)
+    await this.appendStageLogEntry(id, 'testing', {
+      level: 'INFO',
+      source: 'system',
+      text: `测试质检${repairMessage}`
+    })
+    await this.emitStageStatus(id, state, stage, `测试质检${repairMessage}`)
+
+    const prompt = createTestingRepairPrompt({
+      title: state.title,
+      requirementsMarkdown: await this.getRequirementsMarkdown(state),
+      attempt,
+      maxAttempts,
+      failedLabel: label,
+      failedCommand,
+      logSummary: summary,
+      repairContextPath
+    })
+    const repairCommand = buildOpencodeCommand(prompt, state.appDir, { thinking: true })
+    const result = await this.runCommandWithStageLogging(id, 'testing', {
+      label: `智能编码/修复 第 ${attempt}/${maxAttempts} 次`,
+      command: repairCommand,
+      cwd: state.appDir,
+      timeoutMs: 40 * 60 * 1000,
+      source: 'opencode'
+    })
+
+    if (result.exitCode !== 0) {
+      const repairSummary = summarizeCommandResult(result)
+      await this.appendStageLogEntry(id, 'testing', {
+        level: 'ERROR',
+        source: 'system',
+        text: `智能编码/修复失败：${repairSummary}`
+      })
+      throw new Error(`智能编码/修复 failed`)
+    }
+
+    state = await this.requireWorkOrder(id)
+    await this.writeHandoffDocument(state, `测试质检第 ${attempt}/${maxAttempts} 次自动返修完成，下一步重新执行安装、构建和测试。`)
+    await this.store.saveWorkOrder(state)
     return state
   }
 
@@ -606,6 +742,12 @@ export class WorkOrderService {
     } catch (error) {
       this.logger.warn?.(`Unable to write ${fileName}: ${error.message}`)
     }
+  }
+
+  async writeHandoffDocument(state, note = '') {
+    const handoffPath = await this.store.writeAppFile(state.id, HANDOFF_FILE, buildHandoffDocument(state, note))
+    state.handoffPath = handoffPath
+    return handoffPath
   }
 
   async getStageLogPath(id, stageKey) {
@@ -909,6 +1051,50 @@ function splitOutputLines(content) {
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0)
+}
+
+function buildHandoffDocument(state, note = '') {
+  const completedStages = (state.stages || [])
+    .filter((stage) => stage.status === STAGE_STATUS.COMPLETED)
+    .map((stage) => `- ${stage.name}：${stage.logSummary || stage.items?.[0]?.value || '已完成'}`)
+  const runningStage = (state.stages || []).find((stage) => stage.status === STAGE_STATUS.RUNNING)
+  const failedStage = (state.stages || []).find((stage) => stage.status === STAGE_STATUS.FAILED)
+  const repairAttempts = state.repairAttempts?.testing
+    ? `测试质检已自动返修 ${state.repairAttempts.testing}/${TESTING_MAX_REPAIR_RETRIES} 次。`
+    : '测试质检尚未触发自动返修。'
+
+  return [
+    '# 阶段交接文档',
+    '',
+    '## 第一阅读项',
+    '',
+    '- 后续所有阶段必须先阅读本文件。',
+    '- 如果本文件不存在或信息不足，再读取 requirements.md、docs/design.md 和当前项目完整上下文。',
+    '',
+    '## 当前工单',
+    '',
+    `- 工单：${state.id}`,
+    `- 应用：${state.title}`,
+    `- 状态：${state.status}`,
+    `- 需求文件：${state.requirementsPath || 'requirements.md'}`,
+    `- 当前阶段：${runningStage?.name || failedStage?.name || '-'}`,
+    `- 返修状态：${repairAttempts}`,
+    '',
+    '## 最近交接说明',
+    '',
+    note || '暂无。',
+    '',
+    '## 已完成阶段',
+    '',
+    completedStages.length ? completedStages.join('\n') : '- 暂无。',
+    '',
+    '## 下一阶段执行原则',
+    '',
+    '- 以不中断流水线为主要目标，自行修复可恢复的问题。',
+    '- 成功部署是第二目标，但部署必须在质检通过后执行。',
+    '- 不要向用户请求“是否继续”；仅在超过重试上限、缺凭据或需要破坏性操作时失败退出。',
+    ''
+  ].join('\n')
 }
 
 function parseOpencodeLine(line) {
