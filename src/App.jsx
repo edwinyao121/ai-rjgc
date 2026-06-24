@@ -35,7 +35,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}>
+      <aside className={`${sidebarOpen ? 'w-64 border-r border-gray-200' : 'w-0 overflow-hidden border-none'} bg-white transition-all duration-300 flex flex-col`}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
@@ -89,6 +89,15 @@ function App() {
       <main className="flex-1 flex flex-col">
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors mr-2 flex items-center justify-center border border-gray-200 shadow-sm bg-white"
+                title="展开菜单"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            )}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
