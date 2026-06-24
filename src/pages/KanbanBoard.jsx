@@ -1740,9 +1740,21 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">应用生产线</h1>
-          <p className="text-gray-500 text-sm mt-1">软件系统生产全链路可视化</p>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-800 title-gradient">应用生产线</h1>
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-semibold tracking-wider uppercase">
+                <Radio className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+                Live
+              </span>
+            </div>
+            <p className="text-gray-400 text-xs mt-0.5 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>软件系统生产全链路可视化</span>
+            </p>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -1854,15 +1866,22 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                 {/* Module 2: 智能开发 */}
                 <div className="border border-blue-100 rounded-xl p-2.5 bg-blue-50/10 flex flex-col flex-shrink-0">
                   <div className="flex items-center justify-between mb-2 px-1 gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-550"></span>
-                      <span className="font-bold text-[11px] text-blue-800">智能开发</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                      <span className="font-bold text-[11px] text-blue-800 uppercase tracking-wider">智能开发</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-blue-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-600 rounded-full" style={{ width: `${devProgress}%` }}></div>
+                    <div className="flex-1 flex items-center gap-3">
+                      <div className="flex-1 h-2 bg-blue-200 rounded-full overflow-hidden relative shadow-inner">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-500 via-sky-500 to-teal-400 rounded-full transition-all duration-500 relative"
+                          style={{ width: `${devProgress}%` }}
+                        >
+                          <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-white/40 animate-pulse rounded-full"></div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold text-blue-600 font-mono">{devProgress}%</span>
+                      <span className="text-[10px] font-bold text-blue-600 font-mono flex-shrink-0 bg-blue-550/10 px-1.5 py-0.5 rounded border border-blue-200/50">
+                        {devProgress}%
+                      </span>
                     </div>
                   </div>
                   <div className="flex-1 flex gap-2 items-center">
@@ -1917,7 +1936,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                             setActiveDeliverablesType('docs')
                             setDeliverablesModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm"
+                          className="inline-flex items-center gap-0.5 rounded bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 text-[9px] font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-sm shadow-emerald-600/15"
                         >
                           <Eye className="w-2.5 h-2.5" />
                           详情
@@ -1948,7 +1967,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                             setActiveDeliverablesType('builds')
                             setDeliverablesModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-0.5 rounded border border-emerald-250 bg-white px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors shadow-sm"
+                          className="inline-flex items-center gap-0.5 rounded bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 text-[9px] font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-sm shadow-emerald-600/15"
                         >
                           <Eye className="w-2.5 h-2.5" />
                           详情
@@ -2045,48 +2064,88 @@ function DeliverablesModal({ open, type, order, onClose }) {
   const { reqDocs, userDocs, sourceCode, installPacks } = getDeliverables(order)
   const title = type === 'docs' ? '文档交付详情' : '制品交付详情'
 
-  const renderItem = (item, index) => (
-    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200/50 hover:bg-gray-100/50 transition-colors">
-      <div className="min-w-0 flex-1 pr-3">
-        <p className="text-xs font-bold text-gray-800 truncate select-all">{item.label || item.value}</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">来源阶段: {item.stageName}</p>
+  const renderItem = (item, index) => {
+    let ItemIcon = FileText
+    let iconBg = 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+    const isGit = item.value && item.value.startsWith('git@')
+    const isPack = item.isInstallPack || item.isFile
+    
+    if (isGit) {
+      ItemIcon = GitBranch
+      iconBg = 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+    } else if (isPack) {
+      ItemIcon = Package
+      iconBg = 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+    }
+
+    return (
+      <div key={index} className="flex items-center justify-between p-3 bg-[#243340]/90 hover:bg-[#2d3e4e] rounded-xl border border-slate-700/60 hover:border-blue-500/30 transition-all duration-200 shadow-sm gap-4">
+        {/* Left Side: Icon & Details */}
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${iconBg} flex-shrink-0 mt-0.5 shadow-inner`}>
+            <ItemIcon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-[#ffffff] truncate select-all">{item.label || item.value}</p>
+            {/* If it's a package file, display the filename */}
+            {isPack && item.value && (
+              <p className="text-[10px] font-mono text-slate-300 mt-1 select-all break-all bg-slate-950/40 px-1.5 py-0.5 rounded border border-slate-800/50 inline-block">
+                {item.value}
+              </p>
+            )}
+            <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-slate-500"></span>
+              来源阶段: {item.stageName}
+            </p>
+          </div>
+        </div>
+
+        {/* Right Side: Action Button */}
+        <div className="flex-shrink-0">
+          {item.url && item.url !== '#' && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1 text-[11px] bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-blue-600/25"
+            >
+              <Eye className="w-3 h-3" />
+              查看
+            </a>
+          )}
+          {isGit && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(item.value)
+                alert('源码仓库地址已复制到剪贴板！')
+              }}
+              className="inline-flex items-center gap-1 px-3 py-1 text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-indigo-600/25"
+            >
+              <ClipboardCheck className="w-3 h-3" />
+              复制地址
+            </button>
+          )}
+          {isPack && item.value && (
+            <a
+              href={item.value}
+              download
+              className="inline-flex items-center gap-1 px-3 py-1 text-[11px] bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-amber-600/25"
+            >
+              <Download className="w-3 h-3" />
+              下载
+            </a>
+          )}
+        </div>
       </div>
-      {item.url && item.url !== '#' && (
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex-shrink-0 px-2 py-1 text-[11px] bg-blue-50 text-blue-600 hover:bg-blue-100 rounded border border-blue-200 font-bold transition-colors"
-        >
-          查看
-        </a>
-      )}
-      {item.value && (
-        <a
-          href={item.value.startsWith('git@') ? '#' : item.value}
-          target={item.value.startsWith('git@') ? '_self' : '_blank'}
-          rel="noreferrer"
-          onClick={(e) => {
-            if (item.value.startsWith('git@')) {
-              e.preventDefault()
-              navigator.clipboard.writeText(item.value)
-              alert('源码仓库地址已复制到剪贴板！')
-            }
-          }}
-          className="flex-shrink-0 select-all px-1.5 py-0.5 text-[9px] bg-slate-100 border border-gray-300 rounded font-mono text-gray-700 font-semibold shadow-sm hover:bg-slate-200 cursor-pointer"
-        >
-          {item.value.startsWith('git@') ? '复制 Git 地址' : item.value}
-        </a>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white border border-gray-250 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between border-b border-gray-150/70 px-5 py-4 bg-gray-50/50">
-          <h2 className="font-bold text-gray-800 text-sm">{title}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-400 hover:text-gray-700 transition-colors">
+    <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-[#1B2732] border border-slate-700/50 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between border-b border-slate-700/50 px-5 py-4 bg-slate-800/40">
+          <h2 className="font-bold text-[#ffffff] text-sm">{title}</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-700/50 rounded-lg text-gray-400 hover:text-[#ffffff] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -2096,13 +2155,13 @@ function DeliverablesModal({ open, type, order, onClose }) {
             <>
               {/* Section 1: 需求文档 */}
               <div>
-                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   需求文档 ({reqDocs.length})
                 </h3>
                 <div className="space-y-2">
                   {reqDocs.length === 0 ? (
-                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无需求文档</p>
+                    <p className="text-xs text-slate-400 italic py-1 pl-3">暂无需求文档</p>
                   ) : (
                     reqDocs.map((item, idx) => renderItem(item, idx))
                   )}
@@ -2111,13 +2170,13 @@ function DeliverablesModal({ open, type, order, onClose }) {
 
               {/* Section 2: 用户文档 */}
               <div className="pt-2">
-                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   用户文档 ({userDocs.length})
                 </h3>
                 <div className="space-y-2">
                   {userDocs.length === 0 ? (
-                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无用户文档</p>
+                    <p className="text-xs text-slate-400 italic py-1 pl-3">暂无用户文档</p>
                   ) : (
                     userDocs.map((item, idx) => renderItem(item, idx))
                   )}
@@ -2128,13 +2187,13 @@ function DeliverablesModal({ open, type, order, onClose }) {
             <>
               {/* Section 1: 源码访问地址 */}
               <div>
-                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                   源码访问地址 ({sourceCode.length})
                 </h3>
                 <div className="space-y-2">
                   {sourceCode.length === 0 ? (
-                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无源码地址</p>
+                    <p className="text-xs text-slate-400 italic py-1 pl-3">暂无源码地址</p>
                   ) : (
                     sourceCode.map((item, idx) => renderItem(item, idx))
                   )}
@@ -2143,13 +2202,13 @@ function DeliverablesModal({ open, type, order, onClose }) {
 
               {/* Section 2: 安装包访问地址 */}
               <div className="pt-2">
-                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                   安装包访问地址 ({installPacks.length})
                 </h3>
                 <div className="space-y-2">
                   {installPacks.length === 0 ? (
-                    <p className="text-xs text-gray-405 italic py-1 pl-3">暂无安装包</p>
+                    <p className="text-xs text-slate-400 italic py-1 pl-3">暂无安装包</p>
                   ) : (
                     installPacks.map((item, idx) => renderItem(item, idx))
                   )}

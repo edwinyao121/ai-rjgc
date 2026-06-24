@@ -28,6 +28,15 @@ h1 {
   color: #E5EAFF !important;
 }
 
+.title-gradient {
+  background: linear-gradient(135deg, #8AB4F8 0%, #C2D7FF 50%, #FFFFFF 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  color: transparent !important;
+  display: inline-block;
+}
+
 h2 {
   font-family: 'OPPO Sans 4.0', 'OPPOSans', sans-serif !important;
   font-size: 16px !important;
