@@ -20,7 +20,7 @@ export const PIPELINE_STAGES = Object.freeze([
     id: 1,
     key: 'requirements',
     name: '需求待入厂',
-    estimatedDurationMs: 5 * 60 * 1000,
+    estimatedDurationMs: 15 * 60 * 1000,
     gate: { entry: null, exit: '需求校验' },
     pendingLabel: '等待需求澄清'
   },

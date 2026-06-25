@@ -169,7 +169,7 @@ export class WorkOrderService {
         label: '需求澄清',
         command,
         cwd: state.appDir,
-        timeoutMs: 5 * 60 * 1000,
+        timeoutMs: 15 * 60 * 1000,
         source: 'opencode'
       })
 
