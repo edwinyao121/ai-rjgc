@@ -148,7 +148,7 @@
     {
       "id": "product-010",
       "name": "看板布局耗时与新建描述精简优化",
-      "description": "耗时显示改为并列排列，新建工单按钮更名，移除左侧卡片虚假描述，隐藏已完成/已跳过冗余文本状态。",
+      "description": "耗时显示改为并列排列，新建工单按钮更名，移除左侧卡片虚假描述，隐藏已完成/已跳过冗余文本状态，并取消创建时描述必填校验。",
       "dependencies": ["product-009"],
       "status": "completed",
       "acceptanceCriteria": [
@@ -156,9 +156,10 @@
         "右侧“新建工单”按钮文字更名为“新建项目”。",
         "左侧应用列表卡片（WorkOrderCard）中不再渲染 description 描述内容，防止由于去除基本描述后显示虚假描述或空白。",
         "隐藏阶段流转卡片正中的“已完成”与“已跳过”文字状态，避免与进度条/进度百分比冗余。",
+        "取消后端新建应用时的“Description is required”描述验证，创建工单时不再因为 description 缺失而报错。",
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
-      "evidence": "2026-06-25：已修改 KanbanBoard.jsx 中的 StageCard 耗时布局、已完成/已跳过状态渲染、新建工单按钮名、WorkOrderCard 的 description 渲染，并修改 tests/frontend-render.test.js 的 WorkOrderCard description 匹配测试。全套 56 个单元/集成测试已全部通过，Vite 编译无误。"
+      "evidence": "2026-06-25：已修改 server/lib/orchestrator.js 移除了对 description 必填的 VALIDATION_ERROR 校验；已修改 KanbanBoard.jsx 中的 StageCard 耗时布局、已完成/已跳过状态渲染、新建工单按钮名、WorkOrderCard 的 description 渲染，并修改 tests/frontend-render.test.js 的 WorkOrderCard description 匹配测试。全套 56 个单元/集成测试已全部通过，Vite 编译无误。"
     }
   ]
 }

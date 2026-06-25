@@ -96,11 +96,6 @@ export class WorkOrderService {
     const trimmed = shouldDeferClarification ? '' : validateMessage(message)
     const trimmedTitle = shouldDeferClarification ? validateTitle(title) : (title == null ? null : validateTitle(title))
     const trimmedDescription = description == null ? '' : validateDescription(description)
-    if (shouldDeferClarification && !trimmedDescription) {
-      const error = new Error('Description is required')
-      error.code = 'VALIDATION_ERROR'
-      throw error
-    }
     const state = await this.store.createWorkOrder({
       message: trimmed,
       title: trimmedTitle,
