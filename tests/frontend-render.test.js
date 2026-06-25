@@ -183,7 +183,7 @@ test('CreateWorkOrderModal collects app title and basic description before assis
     }))
 
     assert.match(html, /应用标题/)
-    assert.match(html, /基本描述/)
+    assert.doesNotMatch(html, /基本描述/)
     assert.match(html, /创建应用/)
     assert.doesNotMatch(html, /输入应用目标、关键功能和验收口径/)
   } finally {
@@ -399,6 +399,8 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
 
     assert.match(runningHtml, /预计剩余/)
     assert.match(runningHtml, /12分钟/)
+    assert.match(runningHtml, /日志/)
+    assert.doesNotMatch(runningHtml, /详情/)
 
     const completedHtml = renderToString(React.createElement(StageCard, {
       stage: {

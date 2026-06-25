@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle } from 'lucide-react'
+import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2 } from 'lucide-react'
 import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
 
 const workOrders = [
@@ -964,7 +964,7 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
           className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/90 px-2 py-1 text-[18px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
         >
           <Eye className="w-4 h-4" />
-          详情
+          日志
         </button>
       </div>
     </div>
@@ -1682,6 +1682,7 @@ export function RequirementsItemsCard({ items, title }) {
 // AI Chat Panel Component
 export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, onClose, loading, error, startingDevelopment, selectedStageKey = 'all', onSelectStage = null, stages = [], requirementsItems = null }) {
   const [inputValue, setInputValue] = useState('')
+  const [isZoomed, setIsZoomed] = useState(false)
   const messagesEndRef = useRef(null)
 
   const stageTabs = useMemo(() => [
@@ -1709,7 +1710,7 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
         id: 'demo-greeting',
         sender: 'ai',
         text: activeOrder.awaitingOriginalRequirement
-          ? `应用已创建：【${activeOrder.title}】。请输入原始需求，我会结合应用标题和基本描述完成需求澄清。`
+          ? `应用已创建：【${activeOrder.title}】。请输入原始需求，我会结合应用标题完成需求澄清。`
           : `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入新的应用需求，我会创建真实工单并交给后端流水线执行。`,
         time: '刚刚',
         stageId: null,
@@ -1762,9 +1763,20 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
   const canStartDevelopment = isRuntime && activeOrder.status === 'READY_FOR_DEVELOPMENT' && !startingDevelopment
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm h-full w-full">
-      <div className="w-full flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-2">
+    <>
+      {isZoomed && (
+        <div 
+          className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity cursor-pointer" 
+          onClick={() => setIsZoomed(false)}
+        />
+      )}
+      <div className={`bg-white rounded-xl border border-gray-200 p-4 flex flex-col shadow-sm transition-all duration-300 ${
+        isZoomed 
+          ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] z-50 shadow-2xl' 
+          : 'h-full w-full'
+      }`}>
+        <div className="w-full flex flex-col h-full min-h-0">
+          <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-2">
           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
             <Bot className="w-5 h-5" />
           </div>
@@ -1798,6 +1810,14 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
                   <span>推进中...</span>
                 </div>
               )}
+              <button
+                type="button"
+                onClick={() => setIsZoomed(!isZoomed)}
+                className="p-2 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-650 transition-colors flex-shrink-0"
+                title={isZoomed ? "恢复大小" : "放大"}
+              >
+                {isZoomed ? <Minimize2 className="w-8 h-8" /> : <Maximize2 className="w-8 h-8" />}
+              </button>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-650 transition-colors flex-shrink-0"
@@ -1948,6 +1968,7 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
         </form>
       </div>
     </div>
+    </>
   )
 }
 
@@ -1973,18 +1994,18 @@ function stageStatusColor(status) {
 
 export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, submitting, error }) {
   if (!open) return null
-  const current = form || { title: '', description: '' }
+  const current = form || { title: '' }
   const handleFieldChange = (field, value) => {
     onChange?.({ ...current, [field]: value })
   }
-  const canSubmit = current.title?.trim() && current.description?.trim()
+  const canSubmit = !!current.title?.trim()
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 flex items-center justify-center p-8">
       <div className="w-full max-w-2xl bg-white border border-gray-200 rounded-xl shadow-2xl p-10">
         <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-4">
           <div>
             <h2 className="font-bold text-gray-800 text-[32px]">新建应用</h2>
-            <p className="text-[24px] text-gray-500 mt-1">先登记应用标题和基本描述，随后在 AI 研发助手中输入原始需求。</p>
+            <p className="text-[24px] text-gray-500 mt-1">先登记应用标题，随后在 AI 研发助手中输入原始需求。</p>
           </div>
           <button onClick={onClose} className="p-3 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
             <X className="w-8 h-8" />
@@ -2000,15 +2021,6 @@ export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, 
               className="w-full border border-gray-300 rounded-lg px-6 py-4 text-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="例如：港口潮汐窗口计算器"
               autoFocus
-            />
-          </label>
-          <label className="block">
-            <span className="block text-[24px] font-bold text-gray-700 mb-2">基本描述</span>
-            <textarea
-              value={current.description || ''}
-              onChange={(event) => handleFieldChange('description', event.target.value)}
-              className="w-full min-h-32 resize-y border border-gray-300 rounded-lg px-6 py-4 text-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="例如：用于登记四个母港潮高、吃水阈值和出港窗口倒计时的本机应用。"
             />
           </label>
           {error && (
@@ -2112,9 +2124,9 @@ export function StageLogModal({ open, stage, log, loading, error, onClose }) {
                         : 'text-slate-200'
                   }`}
                 >
-                  <span className="font-mono text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}</span>
+                  <span className="font-mono text-white">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}</span>
                   <span className={`font-bold ${entry.level === 'ERROR' ? 'text-red-300' : entry.level === 'WARN' ? 'text-amber-300' : 'text-emerald-300'}`}>{entry.level || 'INFO'}</span>
-                  <span className="font-mono text-slate-400 truncate">{entry.source || 'system'}</span>
+                  <span className="font-mono text-white truncate">{entry.source || 'system'}</span>
                   <span className="whitespace-pre-wrap break-words">{entry.text}</span>
                 </div>
               ))}
@@ -2301,14 +2313,13 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const handleCreateSubmit = async (event) => {
     event.preventDefault()
     const title = createForm.title.trim()
-    const description = createForm.description.trim()
-    if (!title || !description || creating) return
+    if (!title || creating) return
     setCreating(true)
     setCreateError('')
     try {
       const created = await createWorkOrder({
         title,
-        description,
+        description: '',
         deferClarification: true
       })
       setRuntimeOrders(prev => [created, ...prev.filter(order => order.id !== created.id)])
@@ -2415,8 +2426,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center justify-center gap-4">
             <h1 className="text-[48px] font-bold text-gray-800 title-gradient">智能软件工厂</h1>
-            <span className="flex items-center gap-2 text-[20px] px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-semibold tracking-wider uppercase">
-              <Radio className="w-7 h-7 text-blue-400 animate-pulse" />
+            <span className="flex items-center text-[20px] px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-semibold tracking-wider uppercase">
               Live
             </span>
           </div>

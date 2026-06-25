@@ -112,6 +112,22 @@
         "相关前端渲染测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25 15:58：新增前端渲染测试覆盖无左侧菜单、默认看板入口、标题改名与居中；红灯执行 node --test --test-name-pattern='application production line|App shell' tests/frontend-render.test.js 失败，确认旧实现仍渲染应用生产线、左侧菜单和工作台大盘；实现后定向测试通过；npm test 通过（50/50）；npm run build 成功；最终 ./init.sh 通过（npm test 50/50、npm run build 成功）。"
+    },
+    {
+      "id": "product-008",
+      "name": "看板交互与界面布局微调",
+      "description": "阶段卡片详情重命名为日志且文本改为白色；新建工单去除基本描述；移除智脑浮标与工厂标题旁的Live图标；AI助手支持放大80%并居中。",
+      "dependencies": ["product-007"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "页面卡片“详情”按钮更名为“日志”，且日志弹窗中灰色字体（时间戳、来源）修改为白色。",
+        "新建应用/工单弹窗中去除了“基本描述”字段及对应说明，创建时默认传入空描述。",
+        "移除页面右下角的“智脑”浮动气泡/按钮。",
+        "移除了页面顶部“智能软件工厂”标题旁的 Radio 闪烁 Live 图标（保留 Live 文本标识）。",
+        "AI 研发助手标题栏增加放大/缩小按钮，放大后以 fixed 方式占据页面 80% 宽度和高度并在屏幕居中，点击遮罩或再次点击可恢复原样。",
+        "全部 50 个自动化测试均执行通过，npm run build 构建无异常。"
+      ],
+      "evidence": "2026-06-25：已在 KanbanBoard.jsx 中修改 StageCard 按钮名和 StageLogModal 样式；在 App.jsx 中删除智脑浮标；在 KanbanBoard.jsx 中实现 AIChatPanel 局部 state 缩放与遮罩，移除 Radio 图标，修改 CreateWorkOrderModal；在 tests/frontend-render.test.js 中更新了 Form 与 Card 的对应断言。运行 ./init.sh 全套自动化测试 50/50 全部通过，Vite 编译通过。"
     }
   ]
 }
