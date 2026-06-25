@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2, Ban } from 'lucide-react'
-import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
+import { createWorkOrder, fetchStageLog, listApps, listOpencodeModels, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents, updateWorkOrderModelSelections } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -507,8 +507,60 @@ const stageEstimateMsById = {
   5: 15 * 60 * 1000
 }
 
+const MODEL_STAGE_KEYS = ['requirements', 'design', 'coding']
+
 function normalizeStageStatus(status) {
   return runtimeStatusMap[status] || status || 'pending'
+}
+
+function normalizeModelOptions(models) {
+  return (Array.isArray(models) ? models : [])
+    .map((model) => {
+      const id = String(model?.id || model || '').trim()
+      if (!id) return null
+      return {
+        id,
+        label: String(model?.label || id),
+        provider: model?.provider || id.split('/')[0],
+        name: model?.name || id.split('/').slice(1).join('/')
+      }
+    })
+    .filter(Boolean)
+}
+
+function normalizeModelSelections(selections = {}) {
+  const result = {}
+  for (const key of MODEL_STAGE_KEYS) {
+    const value = String(selections?.[key] || '').trim()
+    result[key] = value || null
+  }
+  return result
+}
+
+function getDefaultModelSelections(modelOptions) {
+  const first = modelOptions[0]?.id || null
+  const deepseek = modelOptions.find((model) => model.id.includes('deepseek-v4-flash'))?.id || first
+  return {
+    requirements: first,
+    design: first,
+    coding: deepseek
+  }
+}
+
+function fillMissingModelSelections(selections, modelOptions) {
+  const normalized = normalizeModelSelections(selections)
+  const defaults = getDefaultModelSelections(modelOptions)
+  return {
+    requirements: normalized.requirements || defaults.requirements || null,
+    design: normalized.design || defaults.design || null,
+    coding: normalized.coding || defaults.coding || null
+  }
+}
+
+function getModelLabel(modelOptions, modelId) {
+  const id = String(modelId || '').trim()
+  if (!id) return '未选择模型'
+  return modelOptions.find((model) => model.id === id)?.label || id
 }
 
 function formatDurationForUi(ms) {
@@ -567,7 +619,7 @@ function getStageTimingDisplay(stage, visualStatus, progress, nowMs = Date.now()
 }
 
 function isRuntimeOrder(order) {
-  return typeof order?.id === 'string'
+  return typeof order?.id === 'string' && /^WO-\d{8}-\d{3}$/.test(order.id)
 }
 
 function normalizeRuntimeOrder(order) {
@@ -578,6 +630,7 @@ function normalizeRuntimeOrder(order) {
     creator: order.creator || 'AI研发助手',
     progress: order.progress ?? 0,
     lastUpdate: order.lastUpdate || '刚刚',
+    modelSelections: normalizeModelSelections(order.modelSelections),
     stages: (order.stages || []).map((stage) => ({
       ...stage,
       key: ensureStageKey(stage),
@@ -592,12 +645,30 @@ function normalizeRuntimeOrder(order) {
 function normalizeMockOrder(order) {
   return {
     ...order,
+    modelSelections: normalizeModelSelections(order.modelSelections),
     stages: (order.stages || []).map((stage) => ({
       ...stage,
       key: ensureStageKey(stage),
       icon: stage.icon || stageIconById[stage.id] || Bot
     }))
   }
+}
+
+function mergeRegisteredApps(registeredApps) {
+  if (!Array.isArray(registeredApps) || registeredApps.length === 0) return workOrders
+  return workOrders.map((order) => {
+    const registered = registeredApps.find((app) => app.title === order.title)
+    if (!registered) return order
+    return {
+      ...order,
+      appId: registered.id,
+      title: registered.title || order.title,
+      description: registered.description || order.description,
+      domain: registered.domain || order.domain,
+      workspaceDir: registered.workspaceDir,
+      workspaceReady: registered.workspaceReady
+    }
+  })
 }
 
 export function normalizeChatMessage(message = {}) {
@@ -682,6 +753,14 @@ export function applyGranularEventToOrder(order, event) {
       ...(next ? next : {}),
       status: next?.status || event.status || order.status,
       progress: next?.progress ?? event.progress ?? order.progress,
+      lastUpdate: '刚刚'
+    }
+  }
+
+  if (event.type === 'work-order.model-selections.updated') {
+    return {
+      ...order,
+      modelSelections: normalizeModelSelections(event.modelSelections || event.workOrder?.modelSelections || order.modelSelections),
       lastUpdate: '刚刚'
     }
   }
@@ -778,11 +857,26 @@ const getDeliverables = (order) => {
   return { docs, builds, urls, reqDocs, userDocs, sourceCode, installPacks }
 }
 
-export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null, onSkipStage = null, skipLoading = false }) {
+export function StageCard({
+  stage,
+  onShowLogs,
+  isSelected = false,
+  onSelect = null,
+  onSkipStage = null,
+  skipLoading = false,
+  modelOptions = [],
+  modelSelections = {},
+  modelLocked = true,
+  onModelChange = null
+}) {
   const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
   const visualStatus = normalizeStageStatus(stage.status)
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const stageModelKey = stage.key === 'design' || stage.key === 'coding' ? stage.key : null
+  const selectedModel = stageModelKey ? normalizeModelSelections(modelSelections)[stageModelKey] : null
+  const canEditModel = Boolean(stageModelKey && onModelChange && modelOptions.length > 0 && !modelLocked && visualStatus === 'pending')
+  const showModel = Boolean(stageModelKey && (canEditModel || selectedModel))
 
   const stageAgents = {
     1: '需求设计 Agent',
@@ -872,6 +966,11 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
     onSkipStage?.(stage)
   }
 
+  const handleModelChange = (event) => {
+    event.stopPropagation()
+    onModelChange?.(stageModelKey, event.target.value || null)
+  }
+
   return (
     <div
       onClick={handleCardClick}
@@ -933,6 +1032,33 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
           <Bot className="w-4 h-4 text-indigo-500 flex-shrink-0" />
           <span className="truncate">{stageAgents[stage.id] || 'AI Agent'}</span>
         </div>
+
+        {showModel && (
+          <div
+            className="w-full rounded-md border border-white/70 bg-white/80 px-2 py-1 shadow-sm"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2 text-[17px] font-semibold text-gray-500">
+              <span className="flex-shrink-0">执行模型</span>
+              {canEditModel ? (
+                <select
+                  value={selectedModel || ''}
+                  onChange={handleModelChange}
+                  className="min-w-0 flex-1 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[16px] font-bold text-gray-700"
+                  title="选择该阶段调用 opencode 的模型"
+                >
+                  {modelOptions.map((model) => (
+                    <option key={model.id} value={model.id}>{model.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="min-w-0 truncate text-[16px] font-bold text-indigo-600" title={selectedModel || ''}>
+                  {getModelLabel(modelOptions, selectedModel)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Progress Bar (Only show if stage.id >= 2 && stage.id <= 5, i.e., in intelligent development template cards) */}
         {stage.id >= 2 && stage.id <= 5 && (
@@ -1703,7 +1829,22 @@ export function RequirementsItemsCard({ items, title }) {
 }
 
 // AI Chat Panel Component
-export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, onClose, loading, error, startingDevelopment, selectedStageKey = 'all', onSelectStage = null, stages = [], requirementsItems = null }) {
+export function AIChatPanel({
+  activeOrder,
+  onSendMessage,
+  onStartDevelopment,
+  onClose,
+  loading,
+  error,
+  startingDevelopment,
+  selectedStageKey = 'all',
+  onSelectStage = null,
+  stages = [],
+  requirementsItems = null,
+  modelOptions = [],
+  modelSelections = {},
+  onModelChange = null
+}) {
   const [inputValue, setInputValue] = useState('')
   const [isZoomed, setIsZoomed] = useState(false)
   const messagesEndRef = useRef(null)
@@ -1784,6 +1925,8 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
 
   const isRuntime = isRuntimeOrder(activeOrder)
   const canStartDevelopment = isRuntime && activeOrder.status === 'READY_FOR_DEVELOPMENT' && !startingDevelopment
+  const canConfigureRequirementsModel = modelOptions.length > 0 && Boolean(onModelChange) && (!isRuntime || activeOrder.awaitingOriginalRequirement)
+  const effectiveModelSelections = normalizeModelSelections(modelSelections)
 
   return (
     <>
@@ -1851,6 +1994,21 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
             </div>
           </div>
         </div>
+
+        {canConfigureRequirementsModel && (
+          <div className="mb-3 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[20px] flex-shrink-0">
+            <span className="font-bold text-blue-700 flex-shrink-0">需求澄清模型</span>
+            <select
+              value={effectiveModelSelections.requirements || ''}
+              onChange={(event) => onModelChange('requirements', event.target.value || null)}
+              className="min-w-0 flex-1 rounded-md border border-blue-200 bg-white px-3 py-2 text-[19px] font-semibold text-gray-700"
+            >
+              {modelOptions.map((model) => (
+                <option key={model.id} value={model.id}>{model.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {onSelectStage && (
           <div className="flex items-center gap-2 overflow-x-auto border-b border-gray-100 pb-4 mb-2 flex-shrink-0">
@@ -2016,13 +2174,23 @@ function stageStatusColor(status) {
   return 'text-gray-400'
 }
 
-export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, submitting, error }) {
+export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, submitting, error, modelOptions = [] }) {
   if (!open) return null
-  const current = form || { title: '' }
+  const current = form || { title: '', modelSelections: {} }
   const handleFieldChange = (field, value) => {
     onChange?.({ ...current, [field]: value })
   }
+  const handleModelChange = (stageKey, value) => {
+    onChange?.({
+      ...current,
+      modelSelections: {
+        ...(current.modelSelections || {}),
+        [stageKey]: value || null
+      }
+    })
+  }
   const canSubmit = !!current.title?.trim()
+  const currentModels = normalizeModelSelections(current.modelSelections)
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 flex items-center justify-center p-8">
       <div className="w-full max-w-2xl bg-white border border-gray-200 rounded-xl shadow-2xl p-10">
@@ -2047,6 +2215,20 @@ export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, 
               autoFocus
             />
           </label>
+          {modelOptions.length > 0 && (
+            <label className="block">
+              <span className="block text-[24px] font-bold text-gray-700 mb-2">需求澄清模型</span>
+              <select
+                value={currentModels.requirements || ''}
+                onChange={(event) => handleModelChange('requirements', event.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-6 py-4 text-[24px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+              >
+                {modelOptions.map((model) => (
+                  <option key={model.id} value={model.id}>{model.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {error && (
             <div className="flex items-start gap-4 rounded-lg border border-red-200 bg-red-50 p-6 text-[28px] text-red-700">
               <AlertCircle className="w-8 h-8 mt-0.5 flex-shrink-0" />
@@ -2174,6 +2356,8 @@ export function StageLogModal({ open, stage, log, loading, error, onClose }) {
 
 function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [runtimeOrders, setRuntimeOrders] = useState([])
+  const [registeredApps, setRegisteredApps] = useState([])
+  const [modelOptions, setModelOptions] = useState([])
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [activeAppView, setActiveAppView] = useState(null)
   const [apiError, setApiError] = useState('')
@@ -2182,7 +2366,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [developmentStarting, setDevelopmentStarting] = useState(false)
   const [developmentError, setDevelopmentError] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [createForm, setCreateForm] = useState({ title: '', description: '' })
+  const [draftModelSelections, setDraftModelSelections] = useState({})
+  const [createForm, setCreateForm] = useState({ title: '', description: '', modelSelections: {} })
   const [createError, setCreateError] = useState('')
   const [creating, setCreating] = useState(false)
   const [stageSkipInFlight, setStageSkipInFlight] = useState(null)
@@ -2200,8 +2385,13 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [selectedStageKey, setSelectedStageKey] = useState('all')
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
-  const orders = useMemo(() => [...runtimeOrderList, ...workOrders.map(normalizeMockOrder)], [runtimeOrderList])
+  const builtinOrderList = useMemo(() => mergeRegisteredApps(registeredApps).map(normalizeMockOrder), [registeredApps])
+  const orders = useMemo(() => [...runtimeOrderList, ...builtinOrderList], [runtimeOrderList, builtinOrderList])
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
+  const effectiveModelSelections = useMemo(() => {
+    if (!selectedOrder) return fillMissingModelSelections(draftModelSelections, modelOptions)
+    return fillMissingModelSelections(selectedOrder.modelSelections || draftModelSelections, modelOptions)
+  }, [selectedOrder, draftModelSelections, modelOptions])
   const deliverables = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
   const { reqDocs, userDocs, sourceCode, installPacks, urls } = deliverables
   const devProgress = useMemo(() => {
@@ -2242,6 +2432,41 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       })
       .catch((error) => {
         if (!cancelled) setApiError(error.message || '后端服务未连接')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    listApps()
+      .then((apps) => {
+        if (!cancelled) setRegisteredApps(apps)
+      })
+      .catch((error) => {
+        if (!cancelled) setApiError(error.message || '应用注册表加载失败')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    listOpencodeModels()
+      .then((models) => {
+        if (cancelled) return
+        const options = normalizeModelOptions(models)
+        setModelOptions(options)
+        setDraftModelSelections(prev => fillMissingModelSelections(prev, options))
+        setCreateForm(prev => ({
+          ...prev,
+          modelSelections: fillMissingModelSelections(prev.modelSelections, options)
+        }))
+      })
+      .catch((error) => {
+        if (!cancelled) setApiError(error.message || 'opencode 模型列表加载失败')
       })
     return () => {
       cancelled = true
@@ -2349,11 +2574,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       const created = await createWorkOrder({
         title,
         description: '',
-        deferClarification: true
+        deferClarification: true,
+        modelSelections: normalizeModelSelections(createForm.modelSelections)
       })
       setRuntimeOrders(prev => [created, ...prev.filter(order => order.id !== created.id)])
       setSelectedOrderId(created.id)
-      setCreateForm({ title: '', description: '' })
+      setCreateForm({ title: '', description: '', modelSelections: fillMissingModelSelections({}, modelOptions) })
       setCreateModalOpen(false)
       setApiError('')
       setSidebarOpen?.(false)
@@ -2371,7 +2597,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     try {
       const updated = isRuntimeOrder(order)
         ? await sendWorkOrderMessage(order.id, message)
-        : await createWorkOrder(`${order.title}\n\n${message}`)
+        : await createWorkOrder({
+          appId: order.appId || null,
+          title: order.title,
+          message: `${order.title}\n\n${message}`,
+          modelSelections: normalizeModelSelections(draftModelSelections)
+        })
       setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
       setSelectedOrderId(updated.id)
       setApiError('')
@@ -2388,7 +2619,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     setDevelopmentStarting(true)
     setDevelopmentError('')
     try {
-      const updated = await startDevelopmentRun(order.id)
+      const updated = await startDevelopmentRun(order.id, normalizeModelSelections(effectiveModelSelections))
       setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
       setSelectedOrderId(updated.id)
       setApiError('')
@@ -2397,6 +2628,31 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     } finally {
       setDevelopmentStarting(false)
     }
+  }
+
+  const handleModelSelectionChange = async (stageKey, modelId) => {
+    const nextSelections = {
+      ...effectiveModelSelections,
+      [stageKey]: modelId || null
+    }
+    if (isRuntimeOrder(selectedOrder) && ['CLARIFYING', 'READY_FOR_DEVELOPMENT'].includes(selectedOrder.status)) {
+      try {
+        const updated = await updateWorkOrderModelSelections(selectedOrder.id, nextSelections)
+        setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
+        setApiError('')
+      } catch (error) {
+        setApiError(error.message || '保存模型配置失败')
+      }
+      return
+    }
+    setDraftModelSelections(nextSelections)
+    setCreateForm(prev => ({
+      ...prev,
+      modelSelections: {
+        ...(prev.modelSelections || {}),
+        [stageKey]: modelId || null
+      }
+    }))
   }
 
   const handleSkipStage = async (stage) => {
@@ -2603,6 +2859,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         onSelect={(s) => setSelectedStageKey(s.key)}
                         onSkipStage={isRuntimeOrder(selectedOrder) ? handleSkipStage : null}
                         skipLoading={stageSkipInFlight === `${selectedOrder.id}:${stage.key}`}
+                        modelOptions={modelOptions}
+                        modelSelections={effectiveModelSelections}
+                        modelLocked={isRuntimeOrder(selectedOrder) ? selectedOrder.status !== 'READY_FOR_DEVELOPMENT' : false}
+                        onModelChange={handleModelSelectionChange}
                       />
                     ))}
                   </div>
@@ -2673,6 +2933,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
               onSelectStage={setSelectedStageKey}
               stages={selectedOrder.stages}
               requirementsItems={selectedOrder.requirementsItems || null}
+              modelOptions={modelOptions}
+              modelSelections={effectiveModelSelections}
+              onModelChange={handleModelSelectionChange}
             />
           </div>
         </div>
@@ -2685,6 +2948,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         onSubmit={handleCreateSubmit}
         submitting={creating}
         error={createError}
+        modelOptions={modelOptions}
       />
       <StageLogModal
         open={stageLogModal.open}

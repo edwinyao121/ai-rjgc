@@ -191,6 +191,43 @@ test('CreateWorkOrderModal collects app title and basic description before assis
   }
 })
 
+test('CreateWorkOrderModal exposes a requirements model selector sourced from opencode models', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { CreateWorkOrderModal } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+
+    const html = renderToString(React.createElement(CreateWorkOrderModal, {
+      open: true,
+      form: {
+        title: '模型选择应用',
+        modelSelections: {
+          requirements: 'opencode/deepseek-v4-flash-free'
+        }
+      },
+      modelOptions: [
+        { id: 'opencode/deepseek-v4-flash-free', label: 'opencode/deepseek-v4-flash-free' },
+        { id: 'openai/gpt-5.2', label: 'openai/gpt-5.2' }
+      ],
+      onChange: () => {},
+      onClose: () => {},
+      onSubmit: () => {},
+      submitting: false,
+      error: ''
+    }))
+
+    assert.match(html, /需求澄清模型/)
+    assert.match(html, /opencode\/deepseek-v4-flash-free/)
+    assert.match(html, /openai\/gpt-5\.2/)
+  } finally {
+    await server.close()
+  }
+})
+
 test('AIChatPanel asks for original requirement after deferred app shell creation', async () => {
   const server = await createServer({
     server: { middlewareMode: true },
@@ -228,6 +265,66 @@ test('AIChatPanel asks for original requirement after deferred app shell creatio
     assert.doesNotMatch(html, /请输入新的应用需求/)
   } finally {
     await server.close()
+  }
+})
+
+test('work order API sends model selections to persistence and start-development endpoints', async () => {
+  const originalFetch = globalThis.fetch
+  const calls = []
+  globalThis.fetch = async (path, options = {}) => {
+    calls.push({ path, options })
+    return new Response(JSON.stringify({
+      workOrder: {
+        id: 'WO-20260625-201',
+        modelSelections: {
+          design: 'openai/gpt-5.2',
+          coding: 'opencode/deepseek-v4-flash-free'
+        }
+      },
+      apps: [],
+      models: []
+    }), {
+      status: path.includes('opencode-models') || path.includes('apps') ? 200 : (path.includes('development-runs') ? 202 : 200),
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  try {
+    const api = await import('../src/api/workOrders.js')
+    assert.equal(typeof api.listApps, 'function')
+    assert.equal(typeof api.listOpencodeModels, 'function')
+    assert.equal(typeof api.updateWorkOrderModelSelections, 'function')
+
+    await api.listApps()
+    await api.listOpencodeModels()
+    await api.updateWorkOrderModelSelections('WO-20260625-201', {
+      design: 'openai/gpt-5.2',
+      coding: 'opencode/deepseek-v4-flash-free'
+    })
+    await api.startDevelopmentRun('WO-20260625-201', {
+      design: 'openai/gpt-5.2',
+      coding: 'opencode/deepseek-v4-flash-free'
+    })
+
+    assert.equal(calls[0].path, '/api/apps')
+    assert.equal(calls[1].path, '/api/opencode-models')
+    assert.equal(calls[2].path, '/api/work-orders/WO-20260625-201/model-selections')
+    assert.equal(calls[2].options.method, 'PATCH')
+    assert.deepEqual(JSON.parse(calls[2].options.body), {
+      modelSelections: {
+        design: 'openai/gpt-5.2',
+        coding: 'opencode/deepseek-v4-flash-free'
+      }
+    })
+    assert.equal(calls[3].path, '/api/work-orders/WO-20260625-201/development-runs')
+    assert.deepEqual(JSON.parse(calls[3].options.body), {
+      modelSelections: {
+        design: 'openai/gpt-5.2',
+        coding: 'opencode/deepseek-v4-flash-free'
+      }
+    })
+  } finally {
+    globalThis.fetch = originalFetch
   }
 })
 
@@ -491,6 +588,70 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
     assert.match(skippedHtml, /100%/)
     assert.doesNotMatch(skippedHtml, /等待中/)
     assert.doesNotMatch(skippedHtml, /开发失败/)
+  } finally {
+    await server.close()
+  }
+})
+
+test('StageCard renders editable model selector for pending design and coding stages only', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { StageCard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const Icon = () => React.createElement('span')
+    const modelOptions = [
+      { id: 'opencode/deepseek-v4-flash-free', label: 'opencode/deepseek-v4-flash-free' },
+      { id: 'openai/gpt-5.2', label: 'openai/gpt-5.2' }
+    ]
+
+    const pendingHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 2,
+        key: 'design',
+        name: '系统设计',
+        icon: Icon,
+        status: 'PENDING',
+        duration: '-',
+        gate: { exit: '设计完备' },
+        items: []
+      },
+      modelOptions,
+      modelSelections: { design: 'openai/gpt-5.2' },
+      modelLocked: false,
+      onModelChange: () => {},
+      onShowLogs: () => {}
+    }))
+
+    assert.match(pendingHtml, /执行模型/)
+    assert.match(pendingHtml, /openai\/gpt-5\.2/)
+    assert.match(pendingHtml, /opencode\/deepseek-v4-flash-free/)
+
+    const runningHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 3,
+        key: 'coding',
+        name: '智能编码',
+        icon: Icon,
+        status: 'RUNNING',
+        startedAt: '2026-06-24T08:00:00.000Z',
+        estimatedDurationMs: 45 * 60 * 1000,
+        duration: '进行中',
+        gate: { exit: '编译通过' },
+        items: []
+      },
+      modelOptions,
+      modelSelections: { coding: 'opencode/deepseek-v4-flash-free' },
+      modelLocked: true,
+      onModelChange: () => {},
+      onShowLogs: () => {}
+    }))
+
+    assert.doesNotMatch(runningHtml, /<select/)
+    assert.match(runningHtml, /opencode\/deepseek-v4-flash-free/)
   } finally {
     await server.close()
   }

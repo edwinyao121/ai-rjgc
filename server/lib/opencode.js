@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnostics = false } = {}) {
+export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnostics = false, model = null } = {}) {
   const command = [
     'opencode',
     'run',
@@ -12,6 +12,10 @@ export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnos
   }
   if (thinking) {
     command.push('--thinking')
+  }
+  const selectedModel = String(model || '').trim()
+  if (selectedModel) {
+    command.push('--model', selectedModel)
   }
   command.push('--dangerously-skip-permissions', '--dir', path.resolve(appDir), prompt)
   return command

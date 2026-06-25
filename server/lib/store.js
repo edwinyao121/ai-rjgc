@@ -96,11 +96,21 @@ export class WorkOrderStore {
     return `${prefix}${String(maxSequence + 1).padStart(3, '0')}`
   }
 
-  async createWorkOrder({ message, title = null, description = '', deferClarification = false, now = new Date() }) {
+  async createWorkOrder({
+    message,
+    title = null,
+    description = '',
+    deferClarification = false,
+    now = new Date(),
+    appId = null,
+    workspaceDir = null,
+    appDir = null,
+    modelSelections = null
+  }) {
     const id = await this.allocateId(now)
     const workOrderDir = this.getWorkOrderDir(id)
-    const appDir = this.getAppDir(id)
-    await fs.mkdir(appDir, { recursive: true })
+    const effectiveAppDir = appDir || this.getAppDir(id)
+    await fs.mkdir(effectiveAppDir, { recursive: true })
 
     const trimmedMessage = String(message || '').trim()
     const trimmedTitle = String(title || '').trim()
@@ -142,12 +152,15 @@ export class WorkOrderStore {
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
       lastUpdate: '刚刚',
-      appDir,
+      appId,
+      workspaceDir,
+      appDir: effectiveAppDir,
       deploymentUrl: null,
       deploymentHealthUrl: null,
       deploymentPort: null,
       requirementsPath: null,
       requirementsItems: null,
+      modelSelections: normalizeModelSelectionsForState(modelSelections),
       awaitingOriginalRequirement: Boolean(deferClarification),
       messages,
       stages: createPipelineStages(now)
@@ -175,6 +188,7 @@ export class WorkOrderStore {
       state.messages = state.messages.map((message) => normalizeMessage(message))
       await this.writeMessages(state.id, state.messages)
     }
+    state.modelSelections = normalizeModelSelectionsForState(state.modelSelections)
     const statePath = this.getStatePath(state.id)
     await writeFileAtomically(statePath, `${JSON.stringify(state, null, 2)}\n`)
     return state
@@ -257,7 +271,8 @@ export class WorkOrderStore {
   }
 
   async writeAppFile(workOrderId, fileName, content) {
-    const appDir = this.getAppDir(workOrderId)
+    const state = await this.readWorkOrder(workOrderId)
+    const appDir = state?.appDir || this.getAppDir(workOrderId)
     await fs.mkdir(appDir, { recursive: true })
     const filePath = path.join(appDir, fileName)
     await fs.writeFile(filePath, content, 'utf8')
@@ -454,6 +469,18 @@ export function normalizeMessage(message = {}) {
     createdAt,
     updatedAt: message.updatedAt || createdAt
   }
+}
+
+function normalizeModelSelectionsForState(modelSelections) {
+  const source = modelSelections && typeof modelSelections === 'object' && !Array.isArray(modelSelections)
+    ? modelSelections
+    : {}
+  const result = {}
+  for (const stageKey of ['requirements', 'design', 'coding']) {
+    const value = String(source[stageKey] || '').trim()
+    result[stageKey] = value || null
+  }
+  return result
 }
 
 function shouldPreserveMetadata(kind) {

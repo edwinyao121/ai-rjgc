@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { WorkOrderStore } from '../server/lib/store.js'
@@ -201,6 +201,125 @@ test('broadcasts SSE events and writes events.jsonl', async () => {
     const events = await fixture.store.readEvents(state.id)
     assert.equal(events.at(-1).type, 'stage.status.changed')
     assert.match(response.chunks.join(''), /event: stage\.status\.changed/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('initializes the built-in app registry with stable workspaces', async () => {
+  const fixture = await createFixture()
+  try {
+    const appWorkspaceRoot = path.join(fixture.root, 'app-workspaces')
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner: new FakeRunner(),
+      autoStart: false,
+      appWorkspaceRoot
+    })
+
+    await service.init()
+    const apps = await service.listApps()
+
+    assert.equal(apps.length, 4)
+    const tideApp = apps.find((app) => app.id === 'builtin-tide-window')
+    assert.ok(tideApp, 'expected the tide calculator built-in app')
+    assert.equal(tideApp.title, '航母母港潮汐窗口计算器')
+    assert.equal(tideApp.slug, 'tide-window-calculator')
+    assert.equal(tideApp.workspaceDir, path.join(appWorkspaceRoot, 'tide-window-calculator'))
+    assert.equal(tideApp.directories.app, true)
+    assert.equal(tideApp.directories.agents, true)
+    assert.equal(tideApp.directories.skills, true)
+    assert.equal(tideApp.directories.docs, true)
+
+    for (const dirname of ['app', 'agents', 'skills', 'docs']) {
+      const dirStat = await stat(path.join(tideApp.workspaceDir, dirname))
+      assert.equal(dirStat.isDirectory(), true)
+    }
+    const workspace = JSON.parse(await readFile(path.join(tideApp.workspaceDir, 'workspace.json'), 'utf8'))
+    assert.equal(workspace.appId, 'builtin-tide-window')
+    assert.equal(workspace.slug, 'tide-window-calculator')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('built-in app work orders bind to the app workspace and persist model selections', async () => {
+  const fixture = await createFixture()
+  try {
+    const appWorkspaceRoot = path.join(fixture.root, 'app-workspaces')
+    const runner = new FakeRunner([
+      opencodeModelsHandler(['opencode/deepseek-v4-flash-free', 'openai/gpt-5.2'])
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      appWorkspaceRoot
+    })
+    await service.init()
+
+    const state = await service.createWorkOrder({
+      appId: 'builtin-tide-window',
+      title: '航母母港潮汐窗口计算器',
+      deferClarification: true,
+      modelSelections: {
+        requirements: 'opencode/deepseek-v4-flash-free',
+        design: 'openai/gpt-5.2',
+        coding: 'opencode/deepseek-v4-flash-free'
+      }
+    }, { startClarification: false })
+
+    assert.equal(state.appId, 'builtin-tide-window')
+    assert.equal(state.workspaceDir, path.join(appWorkspaceRoot, 'tide-window-calculator'))
+    assert.equal(state.appDir, path.join(appWorkspaceRoot, 'tide-window-calculator', 'app'))
+    assert.deepEqual(state.modelSelections, {
+      requirements: 'opencode/deepseek-v4-flash-free',
+      design: 'openai/gpt-5.2',
+      coding: 'opencode/deepseek-v4-flash-free'
+    })
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    assert.equal(persisted.appDir, state.appDir)
+    assert.equal(persisted.workspaceDir, state.workspaceDir)
+    assert.equal(persisted.modelSelections.design, 'openai/gpt-5.2')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('model catalog is loaded from opencode models and invalid selections are rejected', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      opencodeModelsHandler(['opencode/deepseek-v4-flash-free', 'openai/gpt-5.2'])
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      modelCacheTtlMs: 60_000
+    })
+
+    const models = await service.listOpencodeModels()
+    assert.deepEqual(models.map((model) => model.id), ['opencode/deepseek-v4-flash-free', 'openai/gpt-5.2'])
+    assert.equal(models[0].provider, 'opencode')
+    assert.equal(models[0].name, 'deepseek-v4-flash-free')
+
+    const state = await service.createWorkOrder({ title: '模型校验应用', deferClarification: true }, { startClarification: false })
+    await assert.rejects(
+      () => service.updateModelSelections(state.id, { design: 'unknown/model' }),
+      { code: 'VALIDATION_ERROR' }
+    )
+
+    const updated = await service.updateModelSelections(state.id, {
+      requirements: 'opencode/deepseek-v4-flash-free',
+      design: 'openai/gpt-5.2',
+      coding: 'opencode/deepseek-v4-flash-free'
+    })
+    assert.equal(updated.modelSelections.design, 'openai/gpt-5.2')
   } finally {
     await fixture.cleanup()
   }
@@ -513,6 +632,85 @@ test('POST /api/work-orders/:id/stage-skips returns the updated work order', asy
     assert.equal(response.status, 200)
     assert.equal(payload.workOrder.id, state.id)
     assert.equal(payload.workOrder.stages.find((stage) => stage.key === 'design').status, STAGE_STATUS.SKIPPED)
+  } finally {
+    if (apiServer) {
+      await new Promise((resolve) => apiServer.close(resolve))
+    }
+    await fixture.cleanup()
+  }
+})
+
+test('GET /api/apps returns the built-in app registry', async () => {
+  const fixture = await createFixture()
+  let apiServer
+  try {
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner: new FakeRunner(),
+      autoStart: false,
+      appWorkspaceRoot: path.join(fixture.root, 'app-workspaces')
+    })
+    await service.init()
+    apiServer = createApiServer({ service, eventBus: fixture.eventBus })
+    await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve))
+    const { port } = apiServer.address()
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/apps`)
+    const payload = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.apps.length, 4)
+    assert.ok(payload.apps.some((app) => app.id === 'builtin-tide-window' && app.directories.skills === true))
+  } finally {
+    if (apiServer) {
+      await new Promise((resolve) => apiServer.close(resolve))
+    }
+    await fixture.cleanup()
+  }
+})
+
+test('PATCH /api/work-orders/:id/model-selections validates and persists model selections', async () => {
+  const fixture = await createFixture()
+  let apiServer
+  try {
+    const runner = new FakeRunner([
+      opencodeModelsHandler(['opencode/deepseek-v4-flash-free', 'openai/gpt-5.2'])
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      modelCacheTtlMs: 60_000
+    })
+    const state = await service.createWorkOrder({ title: '模型接口应用', deferClarification: true }, { startClarification: false })
+    apiServer = createApiServer({ service, eventBus: fixture.eventBus })
+    await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve))
+    const { port } = apiServer.address()
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/model-selections`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        modelSelections: {
+          requirements: 'opencode/deepseek-v4-flash-free',
+          design: 'openai/gpt-5.2',
+          coding: 'opencode/deepseek-v4-flash-free'
+        }
+      })
+    })
+    const payload = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.workOrder.modelSelections.design, 'openai/gpt-5.2')
+
+    const invalidResponse = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/model-selections`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelSelections: { design: 'missing/model' } })
+    })
+    assert.equal(invalidResponse.status, 400)
   } finally {
     if (apiServer) {
       await new Promise((resolve) => apiServer.close(resolve))
@@ -1248,6 +1446,80 @@ test('startDevelopmentRun on a failed work order is rejected with CONFLICT', asy
   }
 })
 
+test('clarification opencode command uses the selected requirements model', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      opencodeModelsHandler(['openai/gpt-5.2']),
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 模型需求',
+        title: '模型需求应用'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({
+      message: '做一个可选模型的需求应用',
+      modelSelections: {
+        requirements: 'openai/gpt-5.2'
+      }
+    }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const command = runner.runs[1].command
+    assert.equal(command[command.indexOf('--model') + 1], 'openai/gpt-5.2')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('design and coding opencode stages use their saved model selections', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 分阶段模型需求',
+        title: '分阶段模型应用'
+      }),
+      streamingHandler(['design ok'], { exitCode: 0 }),
+      streamingHandler(['coding ok'], { exitCode: 0 })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个分阶段模型应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    const ready = await fixture.store.readWorkOrder(state.id)
+    ready.modelSelections = {
+      requirements: null,
+      design: 'openai/gpt-5.2',
+      coding: 'opencode/deepseek-v4-flash-free'
+    }
+    await fixture.store.saveWorkOrder(ready)
+
+    await service.runOpencodePipelineStage(state.id, 'design')
+    await service.runOpencodePipelineStage(state.id, 'coding')
+
+    assert.equal(runner.runs[1].command[runner.runs[1].command.indexOf('--model') + 1], 'openai/gpt-5.2')
+    assert.equal(runner.runs[2].command[runner.runs[2].command.indexOf('--model') + 1], 'opencode/deepseek-v4-flash-free')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('opencode stdout/stderr lines produce assistant.message.append + assistant.message.delta persisted to messages.json', async () => {
   const fixture = await createFixture()
   try {
@@ -1567,6 +1839,14 @@ test('buildOpencodeCommand adds print logs and DEBUG log level when diagnostics 
   assert.equal(command.at(-1), 'prompt')
 })
 
+test('buildOpencodeCommand adds --model when a model is selected', () => {
+  const command = buildOpencodeCommand('prompt', '/tmp/app', { model: 'opencode/deepseek-v4-flash-free' })
+
+  assert.ok(command.includes('--model'), 'should pass the selected model to opencode')
+  assert.equal(command[command.indexOf('--model') + 1], 'opencode/deepseek-v4-flash-free')
+  assert.equal(command.at(-1), 'prompt')
+})
+
 test('coding prompt requires Python dependencies to use a project virtual environment', () => {
   const prompt = createStagePrompt({
     stageKey: 'coding',
@@ -1808,6 +2088,13 @@ function streamingHandler(lines, { exitCode = 0, stderr = [] } = {}) {
 
 function clarificationHandler(payload) {
   return async () => ok(JSON.stringify(payload))
+}
+
+function opencodeModelsHandler(models) {
+  return async (command) => {
+    assert.deepEqual(command, ['opencode', 'models'])
+    return ok(models.join('\n'))
+  }
 }
 
 class FakeResponse extends EventEmitter {

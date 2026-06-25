@@ -204,6 +204,23 @@
         "npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25 18:07：已复现并发写 messages.json 使用固定 messages.json.tmp 导致 rename ENOENT；修复为按工单串行化消息写入，并使用唯一临时文件名原子替换 messages.json 与 state.json。新增并发 messages.json 写入回归测试；node --test tests/backend.test.js（47/47）、npm test（61/61）、npm run build 与 ./init.sh（61/61 + build）均通过。"
+    },
+    {
+      "id": "product-014",
+      "name": "内设应用工作空间与 opencode 模型选择",
+      "description": "为 4 个内设应用创建稳定应用工作空间，并允许在需求澄清、系统设计、智能编码阶段选择本机 opencode 模型。",
+      "dependencies": ["product-013"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "后端维护 4 个内设应用注册表，并为每个应用创建 .runtime/app-workspaces/<app-slug>/ 下的 app、agents、skills、docs 和 workspace.json。",
+        "GET /api/apps 返回内设应用及工作空间状态，使用 appId 创建工单时绑定对应 workspace/app 作为 appDir。",
+        "GET /api/opencode-models 仅返回本机 opencode models 的 provider/model 列表；无效模型选择会被拒绝。",
+        "POST /api/work-orders、PATCH /api/work-orders/:id/model-selections、POST /api/work-orders/:id/development-runs 支持保存或提交 requirements、design、coding 模型选择。",
+        "需求澄清、系统设计、智能编码调用 opencode 时按配置传入 --model；测试准备、部署准备和测试返修沿用 coding 模型。",
+        "前端新建应用和首次需求前可选择需求澄清模型，READY_FOR_DEVELOPMENT 状态下系统设计和智能编码阶段卡片可配置模型，启动后锁定。",
+        "相关后端/前端自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 22:57：红灯验证新增后端/前端模型与应用工作空间测试均失败；实现后定向后端/前端回归通过。执行 npm test 通过（72/72），npm run build 成功；最终 ./init.sh 通过（npm test 72/72、npm run build 成功）。"
     }
   ]
 }

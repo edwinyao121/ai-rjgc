@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { createMessage } from './store.js'
+import { ensureBuiltinAppWorkspaces, getBuiltinApp, getBuiltinAppWorkspace, listBuiltinApps } from './apps.js'
 import {
   STAGE_STATUS,
   WORK_ORDER_STATUS,
@@ -20,6 +21,29 @@ import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth
 const HANDOFF_FILE = 'handoff.md'
 const TESTING_MAX_REPAIR_RETRIES = 3
 const SKIPPABLE_STAGE_KEYS = new Set(['design', 'coding', 'testing', 'deployment'])
+const MODEL_STAGE_KEYS = new Set(['requirements', 'design', 'coding'])
+
+function parseOpencodeModels(output) {
+  return String(output || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^[^/\s]+\/[^/\s]+$/.test(line))
+    .map((id) => {
+      const [provider, ...nameParts] = id.split('/')
+      const name = nameParts.join('/')
+      return { id, provider, name, label: id }
+    })
+}
+
+function getSelectedModelForStage(state, stageKey) {
+  const selections = state?.modelSelections || {}
+  if (stageKey === 'requirements') return selections.requirements || null
+  if (stageKey === 'design') return selections.design || null
+  if (stageKey === 'coding' || stageKey === 'testing' || stageKey === 'deployment') {
+    return selections.coding || null
+  }
+  return null
+}
 
 export class WorkOrderService {
   constructor({
@@ -29,7 +53,9 @@ export class WorkOrderService {
     autoStart = true,
     allocatePort = findAvailablePort,
     healthCheck = waitForHealth,
-    logger = console
+    logger = console,
+    appWorkspaceRoot = path.resolve(process.cwd(), '.runtime/app-workspaces'),
+    modelCacheTtlMs = 60 * 1000
   }) {
     this.store = store
     this.eventBus = eventBus
@@ -41,14 +67,41 @@ export class WorkOrderService {
     this.runningApps = new Map()
     this.activeClarifications = new Set()
     this.activePipelines = new Set()
+    this.appWorkspaceRoot = appWorkspaceRoot
+    this.modelCacheTtlMs = modelCacheTtlMs
+    this.modelCache = null
   }
 
   async init() {
     await this.store.init()
+    await ensureBuiltinAppWorkspaces(this.appWorkspaceRoot)
   }
 
   async listWorkOrders() {
     return this.store.listWorkOrders()
+  }
+
+  async listApps() {
+    return listBuiltinApps(this.appWorkspaceRoot)
+  }
+
+  async listOpencodeModels({ force = false } = {}) {
+    const now = Date.now()
+    if (!force && this.modelCache && now - this.modelCache.loadedAt < this.modelCacheTtlMs) {
+      return this.modelCache.models
+    }
+    const result = await this.runner.run(['opencode', 'models'], {
+      cwd: process.cwd(),
+      timeoutMs: 15 * 1000
+    })
+    if (result.exitCode !== 0) {
+      const error = new Error(`Unable to list opencode models: ${summarizeCommandResult(result) || `exit ${result.exitCode}`}`)
+      error.code = 'OPENCODE_MODELS_ERROR'
+      throw error
+    }
+    const models = parseOpencodeModels(result.stdout)
+    this.modelCache = { loadedAt: now, models }
+    return models
   }
 
   async getWorkOrder(id) {
@@ -91,16 +144,23 @@ export class WorkOrderService {
     }
   }
 
-  async createWorkOrder({ message, title, description, deferClarification = false }, { startClarification = this.autoStart } = {}) {
+  async createWorkOrder({ message, title, description, deferClarification = false, appId = null, modelSelections = null }, { startClarification = this.autoStart } = {}) {
     const shouldDeferClarification = Boolean(deferClarification)
     const trimmed = shouldDeferClarification ? '' : validateMessage(message)
-    const trimmedTitle = shouldDeferClarification ? validateTitle(title) : (title == null ? null : validateTitle(title))
+    const appContext = await this.resolveAppContext(appId)
+    const effectiveTitle = title ?? appContext?.title ?? null
+    const trimmedTitle = shouldDeferClarification ? validateTitle(effectiveTitle) : (effectiveTitle == null ? null : validateTitle(effectiveTitle))
     const trimmedDescription = description == null ? '' : validateDescription(description)
+    const normalizedModelSelections = await this.normalizeAndValidateModelSelections(modelSelections)
     const state = await this.store.createWorkOrder({
       message: trimmed,
       title: trimmedTitle,
       description: trimmedDescription,
-      deferClarification: shouldDeferClarification
+      deferClarification: shouldDeferClarification,
+      appId: appContext?.id || null,
+      workspaceDir: appContext?.workspaceDir || null,
+      appDir: appContext?.appDir || null,
+      modelSelections: normalizedModelSelections
     })
     await this.emit(state.id, 'work-order.created', { workOrder: state })
     if (startClarification && !shouldDeferClarification) {
@@ -164,7 +224,11 @@ export class WorkOrderService {
         title: state.title,
         description: state.description
       })
-      const command = buildOpencodeCommand(prompt, state.appDir, { thinking: false, diagnostics: true })
+      const command = buildOpencodeCommand(prompt, state.appDir, {
+        thinking: false,
+        diagnostics: true,
+        model: getSelectedModelForStage(state, 'requirements')
+      })
       const result = await this.runCommandWithStageLogging(id, 'requirements', {
         label: '需求澄清',
         command,
@@ -304,7 +368,10 @@ export class WorkOrderService {
     }
   }
 
-  async startDevelopmentRun(id) {
+  async startDevelopmentRun(id, modelSelections = null) {
+    if (modelSelections) {
+      await this.updateModelSelections(id, modelSelections)
+    }
     const state = await this.requireWorkOrder(id)
     if (this.activePipelines.has(id) || this.activeClarifications.has(id)) {
       const error = new Error('开发流水线正在运行，无法重复启动')
@@ -328,6 +395,22 @@ export class WorkOrderService {
     })
     queueMicrotask(() => {
       this.runPipeline(id).catch((error) => this.failFromUnexpectedError(id, 'design', error))
+    })
+    return state
+  }
+
+  async updateModelSelections(id, modelSelections) {
+    const state = await this.requireWorkOrder(id)
+    if (![WORK_ORDER_STATUS.CLARIFYING, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT].includes(state.status)) {
+      const error = new Error(`当前工单状态为 ${state.status}，无法修改模型配置`)
+      error.code = 'CONFLICT'
+      throw error
+    }
+    state.modelSelections = await this.normalizeAndValidateModelSelections(modelSelections, state.modelSelections)
+    await this.store.saveWorkOrder(state)
+    await this.emit(id, 'work-order.model-selections.updated', {
+      modelSelections: state.modelSelections,
+      workOrder: state
     })
     return state
   }
@@ -400,7 +483,10 @@ export class WorkOrderService {
       title: state.title,
       requirementsMarkdown: await this.getRequirementsMarkdown(state)
     })
-    const command = buildOpencodeCommand(prompt, state.appDir, { thinking: true })
+    const command = buildOpencodeCommand(prompt, state.appDir, {
+      thinking: true,
+      model: getSelectedModelForStage(state, stageKey)
+    })
     const result = await this.runCommandWithStageLogging(id, stageKey, {
       label: stage.name,
       command,
@@ -627,7 +713,10 @@ export class WorkOrderService {
       logSummary: summary,
       repairContextPath
     })
-    const repairCommand = buildOpencodeCommand(prompt, state.appDir, { thinking: true })
+    const repairCommand = buildOpencodeCommand(prompt, state.appDir, {
+      thinking: true,
+      model: getSelectedModelForStage(state, 'coding')
+    })
     const result = await this.runCommandWithStageLogging(id, 'testing', {
       label: `智能编码/修复 第 ${attempt}/${maxAttempts} 次`,
       command: repairCommand,
@@ -1183,6 +1272,55 @@ export class WorkOrderService {
     }
     const appRequirements = path.join(state.appDir, 'requirements.md')
     return fs.readFile(appRequirements, 'utf8')
+  }
+
+  async resolveAppContext(appId) {
+    const normalized = String(appId || '').trim()
+    if (!normalized) return null
+    const app = getBuiltinApp(normalized)
+    if (!app) {
+      const error = new Error('Unknown appId')
+      error.code = 'VALIDATION_ERROR'
+      throw error
+    }
+    await ensureBuiltinAppWorkspaces(this.appWorkspaceRoot)
+    const workspaceDir = getBuiltinAppWorkspace(app, this.appWorkspaceRoot)
+    return {
+      ...app,
+      workspaceDir,
+      appDir: path.join(workspaceDir, 'app')
+    }
+  }
+
+  async normalizeAndValidateModelSelections(input, base = null) {
+    const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+    const merged = {
+      requirements: base?.requirements || null,
+      design: base?.design || null,
+      coding: base?.coding || null
+    }
+    const keys = Object.keys(source)
+    for (const key of keys) {
+      if (!MODEL_STAGE_KEYS.has(key)) {
+        const error = new Error(`Unsupported model selection stage: ${key}`)
+        error.code = 'VALIDATION_ERROR'
+        throw error
+      }
+      const value = String(source[key] || '').trim()
+      merged[key] = value || null
+    }
+    const selected = Object.values(merged).filter(Boolean)
+    if (selected.length === 0) return merged
+    const availableModels = await this.listOpencodeModels()
+    const availableIds = new Set(availableModels.map((model) => model.id))
+    for (const model of selected) {
+      if (!availableIds.has(model)) {
+        const error = new Error(`Model is not available from opencode models: ${model}`)
+        error.code = 'VALIDATION_ERROR'
+        throw error
+      }
+    }
+    return merged
   }
 }
 

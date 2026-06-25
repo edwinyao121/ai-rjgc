@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 18:07（Asia/Shanghai）
+- 最后更新：2026-06-25 22:57（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：无。
-- 会话目标：已完成 `product-013` 修复需求澄清日志点击时消息文件并发写入崩溃。
+- 当前事项：`product-014` 内设应用工作空间与 opencode 模型选择，已完成。
+- 会话目标：为 4 个内设应用创建稳定工作空间，并在需求澄清、系统设计、智能编码阶段支持本机 opencode 模型选择。
 
 ## 已完成
 
@@ -59,6 +59,13 @@
   - 复现固定 `messages.json.tmp` 临时文件在并发写入下触发 `ENOENT`。
   - 消息文件写入已按工单串行化，避免流式消息增量和完整消息保存并发破坏同一文件。
   - `messages.json` 与 `state.json` 原子写入均改为唯一临时文件名后 rename，消除固定 `.tmp` 文件名竞争。
+- [x] 内设应用工作空间与 opencode 模型选择：
+  - 新增后端应用注册表，初始化 4 个内设应用的 `.runtime/app-workspaces/<app-slug>/` 工作空间，并创建 `app/`、`agents/`、`skills/`、`docs/` 和 `workspace.json`。
+  - 新增 `GET /api/apps`，返回内设应用和工作空间目录状态；使用 `appId` 创建工单时绑定对应应用 workspace 的 `app/` 目录作为 `appDir`。
+  - 新增 `GET /api/opencode-models`，只读取本机 `opencode models` 输出；新增 `PATCH /api/work-orders/:id/model-selections` 保存 requirements/design/coding 模型选择并拒绝无效模型。
+  - `POST /api/work-orders` 与 `POST /api/work-orders/:id/development-runs` 支持提交 `modelSelections`；需求澄清、系统设计、智能编码调用 opencode 时传入 `--model`。
+  - 测试准备、部署准备和测试返修沿用 `coding` 模型。
+  - 前端加载后端应用注册表和本机模型列表；新建应用和首次需求前可选需求澄清模型，READY_FOR_DEVELOPMENT 状态下系统设计/智能编码阶段卡片可选模型，启动后锁定。
 
 ## 进行中
 
@@ -66,13 +73,15 @@
 
 ## 下一步
 
-1. 用户在浏览器中重新触发需求澄清并打开阶段日志，确认不会再出现 `messages.json.tmp` rename ENOENT。
-2. 如仍有运行中工单沿用旧进程，请重启后端服务加载本次修复。
+1. 重启后端服务以加载新增的 `/api/apps`、`/api/opencode-models` 与模型选择接口。
+2. 在浏览器中新建或打开应用，确认模型下拉只展示本机 `opencode models` 当前可用项。
 
 ## 风险与注意事项
 
-- 本次没有修改运行态历史工单 state，因此已失败的历史工单不会自动恢复。
+- 本次没有修改运行态历史工单 state，因此已失败的历史工单不会自动恢复；历史工单若没有 `modelSelections` 会按 opencode 默认模型执行。
 - `./init.sh` / `npm run build` 会刷新 `dist/index.html` 资源哈希；当前工作区也保留了既有 `node_modules/.vite/deps/_metadata.json` 缓存变更，提交时应单独确认是否纳入。
+- `.runtime/app-workspaces/` 是运行态工作空间，不纳入 git；后续可直接向对应应用的 `agents/` 或 `skills/` 放置专属能力文件。
+- 模型列表完全来自本机 `opencode models`，未配置的 GLM5.2 不会展示，也不能保存到工单配置中。
 - 左侧应用列表不再提供运行/访问入口；访问部署应用统一保留在主内容区顶部按钮。
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
 - 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
@@ -100,6 +109,13 @@
 - `tests/backend.test.js`：新增 opencode 超时诊断、空输出提示、stderr 脱敏和需求澄清 debug 参数回归测试。
 - `server/lib/store.js`：修复 `messages.json.tmp` / `state.json.tmp` 固定临时文件名并发 rename 竞争，消息写入按工单串行化。
 - `tests/backend.test.js`：新增并发 `messages.json` 写入回归测试。
+- `server/lib/apps.js`：新增内设应用注册表和工作空间初始化逻辑。
+- `server/index.js`、`server/lib/orchestrator.js`、`server/lib/store.js`、`server/lib/opencode.js`：新增应用注册表 API、模型列表 API、模型选择保存、工单绑定应用 workspace、opencode `--model` 传参。
+- `src/api/workOrders.js`、`src/pages/KanbanBoard.jsx`：新增应用/模型 API 调用、新建应用需求澄清模型选择、阶段卡片设计/编码模型选择、启动智能开发时提交模型配置。
+- `tests/backend.test.js`、`tests/frontend-render.test.js`：新增应用工作空间、模型目录、模型校验、命令传参、前端选择器和 API 请求体回归测试。
+- `docs/AI研发助手单机版需求文档.md`：补充应用工作空间、模型选择接口和 opencode 执行策略。
+- `dist/index.html`：`npm run build` 刷新的构建产物入口。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-014` 状态与校验证据。
 
 ## 校验证据
 
@@ -152,6 +168,13 @@
 - [x] `npm test`：2026-06-25 18:07 执行通过，61 个测试全部通过。
 - [x] `npm run build`：2026-06-25 18:07 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-25 18:07 执行通过；`npm test` 61/61，`npm run build` 成功。
+- [x] 红灯验证：2026-06-25 22:57 执行 `node --test --test-name-pattern='built-in app|model catalog|model selections|opencode command uses|opencode stages use|buildOpencodeCommand adds --model|GET /api/apps|PATCH /api/work-orders' tests/backend.test.js` 失败，确认旧实现缺少应用注册表、模型目录、模型选择接口和 `--model` 传参。
+- [x] 红灯验证：2026-06-25 22:57 执行 `node --test --test-name-pattern='requirements model selector|work order API sends model selections|StageCard renders editable model selector' tests/frontend-render.test.js` 失败，确认旧前端缺少模型下拉、模型 API 和阶段卡片配置。
+- [x] 定向后端回归：2026-06-25 22:57 执行 `node --test --test-name-pattern='built-in app|model catalog|model selections|opencode command uses|opencode stages use|buildOpencodeCommand adds --model|GET /api/apps|PATCH /api/work-orders|startDevelopmentRun only launches|install/build/test commands' tests/backend.test.js` 通过。
+- [x] 定向前端回归：2026-06-25 22:57 执行 `node --test --test-name-pattern='renders application production line|CreateWorkOrderModal|requirements model selector|work order API sends model selections|StageCard renders editable model selector|AIChatPanel renders opencode-stream' tests/frontend-render.test.js` 通过。
+- [x] `npm test`：2026-06-25 22:57 执行通过，72 个测试全部通过。
+- [x] `npm run build`：2026-06-25 22:57 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-25 22:57 执行通过；`npm test` 72/72，`npm run build` 成功。
 
 ## 构建提示
 

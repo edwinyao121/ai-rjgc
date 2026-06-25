@@ -21,6 +21,8 @@
 - 使用 opencode 作为研发执行引擎。
 - 在当前机器启动生成的软件服务。
 - 部署成功后返回本机访问地址。
+- 为内设应用创建稳定本地工作空间，便于后续放置应用专属 Agent、Skill、文档和源码。
+- 在需求澄清、系统设计、智能编码阶段支持选择本机 opencode 已配置模型。
 
 ### 2.2 不包含
 
@@ -272,9 +274,77 @@ POST /api/work-orders/:id/stage-skips
 - 仅允许跳过 `PENDING` 阶段。
 - 无效阶段、`requirements` 或不允许跳过的阶段返回结构化错误。
 
+### 7.6 查询内设应用
+
+```http
+GET /api/apps
+```
+
+返回 4 个内设应用及其工作空间状态。每个应用包含：
+
+- `id`：稳定应用标识，例如 `builtin-tide-window`。
+- `title`：应用名称。
+- `workspaceDir`：应用工作空间路径。
+- `appDir`：该应用源码目录。
+- `directories`：`app`、`agents`、`skills`、`docs` 目录是否就绪。
+
+### 7.7 查询 opencode 模型
+
+```http
+GET /api/opencode-models
+```
+
+后端只从当前机器的 `opencode models` 输出中读取可选模型。返回模型必须使用 `provider/model` 格式；未出现在该列表中的模型不得保存或提交给阶段执行。
+
+### 7.8 保存阶段模型选择
+
+```http
+PATCH /api/work-orders/:id/model-selections
+```
+
+请求：
+
+```json
+{
+  "modelSelections": {
+    "requirements": "opencode/deepseek-v4-flash-free",
+    "design": "openai/gpt-5.2",
+    "coding": "opencode/deepseek-v4-flash-free"
+  }
+}
+```
+
+规则：
+
+- 仅支持 `requirements`、`design`、`coding` 三个键。
+- 只允许保存 `GET /api/opencode-models` 返回的模型。
+- 仅允许在需求澄清或待启动智能开发阶段修改；流水线启动后锁定。
+- 测试准备、部署准备和测试返修默认沿用 `coding` 模型。
+
+### 7.9 启动智能开发时提交模型选择
+
+```http
+POST /api/work-orders/:id/development-runs
+```
+
+请求体可包含最终模型选择：
+
+```json
+{
+  "modelSelections": {
+    "design": "openai/gpt-5.2",
+    "coding": "opencode/deepseek-v4-flash-free"
+  }
+}
+```
+
+后端保存并校验模型选择后再启动流水线。
+
 ## 8. opencode 执行策略
 
 每个阶段单独调用 opencode，避免一个长任务不可控。
+
+若工单保存了阶段模型选择，后端必须在对应 opencode 命令中增加 `--model provider/model`。需求澄清使用 `requirements`，系统设计使用 `design`，智能编码、测试准备、部署准备和测试返修使用 `coding`。
 
 示例：
 
@@ -318,6 +388,13 @@ opencode run --format json --dir .runtime/work-orders/WO-001/app \
 
 ```text
 .runtime/
+  app-workspaces/
+    tide-window-calculator/
+      workspace.json
+      agents/
+      skills/
+      docs/
+      app/
   work-orders/
     WO-001/
       state.json
@@ -332,6 +409,7 @@ docs/
 说明：
 
 - `docs/requirements/` 保存最终需求规格文档。
+- `.runtime/app-workspaces/` 保存内设应用的稳定工作空间。
 - `.runtime/work-orders/` 保存运行态数据、日志和生成应用。
 - 第一版不引入数据库；后续可迁移到 SQLite 或 PostgreSQL。
 

@@ -34,6 +34,16 @@ async function routeRequest({ request, response, service, eventBus }) {
     return
   }
 
+  if (request.method === 'GET' && pathname === '/api/apps') {
+    sendJson(response, 200, { apps: await service.listApps() })
+    return
+  }
+
+  if (request.method === 'GET' && pathname === '/api/opencode-models') {
+    sendJson(response, 200, { models: await service.listOpencodeModels() })
+    return
+  }
+
   if (request.method === 'GET' && pathname === '/api/work-orders') {
     sendJson(response, 200, { workOrders: await service.listWorkOrders() })
     return
@@ -45,7 +55,9 @@ async function routeRequest({ request, response, service, eventBus }) {
       message: body.message || body.requirement || body.text,
       title: body.title,
       description: body.description,
-      deferClarification: body.deferClarification === true
+      deferClarification: body.deferClarification === true,
+      appId: body.appId,
+      modelSelections: body.modelSelections
     })
     sendJson(response, 201, { workOrder })
     return
@@ -62,8 +74,18 @@ async function routeRequest({ request, response, service, eventBus }) {
   const developmentRunMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})\/development-runs$/)
   if (developmentRunMatch && request.method === 'POST') {
     const [, id] = developmentRunMatch
-    const workOrder = await service.startDevelopmentRun(id)
+    const body = await readJsonBody(request)
+    const workOrder = await service.startDevelopmentRun(id, body.modelSelections || null)
     sendJson(response, 202, { workOrder })
+    return
+  }
+
+  const modelSelectionsMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})\/model-selections$/)
+  if (modelSelectionsMatch && request.method === 'PATCH') {
+    const [, id] = modelSelectionsMatch
+    const body = await readJsonBody(request)
+    const workOrder = await service.updateModelSelections(id, body.modelSelections || body)
+    sendJson(response, 200, { workOrder })
     return
   }
 
@@ -132,7 +154,7 @@ async function readJsonBody(request) {
 
 function setCorsHeaders(response) {
   response.setHeader('Access-Control-Allow-Origin', '*')
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS')
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Last-Event-ID')
 }
 

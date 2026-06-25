@@ -6,6 +6,7 @@ const EVENT_TYPES = [
   'deployment.updated',
   'work-order.created',
   'work-order.status.changed',
+  'work-order.model-selections.updated',
   'development.run.started',
   'message.created',
   'clarification.started',
@@ -18,6 +19,16 @@ const EVENT_TYPES = [
 export async function listWorkOrders() {
   const payload = await apiFetch('/api/work-orders')
   return payload.workOrders || []
+}
+
+export async function listApps() {
+  const payload = await apiFetch('/api/apps')
+  return payload.apps || []
+}
+
+export async function listOpencodeModels() {
+  const payload = await apiFetch('/api/opencode-models')
+  return payload.models || []
 }
 
 export async function createWorkOrder(input) {
@@ -37,9 +48,21 @@ export async function sendWorkOrderMessage(id, message) {
   return payload.workOrder
 }
 
-export async function startDevelopmentRun(id) {
+export async function updateWorkOrderModelSelections(id, modelSelections) {
+  const payload = await apiFetch(`/api/work-orders/${id}/model-selections`, {
+    method: 'PATCH',
+    body: JSON.stringify({ modelSelections })
+  })
+  return payload.workOrder
+}
+
+export async function startDevelopmentRun(id, modelSelections = null) {
+  const options = { method: 'POST' }
+  if (modelSelections) {
+    options.body = JSON.stringify({ modelSelections })
+  }
   const payload = await apiFetch(`/api/work-orders/${id}/development-runs`, {
-    method: 'POST'
+    ...options
   })
   return payload.workOrder
 }
