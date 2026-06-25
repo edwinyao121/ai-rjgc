@@ -173,6 +173,22 @@
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25：已修改 server/lib/orchestrator.js 中的 requirements timeoutMs 设定为 15 分钟；修改了 server/lib/stages.js 中 requirements 的 estimatedDurationMs 为 15 分钟。全套 56 个测试全部通过，Vite 编译无误。"
+    },
+    {
+      "id": "product-012",
+      "name": "opencode 超时诊断日志",
+      "description": "为需求澄清阶段补强 opencode 本地诊断日志，超时时展示启动信息、输出活动、空闲时长和 opencode 日志位置。",
+      "dependencies": ["product-011"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "需求澄清阶段的 opencode 命令启用 --print-logs 和 --log-level DEBUG，继续使用 --format json。",
+        "阶段日志记录 opencode 启动命令、cwd、timeoutMs、PID、开始时间和 opencode 本机日志目录，prompt 保持隐藏。",
+        "stdout/stderr 输出活动记录最后输出时间、行数和累计字节数；超时记录 timedOut=true、lastOutputAt、idleMs、exitCode 和退出信号。",
+        "无 stdout/stderr 输出时，需求阶段日志写入 opencode 已启动但未产生可读输出的可读提示。",
+        "每次 opencode 执行写入当前 work-order 运行目录下的 opencode-diagnostics.jsonl 本地诊断 JSONL。",
+        "诊断日志和阶段日志不记录完整 prompt、环境变量、配置输出或明显敏感字段原文。"
+      ],
+      "evidence": "2026-06-25 17:55：已为需求澄清 opencode 命令启用 --print-logs --log-level DEBUG；runCommand 返回 PID、startedAt、lastOutputAt、idleMs、stdout/stderr 字节与行数等诊断元数据；阶段日志记录 opencode log dir、启动信息、空输出提示、超时活动摘要并脱敏敏感字段；opencode 执行写入 opencode-diagnostics.jsonl。定向诊断测试、node --test tests/backend.test.js（46/46）、npm test（60/60）、npm run build 与 ./init.sh（60/60 + build）均通过。"
     }
   ]
 }

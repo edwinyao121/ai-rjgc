@@ -1,12 +1,15 @@
 import path from 'node:path'
 
-export function buildOpencodeCommand(prompt, appDir, { thinking = false } = {}) {
+export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnostics = false } = {}) {
   const command = [
     'opencode',
     'run',
     '--format',
     'json'
   ]
+  if (diagnostics) {
+    command.push('--print-logs', '--log-level', 'DEBUG')
+  }
   if (thinking) {
     command.push('--thinking')
   }

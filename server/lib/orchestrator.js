@@ -164,7 +164,7 @@ export class WorkOrderService {
         title: state.title,
         description: state.description
       })
-      const command = buildOpencodeCommand(prompt, state.appDir, { thinking: false })
+      const command = buildOpencodeCommand(prompt, state.appDir, { thinking: false, diagnostics: true })
       const result = await this.runCommandWithStageLogging(id, 'requirements', {
         label: '需求澄清',
         command,
@@ -847,7 +847,7 @@ export class WorkOrderService {
 
   async writeDebugOutput(id, fileName, content) {
     try {
-      await fs.writeFile(path.join(this.store.getWorkOrderDir(id), fileName), content, 'utf8')
+      await fs.writeFile(path.join(this.store.getWorkOrderDir(id), fileName), redactSensitiveText(content), 'utf8')
     } catch (error) {
       this.logger.warn?.(`Unable to write ${fileName}: ${error.message}`)
     }
@@ -880,7 +880,10 @@ export class WorkOrderService {
   }
 
   async appendStageLogEntry(id, stageKey, entry) {
-    const savedEntry = await this.store.appendStageLogEntry(id, stageKey, entry)
+    const savedEntry = await this.store.appendStageLogEntry(id, stageKey, {
+      ...entry,
+      text: redactSensitiveText(entry.text)
+    })
     await this.emit(id, 'stage.log.append', {
       stageId: stageKey,
       entry: savedEntry
@@ -965,12 +968,37 @@ export class WorkOrderService {
     source = 'command'
   }) {
     let streamedLineCount = 0
+    let replayedLineCount = 0
     let streamMessageId = null
+    let startLogged = false
+    const formattedCommand = formatCommand(command)
     await this.appendStageLogEntry(id, stageKey, {
       level: 'INFO',
       source,
-      text: `${label}: ${formatCommand(command)}`
+      text: `${label}: ${formattedCommand}`
     })
+    if (source === 'opencode') {
+      await this.appendStageLogEntry(id, stageKey, {
+        level: 'INFO',
+        source,
+        text: `opencode log dir: ${getOpencodeLogDir()}`
+      })
+    }
+
+    const logCommandStart = async (diagnostics) => {
+      startLogged = true
+      await this.appendStageLogEntry(id, stageKey, {
+        level: 'INFO',
+        source,
+        text: formatCommandStartLog({
+          label,
+          command: formattedCommand,
+          diagnostics,
+          cwd,
+          timeoutMs
+        })
+      })
+    }
 
     if (source === 'opencode') {
       const state = await this.requireWorkOrder(id)
@@ -990,7 +1018,7 @@ export class WorkOrderService {
       const parsed = parseOpencodeLine(line)
       if (!parsed) return
       if (parsed.kind === 'text' || parsed.kind === 'thinking') {
-        const text = parsed.text || ''
+        const text = redactSensitiveText(parsed.text || '')
         if (!text) return
         if (isClarificationStage && text.trimStart().startsWith('{')) {
           return
@@ -999,12 +1027,12 @@ export class WorkOrderService {
         return
       }
       if (parsed.kind === 'tool') {
-        const summary = formatToolSummary(parsed.tool, parsed.description)
+        const summary = redactSensitiveText(formatToolSummary(parsed.tool, parsed.description))
         if (summary) {
           await this.appendOpencodeStreamDelta(id, streamMessageId, `${summary}\n`, 'STREAMING', {
             activity: 'tool',
             tool: parsed.tool || null,
-            toolDescription: parsed.description || null
+            toolDescription: redactSensitiveText(parsed.description || '') || null
           })
         }
         return
@@ -1014,7 +1042,7 @@ export class WorkOrderService {
         return
       }
       if (parsed.kind === 'raw') {
-        await this.appendOpencodeStreamDelta(id, streamMessageId, `${line}\n`, 'STREAMING', { activity: 'thinking' })
+        await this.appendOpencodeStreamDelta(id, streamMessageId, `${redactSensitiveText(line)}\n`, 'STREAMING', { activity: 'thinking' })
       }
     }
 
@@ -1022,6 +1050,7 @@ export class WorkOrderService {
       cwd,
       env,
       timeoutMs,
+      onStart: logCommandStart,
       onStdoutLine: async (line) => {
         streamedLineCount += 1
         await this.appendStageLogEntry(id, stageKey, {
@@ -1036,7 +1065,7 @@ export class WorkOrderService {
       onStderrLine: async (line) => {
         streamedLineCount += 1
         await this.appendStageLogEntry(id, stageKey, {
-          level: 'WARN',
+          level: inferStderrLogLevel(line),
           source,
           text: line
         })
@@ -1045,9 +1074,19 @@ export class WorkOrderService {
         }
       }
     })
+    const diagnostics = normalizeCommandDiagnostics(result.diagnostics, {
+      cwd,
+      timeoutMs,
+      stdout: result.stdout,
+      stderr: result.stderr
+    })
+    if (!startLogged && diagnostics) {
+      await logCommandStart(diagnostics)
+    }
 
     if (streamedLineCount === 0) {
       for (const line of splitOutputLines(result.stdout)) {
+        replayedLineCount += 1
         await this.appendStageLogEntry(id, stageKey, {
           level: 'INFO',
           source,
@@ -1058,8 +1097,9 @@ export class WorkOrderService {
         }
       }
       for (const line of splitOutputLines(result.stderr)) {
+        replayedLineCount += 1
         await this.appendStageLogEntry(id, stageKey, {
-          level: 'WARN',
+          level: inferStderrLogLevel(line),
           source,
           text: line
         })
@@ -1068,18 +1108,62 @@ export class WorkOrderService {
         }
       }
     }
+    if (source === 'opencode' && streamedLineCount + replayedLineCount === 0) {
+      await this.appendStageLogEntry(id, stageKey, {
+        level: result.timedOut ? 'WARN' : 'INFO',
+        source,
+        text: 'opencode 已启动但未产生可读输出'
+      })
+    }
 
     await this.appendStageLogEntry(id, stageKey, {
       level: result.exitCode === 0 ? 'INFO' : 'ERROR',
       source,
-      text: `${label} exitCode=${result.exitCode}${result.timedOut ? ' timedOut=true' : ''}`
+      text: formatCommandExitLog({ label, result, diagnostics })
     })
+    if (source === 'opencode') {
+      await this.appendOpencodeDiagnostics(id, {
+        stageKey,
+        label,
+        command: formattedCommand,
+        cwd,
+        timeoutMs,
+        result,
+        diagnostics
+      })
+    }
 
     if (streamMessageId) {
       const finalStatus = result.exitCode === 0 ? 'COMPLETED' : 'FAILED'
       await this.finalizeOpencodeStreamMessage(id, streamMessageId, finalStatus, { activity: null })
     }
     return result
+  }
+
+  async appendOpencodeDiagnostics(id, {
+    stageKey,
+    label,
+    command,
+    cwd,
+    timeoutMs,
+    result,
+    diagnostics
+  }) {
+    try {
+      const record = buildOpencodeDiagnosticsRecord({
+        stageKey,
+        label,
+        command,
+        cwd,
+        timeoutMs,
+        result,
+        diagnostics
+      })
+      const diagnosticsPath = path.join(this.store.getWorkOrderDir(id), 'opencode-diagnostics.jsonl')
+      await fs.appendFile(diagnosticsPath, `${JSON.stringify(redactSensitiveObject(record))}\n`, 'utf8')
+    } catch (error) {
+      this.logger.warn?.(`Unable to write opencode diagnostics: ${error.message}`)
+    }
   }
 
   async requireWorkOrder(id) {
@@ -1195,6 +1279,144 @@ function splitOutputLines(content) {
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0)
+}
+
+function formatCommandStartLog({
+  label,
+  command,
+  diagnostics,
+  cwd,
+  timeoutMs
+}) {
+  const normalized = normalizeCommandDiagnostics(diagnostics, { cwd, timeoutMs })
+  return [
+    `${label} started`,
+    `pid=${normalized?.pid ?? '-'}`,
+    `cwd=${normalized?.cwd || cwd || '-'}`,
+    `timeoutMs=${normalized?.timeoutMs ?? timeoutMs ?? '-'}`,
+    `startedAt=${normalized?.startedAt || '-'}`,
+    `command=${command}`
+  ].join(' ')
+}
+
+function formatCommandExitLog({ label, result, diagnostics }) {
+  const normalized = normalizeCommandDiagnostics(diagnostics, {
+    stdout: result.stdout,
+    stderr: result.stderr
+  })
+  const parts = [
+    `${label} exitCode=${result.exitCode}`,
+    result.timedOut ? 'timedOut=true' : '',
+    `lastOutputAt=${normalized?.lastOutputAt || '<none>'}`,
+    normalized?.idleMs != null ? `idleMs=${normalized.idleMs}` : '',
+    normalized?.exitSignal ? `exitSignal=${normalized.exitSignal}` : '',
+    `stdoutBytes=${normalized?.stdout?.bytes ?? Buffer.byteLength(result.stdout || '', 'utf8')}`,
+    `stderrBytes=${normalized?.stderr?.bytes ?? Buffer.byteLength(result.stderr || '', 'utf8')}`,
+    `stdoutLines=${normalized?.stdout?.lineCount ?? splitOutputLines(result.stdout).length}`,
+    `stderrLines=${normalized?.stderr?.lineCount ?? splitOutputLines(result.stderr).length}`
+  ]
+  return parts.filter(Boolean).join(' ')
+}
+
+function normalizeCommandDiagnostics(diagnostics, fallback = {}) {
+  if (!diagnostics && !fallback) return null
+  const stdoutText = fallback.stdout || ''
+  const stderrText = fallback.stderr || ''
+  const stdout = diagnostics?.stdout || {}
+  const stderr = diagnostics?.stderr || {}
+  return {
+    pid: diagnostics?.pid ?? null,
+    cwd: diagnostics?.cwd || fallback.cwd || null,
+    timeoutMs: diagnostics?.timeoutMs ?? fallback.timeoutMs ?? null,
+    startedAt: diagnostics?.startedAt || null,
+    endedAt: diagnostics?.endedAt || null,
+    lastOutputAt: diagnostics?.lastOutputAt || null,
+    idleMs: diagnostics?.idleMs ?? null,
+    exitSignal: diagnostics?.exitSignal ?? diagnostics?.signal ?? null,
+    stdout: {
+      bytes: stdout.bytes ?? Buffer.byteLength(stdoutText, 'utf8'),
+      lineCount: stdout.lineCount ?? splitOutputLines(stdoutText).length,
+      chunks: stdout.chunks ?? null,
+      lastOutputAt: stdout.lastOutputAt || null
+    },
+    stderr: {
+      bytes: stderr.bytes ?? Buffer.byteLength(stderrText, 'utf8'),
+      lineCount: stderr.lineCount ?? splitOutputLines(stderrText).length,
+      chunks: stderr.chunks ?? null,
+      lastOutputAt: stderr.lastOutputAt || null
+    },
+    outputEvents: Array.isArray(diagnostics?.outputEvents) ? diagnostics.outputEvents : []
+  }
+}
+
+function buildOpencodeDiagnosticsRecord({
+  stageKey,
+  label,
+  command,
+  cwd,
+  timeoutMs,
+  result,
+  diagnostics
+}) {
+  const normalized = normalizeCommandDiagnostics(diagnostics, {
+    cwd,
+    timeoutMs,
+    stdout: result.stdout,
+    stderr: result.stderr
+  })
+  return {
+    stageKey,
+    label,
+    command,
+    pid: normalized?.pid ?? null,
+    cwd: normalized?.cwd || cwd || null,
+    timeoutMs: normalized?.timeoutMs ?? timeoutMs ?? null,
+    startedAt: normalized?.startedAt || null,
+    endedAt: normalized?.endedAt || null,
+    lastOutputAt: normalized?.lastOutputAt || null,
+    idleMs: normalized?.idleMs ?? null,
+    exitCode: result.exitCode,
+    exitSignal: normalized?.exitSignal || null,
+    timedOut: Boolean(result.timedOut),
+    stdoutBytes: normalized?.stdout?.bytes ?? 0,
+    stderrBytes: normalized?.stderr?.bytes ?? 0,
+    stdoutLineCount: normalized?.stdout?.lineCount ?? 0,
+    stderrLineCount: normalized?.stderr?.lineCount ?? 0,
+    outputEvents: normalized?.outputEvents || [],
+    opencodeLogDir: getOpencodeLogDir()
+  }
+}
+
+function inferStderrLogLevel(line) {
+  const text = String(line || '')
+  if (/\b(ERROR|ERR|FATAL)\b/i.test(text)) return 'ERROR'
+  if (/\b(DEBUG|TRACE)\b/i.test(text)) return 'INFO'
+  return 'WARN'
+}
+
+function getOpencodeLogDir() {
+  const dataHome = process.env.XDG_DATA_HOME || path.join(process.env.HOME || '', '.local', 'share')
+  return path.join(dataHome, 'opencode', 'log')
+}
+
+function redactSensitiveObject(value) {
+  if (typeof value === 'string') return redactSensitiveText(value)
+  if (!value || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((item) => redactSensitiveObject(item))
+  const result = {}
+  for (const [key, item] of Object.entries(value)) {
+    result[key] = redactSensitiveObject(item)
+  }
+  return result
+}
+
+function redactSensitiveText(value) {
+  let text = String(value ?? '')
+  text = text.replace(/("(?:api[_-]?key|apikey|token|password|authorization)"\s*:\s*)"[^"]*"/gi, '$1"[REDACTED]"')
+  text = text.replace(/((?:api[_-]?key|apikey|token|password|authorization)\s*[:=]\s*)"[^"]*"/gi, '$1"[REDACTED]"')
+  text = text.replace(/((?:api[_-]?key|apikey|token|password|authorization)\s*[:=]\s*)'[^']*'/gi, "$1'[REDACTED]'")
+  text = text.replace(/((?:api[_-]?key|apikey|token|password|authorization)\s*[:=]\s*)(?!["'])(?:Bearer\s+)?[^\s,;}\]]+/gi, '$1[REDACTED]')
+  return text
 }
 
 function buildHandoffDocument(state, note = '') {

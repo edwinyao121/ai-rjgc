@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 17:26（Asia/Shanghai）
+- 最后更新：2026-06-25 17:55（Asia/Shanghai）
 - 当前分支：`0630`
 - 当前事项：无。
-- 会话目标：将需求澄清超时时间设置为 15 分钟并同步预计计划耗时。
+- 会话目标：已完成 `product-012` opencode 超时诊断日志。
 
 ## 已完成
 
@@ -49,6 +49,12 @@
 - [x] 设置需求澄清超时时间为15分钟：
   - 后端需求澄清阶段的执行命令超时时间 `timeoutMs` 设为 15 分钟（`15 * 60 * 1000`）。
   - 需求澄清阶段的默认预估时间/计划时间 `estimatedDurationMs` 设为 15 分钟（`15 * 60 * 1000`），在页面展现为计划耗时 15 分钟。
+- [x] opencode 超时诊断日志：
+  - 需求澄清阶段的 opencode 命令已启用 `--print-logs --log-level DEBUG`，继续使用 `--format json`。
+  - `runCommand` 返回 PID、startedAt、lastOutputAt、idleMs、stdout/stderr 字节数与行数、输出事件等诊断元数据。
+  - 阶段日志记录 opencode 本机日志目录、启动信息、空输出提示、超时活动摘要，并保持 prompt 隐藏为 `[prompt omitted]`。
+  - opencode 执行会追加本地 `opencode-diagnostics.jsonl`，其中包含 stageKey、pid、cwd、timeoutMs、startedAt、lastOutputAt、exitCode、timedOut、输出字节数和 opencode log dir。
+  - 阶段日志、opencode-stream 可见内容和本地诊断 JSONL 对 `apiKey`、`token`、`password`、`authorization` 等明显敏感字段做基础脱敏。
 
 ## 进行中
 
@@ -56,8 +62,8 @@
 
 ## 下一步
 
-1. 由用户在浏览器中刷新页面，针对 READY/RUNNING 工单手工确认待执行开发阶段显示“跳过”按钮。
-2. 后续若需要运行中阶段取消能力，应作为独立事项设计，不复用本次“跳过待执行阶段”逻辑。
+1. 若真实需求澄清再次超时，优先查看当前 work-order 运行目录下的 `logs/requirements.jsonl`、`opencode-diagnostics.jsonl` 与 `/home/edwin/.local/share/opencode/log`。
+2. 后续若需要调整 15 分钟超时策略，应作为独立事项处理。
 
 ## 风险与注意事项
 
@@ -67,6 +73,7 @@
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
 - 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
 - 跳过部署交付后工单状态为 `COMPLETED` 而非 `DEPLOYED`，访问部署应用按钮仍因没有 `deploymentUrl` 保持不可用。
+- 本次不修改 15 分钟超时策略，不新增前端 API；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
 
 ## 本会话修改文件
 
@@ -83,6 +90,10 @@
 - `tests/backend.test.js`：新增跳过阶段、接口、部署跳过、中间阶段跳过和缺失产物失败归属回归测试。
 - `tests/frontend-render.test.js`：新增 StageCard 跳过按钮/已跳过渲染断言和 `SKIPPED` 事件合并断言。
 - `docs/AI研发助手单机版需求文档.md`、`docs/AI研发助手实时日志与对话需求补充.md`：补充跳过规则、状态模型、接口和 SSE 状态说明。
+- `server/lib/runner.js`：为命令执行结果增加 PID、startedAt、lastOutputAt、idleMs、stdout/stderr 字节和行数等诊断元数据。
+- `server/lib/opencode.js`：支持需求澄清阶段启用 `--print-logs --log-level DEBUG`。
+- `server/lib/orchestrator.js`：增强 opencode 阶段日志、写入 `opencode-diagnostics.jsonl`、记录 opencode 本机日志目录并脱敏敏感字段。
+- `tests/backend.test.js`：新增 opencode 超时诊断、空输出提示、stderr 脱敏和需求澄清 debug 参数回归测试。
 
 ## 校验证据
 
@@ -122,6 +133,12 @@
 - [x] `./init.sh`：2026-06-25 16:43 执行通过；`npm test` 56/56，`npm run build` 成功。
 - [x] `./init.sh`：2026-06-25 17:05 执行通过；`npm test` 56/56，`npm run build` 成功。
 - [x] `./init.sh`：2026-06-25 17:26 执行通过；`npm test` 56/56，`npm run build` 成功。
+- [x] 红灯验证：2026-06-25 17:47 执行 `node --test --test-name-pattern='diagnostics|print logs|times out without output|stderr diagnostics' tests/backend.test.js` 失败，确认旧实现缺少 runner diagnostics、阶段日志 PID/空输出/脱敏和 opencode debug 参数。
+- [x] 定向诊断回归：2026-06-25 17:52 执行 `node --test --test-name-pattern='clarification complete|diagnostics|print logs|times out without output|stderr diagnostics' tests/backend.test.js` 通过。
+- [x] 后端回归：2026-06-25 17:52 执行 `node --test tests/backend.test.js` 通过，46 个测试全部通过。
+- [x] `npm test`：2026-06-25 17:55 执行通过，60 个测试全部通过。
+- [x] `npm run build`：2026-06-25 17:55 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-25 17:55 执行通过；`npm test` 60/60，`npm run build` 成功。
 
 ## 构建提示
 

@@ -18,12 +18,14 @@ export function runCommand(command, {
   env = {},
   timeoutMs = 10 * 60 * 1000,
   maxOutputBytes = 1024 * 1024,
+  onStart = null,
   onStdoutLine = null,
   onStderrLine = null
 } = {}) {
   assertCommandArray(command)
 
   return new Promise((resolve) => {
+    const startedAt = new Date().toISOString()
     const child = spawn(command[0], command.slice(1), {
       cwd,
       env: { ...process.env, ...env },
@@ -36,38 +38,69 @@ export function runCommand(command, {
     let stderrPending = ''
     const lineCallbacks = []
     let timedOut = false
+    let settled = false
+    let killTimer = null
+    const diagnostics = {
+      pid: child.pid ?? null,
+      cwd,
+      timeoutMs,
+      startedAt,
+      endedAt: null,
+      lastOutputAt: null,
+      idleMs: null,
+      signal: null,
+      exitSignal: null,
+      stdout: { bytes: 0, lineCount: 0, chunks: 0, lastOutputAt: null },
+      stderr: { bytes: 0, lineCount: 0, chunks: 0, lastOutputAt: null },
+      outputEvents: []
+    }
+    emitRunnerCallback(onStart, cloneDiagnostics(diagnostics), lineCallbacks)
     const timer = setTimeout(() => {
       timedOut = true
+      diagnostics.timedOut = true
+      diagnostics.timeoutAt = new Date().toISOString()
       child.kill('SIGTERM')
-      setTimeout(() => child.kill('SIGKILL'), 2000).unref()
+      killTimer = setTimeout(() => child.kill('SIGKILL'), 2000)
+      killTimer.unref()
     }, timeoutMs)
 
     child.stdout.on('data', (chunk) => {
       const text = chunk.toString()
+      recordOutputDiagnostics(diagnostics, 'stdout', text)
       stdout = trimBufferedOutput(stdout + text, maxOutputBytes)
       stdoutPending = emitCompleteLines(stdoutPending + text, onStdoutLine, lineCallbacks)
     })
     child.stderr.on('data', (chunk) => {
       const text = chunk.toString()
+      recordOutputDiagnostics(diagnostics, 'stderr', text)
       stderr = trimBufferedOutput(stderr + text, maxOutputBytes)
       stderrPending = emitCompleteLines(stderrPending + text, onStderrLine, lineCallbacks)
     })
     child.on('error', (error) => {
+      stderr = `${stderr}\n${error.message}`.trim()
+      settle({ exitCode: 1, signal: null })
+    })
+    child.on('close', (exitCode, signal) => {
+      settle({ exitCode: timedOut ? 124 : exitCode ?? 0, signal })
+    })
+
+    function settle({ exitCode, signal }) {
+      if (settled) return
+      settled = true
       clearTimeout(timer)
+      if (killTimer) clearTimeout(killTimer)
       if (stdoutPending) emitLine(stdoutPending, onStdoutLine, lineCallbacks)
       if (stderrPending) emitLine(stderrPending, onStderrLine, lineCallbacks)
+      diagnostics.endedAt = new Date().toISOString()
+      diagnostics.exitCode = exitCode
+      diagnostics.timedOut = timedOut
+      diagnostics.signal = signal ?? null
+      diagnostics.exitSignal = signal ?? null
+      diagnostics.idleMs = millisecondsBetween(diagnostics.lastOutputAt || diagnostics.startedAt, diagnostics.endedAt)
       Promise.allSettled(lineCallbacks).then(() => {
-        resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${error.message}`.trim(), timedOut })
+        resolve({ exitCode, stdout, stderr, timedOut, diagnostics: cloneDiagnostics(diagnostics) })
       })
-    })
-    child.on('close', (exitCode) => {
-      clearTimeout(timer)
-      if (stdoutPending) emitLine(stdoutPending, onStdoutLine, lineCallbacks)
-      if (stderrPending) emitLine(stderrPending, onStderrLine, lineCallbacks)
-      Promise.allSettled(lineCallbacks).then(() => {
-        resolve({ exitCode: timedOut ? 124 : exitCode ?? 0, stdout, stderr, timedOut })
-      })
-    })
+    }
   })
 }
 
@@ -107,7 +140,15 @@ export function assertCommandArray(command) {
 
 export function summarizeCommandResult(result) {
   if (result.timedOut) {
-    return `执行超时（exitCode=${result.exitCode}），opencode 在限定时间内未完成。`
+    const diagnostics = result.diagnostics || {}
+    const parts = [
+      `exitCode=${result.exitCode}`,
+      `lastOutputAt=${diagnostics.lastOutputAt || '<none>'}`,
+      diagnostics.idleMs != null ? `idleMs=${diagnostics.idleMs}` : '',
+      `stdoutBytes=${diagnostics.stdout?.bytes ?? Buffer.byteLength(result.stdout || '', 'utf8')}`,
+      `stderrBytes=${diagnostics.stderr?.bytes ?? Buffer.byteLength(result.stderr || '', 'utf8')}`
+    ].filter(Boolean)
+    return `执行超时（${parts.join(' ')}），opencode 在限定时间内未完成。`
   }
   const combined = `${result.stderr || ''}\n${result.stdout || ''}`.trim()
   if (!combined) return ''
@@ -215,6 +256,47 @@ function emitCompleteLines(buffer, callback, pending) {
 }
 
 function emitLine(line, callback, pending) {
+  emitRunnerCallback(callback, line, pending)
+}
+
+function emitRunnerCallback(callback, value, pending) {
   if (!callback) return
-  pending.push(Promise.resolve().then(() => callback(line)))
+  pending.push(Promise.resolve().then(() => callback(value)))
+}
+
+function recordOutputDiagnostics(diagnostics, stream, text) {
+  const at = new Date().toISOString()
+  const bytes = Buffer.byteLength(text, 'utf8')
+  const lineCount = countOutputLines(text)
+  const stats = diagnostics[stream]
+  stats.bytes += bytes
+  stats.lineCount += lineCount
+  stats.chunks += 1
+  stats.lastOutputAt = at
+  diagnostics.lastOutputAt = at
+  diagnostics.outputEvents.push({
+    stream,
+    at,
+    lineCount,
+    byteCount: bytes,
+    totalBytes: stats.bytes
+  })
+}
+
+function countOutputLines(text) {
+  const value = String(text || '')
+  if (!value) return 0
+  const nonEmptyLines = value.split(/\r?\n/).filter((line) => line.length > 0).length
+  return nonEmptyLines || (value.endsWith('\n') ? 0 : 1)
+}
+
+function millisecondsBetween(startIso, endIso) {
+  const start = Date.parse(startIso)
+  const end = Date.parse(endIso)
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null
+  return Math.max(0, end - start)
+}
+
+function cloneDiagnostics(diagnostics) {
+  return JSON.parse(JSON.stringify(diagnostics))
 }

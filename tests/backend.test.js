@@ -320,6 +320,29 @@ test('runCommand reports stdout and stderr lines as they arrive', async () => {
   assert.deepEqual(stderrLines, ['err one'])
 })
 
+test('runCommand returns process diagnostics when a command times out without output', async () => {
+  const result = await runCommand([
+    process.execPath,
+    '-e',
+    'setTimeout(() => {}, 2000)'
+  ], {
+    timeoutMs: 50
+  })
+
+  assert.equal(result.exitCode, 124)
+  assert.equal(result.timedOut, true)
+  assert.equal(typeof result.diagnostics.pid, 'number')
+  assert.ok(result.diagnostics.pid > 0)
+  assert.equal(result.diagnostics.cwd, process.cwd())
+  assert.equal(result.diagnostics.timeoutMs, 50)
+  assert.equal(result.diagnostics.stdout.bytes, 0)
+  assert.equal(result.diagnostics.stdout.lineCount, 0)
+  assert.equal(result.diagnostics.stderr.bytes, 0)
+  assert.equal(result.diagnostics.stderr.lineCount, 0)
+  assert.equal(result.diagnostics.lastOutputAt, null)
+  assert.ok(result.diagnostics.idleMs >= 0)
+})
+
 test('validates manifest command arrays and substitutes deployment port', () => {
   const manifest = validateManifest({
     name: 'demo',
@@ -939,6 +962,8 @@ test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does
     assert.equal(clarified.stages[0].status, STAGE_STATUS.COMPLETED)
     assert.equal(clarified.stages[1].status, STAGE_STATUS.PENDING)
     assert.equal(runner.runs.length, 1, 'clarification should not auto-run design/coding stages')
+    assert.ok(runner.runs[0].command.includes('--print-logs'), 'clarification should enable opencode printed logs')
+    assert.equal(runner.runs[0].command[runner.runs[0].command.indexOf('--log-level') + 1], 'DEBUG')
 
     const persisted = await fixture.store.readWorkOrder(state.id)
     assert.equal(persisted.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
@@ -1293,6 +1318,150 @@ test('opencode failure marks the streaming message FAILED and keeps stage logs c
   }
 })
 
+test('opencode stage logging writes startup timeout diagnostics and a local diagnostics JSONL file', async () => {
+  const fixture = await createFixture()
+  try {
+    const startedAt = '2026-06-25T09:00:00.000Z'
+    const runner = new FakeRunner([
+      async (command, options) => {
+        await options.onStart?.({
+          pid: 4321,
+          cwd: options.cwd,
+          timeoutMs: options.timeoutMs,
+          startedAt
+        })
+        return {
+          exitCode: 124,
+          stdout: '',
+          stderr: '',
+          timedOut: true,
+          diagnostics: {
+            pid: 4321,
+            cwd: options.cwd,
+            timeoutMs: options.timeoutMs,
+            startedAt,
+            endedAt: '2026-06-25T09:15:00.000Z',
+            lastOutputAt: null,
+            idleMs: 900000,
+            signal: 'SIGTERM',
+            stdout: { bytes: 0, lineCount: 0 },
+            stderr: { bytes: 0, lineCount: 0 },
+            outputEvents: []
+          }
+        }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ message: '做一个超时诊断应用' }, { startClarification: false })
+
+    const result = await service.runCommandWithStageLogging(state.id, 'requirements', {
+      label: '需求澄清',
+      command: ['opencode', 'run', '--format', 'json', '--dir', state.appDir, 'prompt apiKey="secret-value"'],
+      cwd: state.appDir,
+      timeoutMs: 15 * 60 * 1000,
+      source: 'opencode'
+    })
+
+    assert.equal(result.exitCode, 124)
+    const requirementsLog = await service.getStageLog(state.id, 'requirements')
+    assert.match(requirementsLog.content, /pid=4321/)
+    assert.match(requirementsLog.content, /timeoutMs=900000/)
+    assert.match(requirementsLog.content, /\[prompt omitted\]/)
+    assert.match(requirementsLog.content, /opencode 已启动但未产生可读输出/)
+    assert.match(requirementsLog.content, /timedOut=true/)
+    assert.match(requirementsLog.content, /idleMs=900000/)
+    assert.doesNotMatch(requirementsLog.content, /secret-value/)
+
+    const diagnosticsPath = path.join(fixture.store.getWorkOrderDir(state.id), 'opencode-diagnostics.jsonl')
+    const diagnostics = JSON.parse((await readFile(diagnosticsPath, 'utf8')).trim())
+    assert.equal(diagnostics.stageKey, 'requirements')
+    assert.equal(diagnostics.pid, 4321)
+    assert.equal(diagnostics.cwd, state.appDir)
+    assert.equal(diagnostics.timeoutMs, 15 * 60 * 1000)
+    assert.equal(diagnostics.startedAt, startedAt)
+    assert.equal(diagnostics.lastOutputAt, null)
+    assert.equal(diagnostics.exitCode, 124)
+    assert.equal(diagnostics.timedOut, true)
+    assert.equal(diagnostics.stdoutBytes, 0)
+    assert.equal(diagnostics.stderrBytes, 0)
+    assert.match(diagnostics.opencodeLogDir, /opencode\/log$/)
+    assert.match(diagnostics.command, /\[prompt omitted\]/)
+    assert.doesNotMatch(JSON.stringify(diagnostics), /secret-value/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('opencode stderr diagnostics are logged with sensitive fields redacted', async () => {
+  const fixture = await createFixture()
+  try {
+    const stderrLines = [
+      'DEBUG authorization: Bearer secret-token',
+      'ERROR apiKey="secret-value"'
+    ]
+    const runner = new FakeRunner([
+      async (_command, options) => {
+        await options.onStart?.({
+          pid: 4322,
+          cwd: options.cwd,
+          timeoutMs: options.timeoutMs,
+          startedAt: '2026-06-25T09:00:00.000Z'
+        })
+        for (const line of stderrLines) {
+          await options.onStderrLine?.(line)
+        }
+        return {
+          exitCode: 0,
+          stdout: '',
+          stderr: stderrLines.join('\n'),
+          timedOut: false,
+          diagnostics: {
+            pid: 4322,
+            cwd: options.cwd,
+            timeoutMs: options.timeoutMs,
+            startedAt: '2026-06-25T09:00:00.000Z',
+            endedAt: '2026-06-25T09:00:01.000Z',
+            lastOutputAt: '2026-06-25T09:00:01.000Z',
+            idleMs: 0,
+            signal: null,
+            stdout: { bytes: 0, lineCount: 0 },
+            stderr: { bytes: Buffer.byteLength(stderrLines.join('\n')), lineCount: 2 },
+            outputEvents: []
+          }
+        }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ message: '做一个脱敏日志应用' }, { startClarification: false })
+
+    await service.runCommandWithStageLogging(state.id, 'requirements', {
+      label: '需求澄清',
+      command: ['opencode', 'run', '--format', 'json', '--dir', state.appDir, 'prompt'],
+      cwd: state.appDir,
+      timeoutMs: 15 * 60 * 1000,
+      source: 'opencode'
+    })
+
+    const requirementsLog = await service.getStageLog(state.id, 'requirements')
+    assert.match(requirementsLog.content, /DEBUG authorization: \[REDACTED\]/)
+    assert.match(requirementsLog.content, /ERROR apiKey="\[REDACTED\]"/)
+    assert.doesNotMatch(requirementsLog.content, /secret-token/)
+    assert.doesNotMatch(requirementsLog.content, /secret-value/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('install/build/test commands only write to stage logs and never create opencode-stream messages', async () => {
   const fixture = await createFixture()
   try {
@@ -1358,6 +1527,15 @@ test('buildOpencodeCommand adds --thinking flag when thinking option is true', (
 
   const withThinking = buildOpencodeCommand('prompt', '/tmp/app', { thinking: true })
   assert.ok(withThinking.includes('--thinking'), 'should include --thinking when thinking is true')
+})
+
+test('buildOpencodeCommand adds print logs and DEBUG log level when diagnostics are enabled', () => {
+  const command = buildOpencodeCommand('prompt', '/tmp/app', { diagnostics: true })
+
+  assert.ok(command.includes('--print-logs'), 'should ask opencode to print local logs to stderr')
+  assert.ok(command.includes('--log-level'), 'should set opencode log level')
+  assert.equal(command[command.indexOf('--log-level') + 1], 'DEBUG')
+  assert.equal(command.at(-1), 'prompt')
 })
 
 test('coding prompt requires Python dependencies to use a project virtual environment', () => {
