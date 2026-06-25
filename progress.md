@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 17:55（Asia/Shanghai）
+- 最后更新：2026-06-25 18:07（Asia/Shanghai）
 - 当前分支：`0630`
 - 当前事项：无。
-- 会话目标：已完成 `product-012` opencode 超时诊断日志。
+- 会话目标：已完成 `product-013` 修复需求澄清日志点击时消息文件并发写入崩溃。
 
 ## 已完成
 
@@ -55,6 +55,10 @@
   - 阶段日志记录 opencode 本机日志目录、启动信息、空输出提示、超时活动摘要，并保持 prompt 隐藏为 `[prompt omitted]`。
   - opencode 执行会追加本地 `opencode-diagnostics.jsonl`，其中包含 stageKey、pid、cwd、timeoutMs、startedAt、lastOutputAt、exitCode、timedOut、输出字节数和 opencode log dir。
   - 阶段日志、opencode-stream 可见内容和本地诊断 JSONL 对 `apiKey`、`token`、`password`、`authorization` 等明显敏感字段做基础脱敏。
+- [x] 修复需求澄清日志点击时消息文件并发写入崩溃：
+  - 复现固定 `messages.json.tmp` 临时文件在并发写入下触发 `ENOENT`。
+  - 消息文件写入已按工单串行化，避免流式消息增量和完整消息保存并发破坏同一文件。
+  - `messages.json` 与 `state.json` 原子写入均改为唯一临时文件名后 rename，消除固定 `.tmp` 文件名竞争。
 
 ## 进行中
 
@@ -62,8 +66,8 @@
 
 ## 下一步
 
-1. 若真实需求澄清再次超时，优先查看当前 work-order 运行目录下的 `logs/requirements.jsonl`、`opencode-diagnostics.jsonl` 与 `/home/edwin/.local/share/opencode/log`。
-2. 后续若需要调整 15 分钟超时策略，应作为独立事项处理。
+1. 用户在浏览器中重新触发需求澄清并打开阶段日志，确认不会再出现 `messages.json.tmp` rename ENOENT。
+2. 如仍有运行中工单沿用旧进程，请重启后端服务加载本次修复。
 
 ## 风险与注意事项
 
@@ -94,6 +98,8 @@
 - `server/lib/opencode.js`：支持需求澄清阶段启用 `--print-logs --log-level DEBUG`。
 - `server/lib/orchestrator.js`：增强 opencode 阶段日志、写入 `opencode-diagnostics.jsonl`、记录 opencode 本机日志目录并脱敏敏感字段。
 - `tests/backend.test.js`：新增 opencode 超时诊断、空输出提示、stderr 脱敏和需求澄清 debug 参数回归测试。
+- `server/lib/store.js`：修复 `messages.json.tmp` / `state.json.tmp` 固定临时文件名并发 rename 竞争，消息写入按工单串行化。
+- `tests/backend.test.js`：新增并发 `messages.json` 写入回归测试。
 
 ## 校验证据
 
@@ -139,6 +145,13 @@
 - [x] `npm test`：2026-06-25 17:55 执行通过，60 个测试全部通过。
 - [x] `npm run build`：2026-06-25 17:55 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-25 17:55 执行通过；`npm test` 60/60，`npm run build` 成功。
+- [x] 基线校验：2026-06-25 18:06 执行 `./init.sh` 通过；`npm test` 60/60，`npm run build` 成功。
+- [x] 红灯验证：2026-06-25 18:06 执行 `node --test --test-name-pattern='concurrent message file writes' tests/backend.test.js` 失败，复现并发写 `messages.json.tmp` 触发多个 `ENOENT`。
+- [x] 定向回归：2026-06-25 18:06 执行 `node --test --test-name-pattern='concurrent message file writes' tests/backend.test.js` 通过。
+- [x] 后端回归：2026-06-25 18:06 执行 `node --test tests/backend.test.js` 通过，47 个测试全部通过。
+- [x] `npm test`：2026-06-25 18:07 执行通过，61 个测试全部通过。
+- [x] `npm run build`：2026-06-25 18:07 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-25 18:07 执行通过；`npm test` 61/61，`npm run build` 成功。
 
 ## 构建提示
 

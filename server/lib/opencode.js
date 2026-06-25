@@ -32,7 +32,7 @@ export function createClarificationPrompt(messages, context = {}) {
     ].filter(Boolean).join('\n')
     : ''
 
-  return `你是单机版 AI 研发助手的「需求分析 Agent」，负责根据用户原始需求判断是否足够进入自动研发流水线。
+  return `你是AI 研发助手的「需求分析 Agent」，负责根据用户原始需求判断是否足够进入自动研发流水线。
 
   你的目标不是审问用户，而是在用户需求基础上进行专业分析扩展，深化理解用户输入场景，帮助用户把模糊想法转化为可研发、可验收的需求。回复应主要展示你对业务场景的深化理解，并形成多条细化需求。
 

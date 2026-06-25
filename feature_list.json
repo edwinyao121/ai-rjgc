@@ -189,6 +189,21 @@
         "诊断日志和阶段日志不记录完整 prompt、环境变量、配置输出或明显敏感字段原文。"
       ],
       "evidence": "2026-06-25 17:55：已为需求澄清 opencode 命令启用 --print-logs --log-level DEBUG；runCommand 返回 PID、startedAt、lastOutputAt、idleMs、stdout/stderr 字节与行数等诊断元数据；阶段日志记录 opencode log dir、启动信息、空输出提示、超时活动摘要并脱敏敏感字段；opencode 执行写入 opencode-diagnostics.jsonl。定向诊断测试、node --test tests/backend.test.js（46/46）、npm test（60/60）、npm run build 与 ./init.sh（60/60 + build）均通过。"
+    },
+    {
+      "id": "product-013",
+      "name": "修复需求澄清日志点击时消息文件并发写入崩溃",
+      "description": "修复需求澄清进行中点击阶段日志时，后台消息流式写入 messages.json 与读取/保存并发导致 messages.json.tmp rename ENOENT 的问题。",
+      "dependencies": ["product-012"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "同一工单并发写入 messages.json 时不再共用固定 messages.json.tmp 临时文件导致 ENOENT。",
+        "消息增量追加和完整消息写入按工单串行化，避免需求澄清流式输出与用户打开日志时相互破坏消息文件。",
+        "state.json 原子写入不再共用固定 state.json.tmp，消除同类 rename 竞争风险。",
+        "新增自动化回归测试复现并发消息写入竞争，修复后通过。",
+        "npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 18:07：已复现并发写 messages.json 使用固定 messages.json.tmp 导致 rename ENOENT；修复为按工单串行化消息写入，并使用唯一临时文件名原子替换 messages.json 与 state.json。新增并发 messages.json 写入回归测试；node --test tests/backend.test.js（47/47）、npm test（61/61）、npm run build 与 ./init.sh（61/61 + build）均通过。"
     }
   ]
 }

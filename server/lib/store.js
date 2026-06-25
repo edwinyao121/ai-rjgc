@@ -46,6 +46,7 @@ export class WorkOrderStore {
     this.eventSequences = new Map()
     this.stageLogQueues = new Map()
     this.stageLogSequences = new Map()
+    this.messageQueues = new Map()
   }
 
   async init() {
@@ -175,9 +176,7 @@ export class WorkOrderStore {
       await this.writeMessages(state.id, state.messages)
     }
     const statePath = this.getStatePath(state.id)
-    const tempPath = `${statePath}.tmp`
-    await fs.writeFile(tempPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
-    await fs.rename(tempPath, statePath)
+    await writeFileAtomically(statePath, `${JSON.stringify(state, null, 2)}\n`)
     return state
   }
 
@@ -278,43 +277,49 @@ export class WorkOrderStore {
 
   async writeMessages(workOrderId, messages) {
     assertWorkOrderId(workOrderId)
-    await fs.mkdir(this.getWorkOrderDir(workOrderId), { recursive: true })
-    const normalized = messages.map((message) => normalizeMessage(message))
-    const messagesPath = this.getMessagesPath(workOrderId)
-    const tempPath = `${messagesPath}.tmp`
-    await fs.writeFile(tempPath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8')
-    await fs.rename(tempPath, messagesPath)
-    return normalized
+    return this.enqueueMessage(workOrderId, () => this.writeMessagesDirect(workOrderId, messages))
   }
 
   async appendMessage(workOrderId, message) {
-    const messages = (await this.readMessages(workOrderId)) || []
-    const next = normalizeMessage(message)
-    messages.push(next)
-    await this.writeMessages(workOrderId, messages)
-    return next
+    assertWorkOrderId(workOrderId)
+    return this.enqueueMessage(workOrderId, async () => {
+      const messages = (await this.readMessages(workOrderId)) || []
+      const next = normalizeMessage(message)
+      messages.push(next)
+      await this.writeMessagesDirect(workOrderId, messages)
+      return next
+    })
   }
 
   async appendMessageDelta(workOrderId, messageId, delta, status = null, metadataPatch = null) {
     assertWorkOrderId(workOrderId)
-    const messages = (await this.readMessages(workOrderId)) || []
-    const index = messages.findIndex((message) => message.id === messageId)
-    if (index === -1) return null
-    const current = normalizeMessage(messages[index])
-    const nextContent = `${current.content ?? ''}${delta || ''}`
-    const nextStatus = status || current.status || 'STREAMING'
-    const nextMetadata = mergeMetadata(current.metadata, metadataPatch)
-    const updated = {
-      ...current,
-      content: nextContent,
-      text: nextContent,
-      status: nextStatus,
-      metadata: nextMetadata,
-      updatedAt: new Date().toISOString()
-    }
-    messages[index] = updated
-    await this.writeMessages(workOrderId, messages)
-    return updated
+    return this.enqueueMessage(workOrderId, async () => {
+      const messages = (await this.readMessages(workOrderId)) || []
+      const index = messages.findIndex((message) => message.id === messageId)
+      if (index === -1) return null
+      const current = normalizeMessage(messages[index])
+      const nextContent = `${current.content ?? ''}${delta || ''}`
+      const nextStatus = status || current.status || 'STREAMING'
+      const nextMetadata = mergeMetadata(current.metadata, metadataPatch)
+      const updated = {
+        ...current,
+        content: nextContent,
+        text: nextContent,
+        status: nextStatus,
+        metadata: nextMetadata,
+        updatedAt: new Date().toISOString()
+      }
+      messages[index] = updated
+      await this.writeMessagesDirect(workOrderId, messages)
+      return updated
+    })
+  }
+
+  async writeMessagesDirect(workOrderId, messages) {
+    await fs.mkdir(this.getWorkOrderDir(workOrderId), { recursive: true })
+    const normalized = messages.map((message) => normalizeMessage(message))
+    await writeFileAtomically(this.getMessagesPath(workOrderId), `${JSON.stringify(normalized, null, 2)}\n`)
+    return normalized
   }
 
   async appendStageLogEntry(workOrderId, stageKey, entry) {
@@ -388,6 +393,13 @@ export class WorkOrderStore {
     const previous = this.stageLogQueues.get(queueKey) || Promise.resolve()
     const next = previous.then(task, task)
     this.stageLogQueues.set(queueKey, next.catch(() => {}))
+    return next
+  }
+
+  enqueueMessage(workOrderId, task) {
+    const previous = this.messageQueues.get(workOrderId) || Promise.resolve()
+    const next = previous.then(task, task)
+    this.messageQueues.set(workOrderId, next.catch(() => {}))
     return next
   }
 }
@@ -496,4 +508,16 @@ function senderToRole(sender) {
 function roleToSender(role) {
   if (role === 'assistant') return 'ai'
   return role
+}
+
+async function writeFileAtomically(filePath, content) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true })
+  const tempPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`
+  try {
+    await fs.writeFile(tempPath, content, 'utf8')
+    await fs.rename(tempPath, filePath)
+  } catch (error) {
+    await fs.rm(tempPath, { force: true }).catch(() => {})
+    throw error
+  }
 }

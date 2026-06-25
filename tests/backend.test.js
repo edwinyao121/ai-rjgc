@@ -264,6 +264,35 @@ test('migrates legacy state.messages into messages.json with normalized roles', 
   }
 })
 
+test('concurrent message file writes do not race on a shared temp file', async () => {
+  const fixture = await createFixture()
+  try {
+    const state = await fixture.store.createWorkOrder({
+      message: '并发消息写入',
+      now: new Date('2026-06-24T08:00:00+08:00')
+    })
+
+    const writes = Array.from({ length: 80 }, (_, index) => fixture.store.writeMessages(state.id, [
+      {
+        id: `msg-${index}`,
+        role: 'assistant',
+        content: `第 ${index} 次写入 ${'x'.repeat(4096)}`,
+        phase: 'clarification',
+        createdAt: new Date('2026-06-24T08:00:00.000Z').toISOString()
+      }
+    ]))
+    const results = await Promise.allSettled(writes)
+    const rejected = results.filter((result) => result.status === 'rejected')
+
+    assert.deepEqual(rejected.map((result) => result.reason?.code), [])
+    const persisted = await fixture.store.readMessages(state.id)
+    assert.equal(persisted.length, 1)
+    assert.match(persisted[0].content, /第 \d+ 次写入/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('appends and reads structured stage log entries as JSONL', async () => {
   const fixture = await createFixture()
   try {
