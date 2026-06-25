@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 04:12（Asia/Shanghai）
+- 最后更新：2026-06-25 09:26（Asia/Shanghai）
 - 当前分支：`0630`
 - 当前事项：无。
-- 会话目标：实现测试质检失败后的自动返修循环、阶段交接文档与需求展示精简。
+- 会话目标：将看板里的应用访问地址改为前端访问地址。
 
 ## 已完成
 
@@ -19,6 +19,7 @@
 - [x] 实现测试质检自动返修：`install/build/test` 失败后写入 `repair-context/testing-failure-attempt-N.md`，调用“智能编码/修复”，最多返修 3 次后才失败。
 - [x] 增加阶段交接文档：需求澄清后生成 app 内 `handoff.md`，后续阶段提示优先阅读该交接文档。
 - [x] 精简需求展示：内部仍保留 `requirements.md` 与需求结构数据，但前端和助手不再单独展示“需求规格说明书”。
+- [x] 修正看板应用访问地址：部署探活继续使用 `healthUrl`，看板和访问按钮使用 `appUrl`/前端根地址；历史 `/api/...` 地址在前端访问层自动规范为同源根地址。
 
 ## 进行中
 
@@ -26,29 +27,24 @@
 
 ## 下一步
 
-1. 若需要让既有历史失败工单重新进入流水线，需再设计“失败工单恢复/重跑”入口；本次只改变后续新运行的流水线行为。
+1. 由用户在看板点击已部署应用确认打开的是前端页面，不再是 API JSON/健康检查地址。
 2. 由用户或产品负责人确认下一项具体工单。
 
 ## 风险与注意事项
 
-- 工作区中 `dist/index.html` 和 `.DS_Store` 为既有未提交变更，不属于本次修复范围。
-- `WO-20260625-001` 的历史状态仍为 `FAILED`；本次新增的是后续流水线的自动返修逻辑，没有直接篡改历史状态。
-- 自动返修目前覆盖测试质检阶段；系统设计、智能编码、部署交付的失败仍保持原有失败处理。
+- 工作区中 `docs/requirements/WO-20260625-001-requirements.md`、`node_modules/.package-lock.json`、`node_modules/.vite/deps/_metadata.json` 存在既有未提交变更，不属于本次地址修复范围。
+- `vite.config.js` 当前也有未提交的 watch ignored 配置变更；该文件不是本次地址修复的手工修改范围，未覆盖或回退。
 
 ## 本会话修改文件
 
-- `AGENTS.md`：中文化的启动流程、边界、验证和收尾要求。
-- `feature_list.json`：功能状态与验收证据结构。
-- `progress.md`：当前进度与风险记录。
-- `session-handoff.md`：跨会话交接模板。
-- `init.sh`：统一校验入口。
-- `server/lib/opencode.js`：加入 Python 虚拟环境与子项目命令约束。
-- `server/lib/opencode.js`：加入 handoff 优先阅读规则与测试返修提示。
-- `server/lib/orchestrator.js`：新增测试质检自动返修循环、返修上下文文件、handoff 写入和启动提示。
-- `src/pages/KanbanBoard.jsx`：隐藏需求规格说明书单独展示，并显示测试质检返修状态。
-- `tests/backend.test.js`：增加生成约束、自动返修、返修上限、handoff 与需求展示隐藏回归测试。
-- `tests/frontend-render.test.js`：增加需求卡片隐藏与测试返修状态展示回归测试。
-- `.runtime/work-orders/WO-20260625-001/app/`：修复忽略运行态工单的 manifest、安装/测试/启动脚本与 pytest 配置。
+- `server/lib/manifest.js`：支持可选 `appUrl`，并提供从 `healthUrl` 推导前端根地址的工具。
+- `server/lib/orchestrator.js`：部署阶段用 `healthUrl` 探活，用 `appUrl`/推导根地址写入 `deploymentUrl`、阶段输出和 SSE 事件。
+- `server/lib/store.js`：新增 `deploymentHealthUrl` 初始字段，保留探活地址用于排障。
+- `server/lib/opencode.js`：提示智能编码生成 manifest 时区分 `healthUrl` 和 `appUrl`。
+- `src/pages/KanbanBoard.jsx`：看板访问按钮和访问地址成果物会将历史 `/api/...` 地址规范为前端根地址。
+- `tests/backend.test.js`：增加部署 URL 分离、探活地址保留和 prompt 约束回归测试。
+- `tests/frontend-render.test.js`：增加历史 API 地址规范化和 `deploymentHealthUrl` 合并回归测试。
+- `feature_list.json`、`progress.md`：记录本次事项和校验证据。
 
 ## 校验证据
 
@@ -61,6 +57,8 @@
 - [x] 定向前端回归：2026-06-25 执行 `node --test --test-name-pattern='RequirementsItemsCard|StageCard shows' tests/frontend-render.test.js` 通过。
 - [x] `npm test`：2026-06-25 04:12 前执行通过，41 个测试全部通过。
 - [x] `./init.sh`：2026-06-25 04:12 后执行通过；`npm test` 41/41，`npm run build` 成功。
+- [x] 定向回归：2026-06-25 09:26 执行 `node --test --test-name-pattern='complete mock pipeline|subproject directories|applyGranularEventToOrder' tests/backend.test.js tests/frontend-render.test.js` 通过。
+- [x] `./init.sh`：2026-06-25 09:26 执行通过；`npm test` 41/41，`npm run build` 成功。
 
 ## 构建提示
 

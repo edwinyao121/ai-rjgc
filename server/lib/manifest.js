@@ -20,7 +20,8 @@ export function validateManifest(manifest) {
     build: requireCommand(manifest.build, 'build'),
     test: requireCommand(manifest.test, 'test'),
     start: requireCommand(manifest.start, 'start'),
-    healthUrl: requireString(manifest.healthUrl, 'healthUrl')
+    healthUrl: requireString(manifest.healthUrl, 'healthUrl'),
+    appUrl: manifest.appUrl == null ? null : requireString(manifest.appUrl, 'appUrl')
   }
   return normalized
 }
@@ -35,6 +36,14 @@ export function substitutePortInCommand(command, port) {
 
 export function substitutePortInUrl(url, port) {
   return substitutePort(url, port)
+}
+
+export function inferAppUrlFromHealthUrl(healthUrl) {
+  try {
+    return new URL(healthUrl).origin
+  } catch {
+    return healthUrl
+  }
 }
 
 function requireString(value, field) {

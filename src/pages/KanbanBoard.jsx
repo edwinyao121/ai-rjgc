@@ -683,12 +683,25 @@ export function applyGranularEventToOrder(order, event) {
       ...order,
       status: event.status || order.status,
       deploymentUrl: event.deploymentUrl ?? order.deploymentUrl,
+      deploymentHealthUrl: event.deploymentHealthUrl ?? order.deploymentHealthUrl,
       progress: event.status === 'DEPLOYED' ? 100 : order.progress,
       lastUpdate: '刚刚'
     }
   }
 
   return order
+}
+
+export function toAppAccessUrl(url) {
+  const trimmed = String(url || '').trim()
+  if (!trimmed) return trimmed
+
+  try {
+    const parsed = new URL(trimmed)
+    return /^\/api(?:\/|$)/.test(parsed.pathname) ? parsed.origin : trimmed
+  } catch {
+    return trimmed
+  }
 }
 
 // Extract and group deliverables (产出文档, 制品, 访问地址) from order stages
@@ -700,7 +713,7 @@ const getDeliverables = (order) => {
   if (!order) return { docs, builds, urls, reqDocs: [], userDocs: [], sourceCode: [], installPacks: [] }
 
   if (order.deploymentUrl) {
-    urls.push({ label: '部署地址', value: order.deploymentUrl, isLink: true })
+    urls.push({ label: '部署地址', value: toAppAccessUrl(order.deploymentUrl), isLink: true })
   }
 
   (order.stages || []).forEach(stage => {
@@ -715,7 +728,10 @@ const getDeliverables = (order) => {
       } 
       // If it is a URL link
       else if (output.isLink || (output.value && output.value.startsWith('http')) || output.label === '访问地址' || output.label === '预发地址') {
-        urls.push({ ...output, stageName: stage.name })
+        const value = output.label === '访问地址' || output.label === '部署地址'
+          ? toAppAccessUrl(output.value)
+          : output.value
+        urls.push({ ...output, value, stageName: stage.name })
       } 
       // Else, treat as document
       else {
@@ -2288,8 +2304,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
 
   const handleGoToApp = (order) => {
     if (isRuntimeOrder(order)) {
-      if (order.deploymentUrl) {
-        window.open(order.deploymentUrl, '_blank', 'noopener,noreferrer')
+      const appAccessUrl = toAppAccessUrl(order.deploymentUrl)
+      if (appAccessUrl) {
+        window.open(appAccessUrl, '_blank', 'noopener,noreferrer')
       }
       return
     }
@@ -2620,8 +2637,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                           <button
                             type="button"
                             onClick={() => {
-                              if (isRuntimeOrder(selectedOrder) && selectedOrder.deploymentUrl) {
-                                window.open(selectedOrder.deploymentUrl, '_blank', 'noopener,noreferrer')
+                              const appAccessUrl = toAppAccessUrl(selectedOrder.deploymentUrl)
+                              if (isRuntimeOrder(selectedOrder) && appAccessUrl) {
+                                window.open(appAccessUrl, '_blank', 'noopener,noreferrer')
                               } else {
                                 window.open(`${window.location.origin}${window.location.pathname}?simulator=${selectedOrder.id}`, '_blank', 'noopener,noreferrer')
                               }

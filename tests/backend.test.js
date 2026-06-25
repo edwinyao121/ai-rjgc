@@ -8,7 +8,7 @@ import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
 import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt, createStagePrompt } from '../server/lib/opencode.js'
-import { substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
+import { inferAppUrlFromHealthUrl, substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
 import { STAGE_STATUS, WORK_ORDER_STATUS, createPipelineStages, markStageCompleted, markStageRunning } from '../server/lib/stages.js'
@@ -309,11 +309,14 @@ test('validates manifest command arrays and substitutes deployment port', () => 
     build: ['npm', 'run', 'build'],
     test: ['npm', 'test'],
     start: ['npm', 'run', 'preview', '--', '--port', '${PORT}'],
-    healthUrl: 'http://127.0.0.1:${PORT}'
+    healthUrl: 'http://127.0.0.1:${PORT}/api/health',
+    appUrl: 'http://127.0.0.1:${PORT}'
   })
 
   assert.deepEqual(substitutePortInCommand(manifest.start, 4101), ['npm', 'run', 'preview', '--', '--port', '4101'])
-  assert.equal(substitutePortInUrl(manifest.healthUrl, 4101), 'http://127.0.0.1:4101')
+  assert.equal(substitutePortInUrl(manifest.healthUrl, 4101), 'http://127.0.0.1:4101/api/health')
+  assert.equal(substitutePortInUrl(manifest.appUrl, 4101), 'http://127.0.0.1:4101')
+  assert.equal(inferAppUrlFromHealthUrl('http://127.0.0.1:4101/api/health'), 'http://127.0.0.1:4101')
   assert.throws(() => validateManifest({ ...manifest, test: 'npm test' }), /command array/)
 })
 
@@ -335,7 +338,7 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
           build: ['node', '--version'],
           test: ['node', '--version'],
           start: ['node', 'server.js', '--port', '${PORT}'],
-          healthUrl: 'http://127.0.0.1:${PORT}'
+          healthUrl: 'http://127.0.0.1:${PORT}/api/health'
         }), 'utf8')
         return ok('coding ok')
       },
@@ -345,13 +348,17 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
       async () => ok('test ok'),
       async () => ok('deployment prep ok')
     ])
+    const healthChecks = []
     const service = new WorkOrderService({
       store: fixture.store,
       eventBus: fixture.eventBus,
       runner,
       autoStart: false,
       allocatePort: async () => 4101,
-      healthCheck: async () => true
+      healthCheck: async (url) => {
+        healthChecks.push(url)
+        return true
+      }
     })
 
     const state = await service.createWorkOrder({ message: '做一个测试应用' }, { startClarification: false })
@@ -360,13 +367,22 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
 
     assert.equal(completed.status, WORK_ORDER_STATUS.DEPLOYED)
     assert.equal(completed.deploymentUrl, 'http://127.0.0.1:4101')
+    assert.equal(completed.deploymentHealthUrl, 'http://127.0.0.1:4101/api/health')
     assert.equal(completed.stages.every((stage) => stage.status === STAGE_STATUS.COMPLETED), true)
     assert.deepEqual(runner.starts[0].command, ['node', 'server.js', '--port', '4101'])
+    assert.deepEqual(healthChecks, ['http://127.0.0.1:4101/api/health'])
 
     const events = await fixture.store.readEvents(state.id)
     assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.text === 'install ok'))
+    assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.text === 'appUrl: http://127.0.0.1:4101'))
+    assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.text === 'healthUrl: http://127.0.0.1:4101/api/health'))
     assert.ok(events.some((event) => event.type === 'stage.log.append' && event.entry?.source === 'deploy'))
-    assert.ok(events.some((event) => event.type === 'deployment.updated' && event.status === WORK_ORDER_STATUS.DEPLOYED))
+    assert.ok(events.some((event) => (
+      event.type === 'deployment.updated'
+      && event.status === WORK_ORDER_STATUS.DEPLOYED
+      && event.deploymentUrl === 'http://127.0.0.1:4101'
+      && event.deploymentHealthUrl === 'http://127.0.0.1:4101/api/health'
+    )))
 
     const testingLog = await service.getStageLog(state.id, 'testing')
     assert.match(testingLog.content, /install ok/)
@@ -939,6 +955,8 @@ test('coding prompt requires manifest commands to target subproject directories 
 
   assert.match(prompt, /子项目目录/)
   assert.match(prompt, /npm.*--prefix/)
+  assert.match(prompt, /healthUrl.*appUrl/s)
+  assert.match(prompt, /用户应访问的前端地址/)
 })
 
 test('stage prompt requires handoff.md as first reading item before full context fallback', () => {

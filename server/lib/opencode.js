@@ -90,7 +90,7 @@ ${requirementsMarkdown}
 - factory.manifest.json 中 install/build/test/start 必须是命令参数数组，不能是 shell 字符串。
 - manifest 命令始终从 app 根目录执行；若源码位于子项目目录，命令必须显式指定子项目目录，例如使用 npm --prefix frontend run build，而不能假设当前目录中存在 package.json。
 - 若项目包含 Python 依赖，必须使用项目内虚拟环境（如 .venv）安装和运行依赖。不得直接用系统 pip 安装，也不得使用 --break-system-packages；请提供创建 .venv 并调用 .venv/bin/pip 的项目脚本，测试和启动命令也必须使用该虚拟环境中的 Python 工具。
-- start 命令中端口使用 "\${PORT}" 占位符，健康检查使用 healthUrl。
+- start 命令中端口使用 "\${PORT}" 占位符，健康检查使用 healthUrl。若 healthUrl 指向 API 或健康检查路径，请同时提供 appUrl 作为用户应访问的前端地址。
 - 不要依赖远程部署服务。`
 
   if (stageKey === 'design') {
@@ -111,7 +111,8 @@ ${requirementsMarkdown}
   "build": ["npm", "run", "build"],
   "test": ["npm", "test"],
   "start": ["npm", "run", "preview", "--", "--host", "127.0.0.1", "--port", "\${PORT}"],
-  "healthUrl": "http://127.0.0.1:\${PORT}"
+  "healthUrl": "http://127.0.0.1:\${PORT}",
+  "appUrl": "http://127.0.0.1:\${PORT}"
 }`
   }
 

@@ -463,7 +463,10 @@ test('applyGranularEventToOrder merges SSE deltas into the same message without 
   })
 
   try {
-    const { applyGranularEventToOrder } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const { applyGranularEventToOrder, toAppAccessUrl } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+
+    assert.equal(toAppAccessUrl('http://127.0.0.1:4101/api/v1/tides/ports'), 'http://127.0.0.1:4101')
+    assert.equal(toAppAccessUrl('http://127.0.0.1:4101/dashboard'), 'http://127.0.0.1:4101/dashboard')
 
     const baseOrder = {
       id: 'WO-20260624-002',
@@ -550,6 +553,17 @@ test('applyGranularEventToOrder merges SSE deltas into the same message without 
     })
     assert.equal(statusChanged.status, 'READY_FOR_DEVELOPMENT')
     assert.equal(statusChanged.progress, 25)
+
+    const deployed = applyGranularEventToOrder(baseOrder, {
+      type: 'deployment.updated',
+      workOrderId: baseOrder.id,
+      status: 'DEPLOYED',
+      deploymentUrl: 'http://127.0.0.1:4101',
+      deploymentHealthUrl: 'http://127.0.0.1:4101/api/health'
+    })
+    assert.equal(deployed.status, 'DEPLOYED')
+    assert.equal(deployed.deploymentUrl, 'http://127.0.0.1:4101')
+    assert.equal(deployed.deploymentHealthUrl, 'http://127.0.0.1:4101/api/health')
   } finally {
     await server.close()
   }

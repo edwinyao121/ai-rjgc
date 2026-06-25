@@ -130,6 +130,7 @@ export class WorkOrderStore {
       lastUpdate: '刚刚',
       appDir,
       deploymentUrl: null,
+      deploymentHealthUrl: null,
       deploymentPort: null,
       requirementsPath: null,
       requirementsItems: null,

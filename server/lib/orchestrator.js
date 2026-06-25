@@ -13,7 +13,7 @@ import {
   refreshStageTiming
 } from './stages.js'
 import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, createTestingRepairPrompt, parseClarificationResponse } from './opencode.js'
-import { MANIFEST_FILE, readManifest, substitutePortInCommand, substitutePortInUrl } from './manifest.js'
+import { MANIFEST_FILE, inferAppUrlFromHealthUrl, readManifest, substitutePortInCommand, substitutePortInUrl } from './manifest.js'
 import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth } from './runner.js'
 
 const HANDOFF_FILE = 'handoff.md'
@@ -569,21 +569,28 @@ export class WorkOrderService {
     const port = await this.allocatePort(4101)
     const startCommand = substitutePortInCommand(manifest.start, port)
     const healthUrl = substitutePortInUrl(manifest.healthUrl, port)
+    const appUrl = manifest.appUrl ? substitutePortInUrl(manifest.appUrl, port) : inferAppUrlFromHealthUrl(healthUrl)
 
     markStageRunning(stage, new Date(), {
       type: 'ai',
       label: '本机部署',
-      value: `正在启动 ${healthUrl}`
+      value: `正在启动 ${appUrl}`
     })
     state.currentStage = 5
     state.deploymentPort = port
+    state.deploymentHealthUrl = healthUrl
     state.progress = getStageProgress(state.stages)
     await this.store.saveWorkOrder(state)
-    await this.emitStageStatus(id, state, stage, `正在启动 ${healthUrl}`)
+    await this.emitStageStatus(id, state, stage, `正在启动 ${appUrl}`)
     await this.appendStageLogEntry(id, 'deployment', {
       level: 'INFO',
       source: 'deploy',
       text: `本机部署: ${formatCommand(startCommand)}`
+    })
+    await this.appendStageLogEntry(id, 'deployment', {
+      level: 'INFO',
+      source: 'deploy',
+      text: `appUrl: ${appUrl}`
     })
     await this.appendStageLogEntry(id, 'deployment', {
       level: 'INFO',
@@ -626,32 +633,35 @@ export class WorkOrderService {
     markStageCompleted(getStageByKey(state.stages, 'deployment'), new Date(), {
       type: 'ai',
       label: '本机部署',
-      value: `部署成功：${healthUrl}`
+      value: `部署成功：${appUrl}`
     }, [
       {
         label: '访问地址',
-        value: healthUrl,
+        value: appUrl,
         isLink: true
       }
     ])
     getStageByKey(state.stages, 'deployment').logPath = logPath
-    getStageByKey(state.stages, 'deployment').logSummary = `部署成功：${healthUrl}`
-    state.deploymentUrl = healthUrl
+    getStageByKey(state.stages, 'deployment').logSummary = `部署成功：${appUrl}`
+    state.deploymentUrl = appUrl
+    state.deploymentHealthUrl = healthUrl
     state.progress = 100
     await this.store.saveWorkOrder(state)
-    await this.emitStageStatus(id, state, getStageByKey(state.stages, 'deployment'), `部署成功：${healthUrl}`)
+    await this.emitStageStatus(id, state, getStageByKey(state.stages, 'deployment'), `部署成功：${appUrl}`)
     await this.appendVisibleMessage(state, {
-      content: `部署交付已完成：${healthUrl}`,
+      content: `部署交付已完成：${appUrl}`,
       phase: 'execution',
       stageId: 'deployment'
     })
     state = await this.requireWorkOrder(id)
-    state.deploymentUrl = healthUrl
+    state.deploymentUrl = appUrl
+    state.deploymentHealthUrl = healthUrl
     state.status = WORK_ORDER_STATUS.DEPLOYED
     state.progress = 100
     await this.store.saveWorkOrder(state)
     await this.emit(id, 'deployment.updated', {
-      deploymentUrl: healthUrl,
+      deploymentUrl: appUrl,
+      deploymentHealthUrl: healthUrl,
       status: WORK_ORDER_STATUS.DEPLOYED,
       workOrder: state
     })

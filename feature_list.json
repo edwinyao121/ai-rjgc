@@ -40,6 +40,20 @@
         "看板能在测试质检返修期间显示第 N/3 次返修中。"
       ],
       "evidence": "2026-06-25：已新增后端自动返修、返修上限、repair-context、handoff.md 与需求展示隐藏回归测试；新增前端需求卡片隐藏与返修状态展示测试。已执行定向后端/前端回归通过；最终 ./init.sh 通过（npm test 41/41、npm run build 成功）。"
+    },
+    {
+      "id": "product-003",
+      "name": "看板应用访问地址指向前端",
+      "description": "部署探活地址和用户访问地址分离，避免看板打开 API 健康检查地址。",
+      "dependencies": ["product-002"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "部署阶段继续使用 healthUrl 做健康检查，但写入看板的 deploymentUrl 为前端访问地址。",
+        "manifest 支持可选 appUrl；未提供时从 healthUrl 推导同源前端根地址。",
+        "历史工单若已保存 /api 路径，看板访问按钮会打开同源前端根地址。",
+        "相关自动化测试与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 09:26：新增 appUrl/healthUrl 分离逻辑、历史 /api 地址规范化与回归测试；定向执行 node --test --test-name-pattern='complete mock pipeline|subproject directories|applyGranularEventToOrder' tests/backend.test.js tests/frontend-render.test.js 通过；随后执行 ./init.sh 通过（npm test 41/41、npm run build 成功）。"
     }
   ]
 }
