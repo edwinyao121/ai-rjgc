@@ -184,6 +184,13 @@ export function parseClarificationResponse(output) {
   ].filter(Boolean)
   const match = strictCandidates.reverse().find(isClarificationObject) || fallbackCandidates.find(isClarificationObject)
   if (!match) {
+    const opencodeErrorMessage = extractOpencodeErrorMessage(output)
+    if (opencodeErrorMessage) {
+      const error = new Error(`Opencode returned an error while generating clarification: ${opencodeErrorMessage}`)
+      error.code = 'OPENCODE_OUTPUT_ERROR'
+      error.opencodeErrorMessage = opencodeErrorMessage
+      throw error
+    }
     throw new Error('Unable to parse clarification JSON from opencode output')
   }
   const requirementsMarkdown = String(match.requirementsMarkdown || '').trim()
@@ -293,6 +300,39 @@ function extractItemsFromMarkdown(markdown, match) {
     items.businessNecessity = [`建设「${match.title}」以解决业务痛点`]
   }
   return items
+}
+
+export function extractOpencodeErrorMessage(output) {
+  for (const line of String(output || '').split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    try {
+      const message = readOpencodeErrorMessage(JSON.parse(trimmed))
+      if (message) return message
+    } catch {
+      // opencode can mix non-JSON lines with JSON events.
+    }
+  }
+  return ''
+}
+
+function readOpencodeErrorMessage(event) {
+  if (!event || typeof event !== 'object' || event.type !== 'error') return ''
+  const rawMessage = event.error?.data?.message || event.error?.message || event.message || ''
+  if (!rawMessage) return event.error?.name || 'Unknown opencode error'
+
+  for (const candidate of balancedJsonObjectStrings(rawMessage)) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && typeof parsed === 'object' && parsed.code && parsed.message) {
+        return `${parsed.code}: ${parsed.message}`
+      }
+    } catch {
+      // Ignore malformed nested error objects.
+    }
+  }
+
+  return String(rawMessage).split('\n')[0].trim()
 }
 
 function splitMarkdownSections(markdown) {

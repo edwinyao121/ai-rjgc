@@ -54,6 +54,20 @@
         "相关自动化测试与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25 09:26：新增 appUrl/healthUrl 分离逻辑、历史 /api 地址规范化与回归测试；定向执行 node --test --test-name-pattern='complete mock pipeline|subproject directories|applyGranularEventToOrder' tests/backend.test.js tests/frontend-render.test.js 通过；随后执行 ./init.sh 通过（npm test 41/41、npm run build 成功）。"
+    },
+    {
+      "id": "product-004",
+      "name": "需求澄清 opencode 错误保底处理",
+      "description": "需求待入厂阶段遇到 opencode type:error 输出时，不再误报 JSON 解析失败，并可基于原始需求生成保底需求摘要。",
+      "dependencies": ["product-003"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "解析器能识别 opencode JSONL 中的 type:error 事件，并提取可读错误原因。",
+        "需求澄清阶段遇到 opencode 错误事件但进程退出码为 0 时，写入告警日志并使用原始需求生成保底需求摘要。",
+        "工单可进入 READY_FOR_DEVELOPMENT，不会因为 Unable to parse clarification JSON 被卡死在 FAILED。",
+        "相关自动化测试与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 09:39：复现 WO-20260625-002 的 opencode type:error 输出；新增 parser 错误识别和澄清阶段保底需求回归测试。定向执行 node --test --test-name-pattern='clarification|opencode error events|plain requirements markdown|multiline requirementsMarkdown' tests/backend.test.js 通过；随后执行 ./init.sh 通过（npm test 43/43、npm run build 成功）。"
     }
   ]
 }

@@ -164,6 +164,23 @@ test('treats plain requirements markdown as a completed clarification', () => {
   assert.match(parsed.requirementsMarkdown, /时间窗口列表/)
 })
 
+test('reports opencode error events from clarification output', () => {
+  const raw = JSON.stringify({
+    type: 'error',
+    error: {
+      name: 'UnknownError',
+      data: {
+        message: 'Type validation failed: Value: {"request_id":"req-1","code":"InvalidParameter","message":"Output data may contain inappropriate content."}.'
+      }
+    }
+  })
+
+  assert.throws(
+    () => parseClarificationResponse(raw),
+    (error) => error.code === 'OPENCODE_OUTPUT_ERROR' && /Output data may contain inappropriate content/.test(error.message)
+  )
+})
+
 test('broadcasts SSE events and writes events.jsonl', async () => {
   const fixture = await createFixture()
   try {
@@ -658,6 +675,46 @@ test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does
     assert.match(handoff, /# 阶段交接文档/)
     assert.match(handoff, /准备就绪应用/)
     assert.match(handoff, /## 第一阅读项/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('clarification falls back to deterministic requirements when opencode returns an error event', async () => {
+  const fixture = await createFixture()
+  try {
+    const errorEvent = JSON.stringify({
+      type: 'error',
+      error: {
+        name: 'UnknownError',
+        data: {
+          message: 'Type validation failed: Value: {"request_id":"req-1","code":"InvalidParameter","message":"Output data may contain inappropriate content."}.'
+        }
+      }
+    })
+    const runner = new FakeRunner([
+      async (_command, options) => {
+        if (options.onStdoutLine) await options.onStdoutLine(errorEvent)
+        return { exitCode: 0, stdout: errorEvent, stderr: '' }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个潮汐窗口仪表盘，展示四个港口和倒计时' }, { startClarification: false })
+    const clarified = await service.processClarification(state.id)
+
+    assert.equal(clarified.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
+    assert.equal(clarified.stages[0].status, STAGE_STATUS.COMPLETED)
+    assert.match(clarified.requirementsMarkdown, /潮汐窗口仪表盘/)
+    assert.ok(clarified.messages.some((message) => /已基于原始需求生成保底需求摘要/.test(message.content)))
+
+    const requirementsLog = await service.getStageLog(state.id, 'requirements')
+    assert.match(requirementsLog.content, /Output data may contain inappropriate content/)
   } finally {
     await fixture.cleanup()
   }

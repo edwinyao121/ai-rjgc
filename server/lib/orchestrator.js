@@ -165,7 +165,32 @@ export class WorkOrderService {
 
       const rawOutput = `${result.stdout}\n${result.stderr}`
       await this.writeDebugOutput(id, 'clarification-output.jsonl', rawOutput)
-      const clarification = parseClarificationResponse(rawOutput)
+      let clarification
+      try {
+        clarification = parseClarificationResponse(rawOutput)
+      } catch (error) {
+        if (error.code !== 'OPENCODE_OUTPUT_ERROR') throw error
+        state = await this.requireWorkOrder(id)
+        const fallbackMarkdown = fallbackRequirementsMarkdown({
+          title: state.title,
+          messages: state.messages
+        })
+        clarification = {
+          complete: true,
+          reply: '需求分析服务返回异常，已基于原始需求生成保底需求摘要，准备进入智能开发。',
+          requirementsMarkdown: fallbackMarkdown,
+          requirementsItems: fallbackRequirementsItems({
+            title: state.title,
+            messages: state.messages
+          }),
+          title: state.title
+        }
+        await this.appendStageLogEntry(id, 'requirements', {
+          level: 'WARN',
+          source: 'system',
+          text: `需求分析服务返回错误，已启用保底需求摘要：${error.opencodeErrorMessage || error.message}`
+        })
+      }
       state = await this.requireWorkOrder(id)
       const now = new Date().toISOString()
       const assistantMessage = createMessage({

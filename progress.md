@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 09:26（Asia/Shanghai）
+- 最后更新：2026-06-25 09:39（Asia/Shanghai）
 - 当前分支：`0630`
 - 当前事项：无。
-- 会话目标：将看板里的应用访问地址改为前端访问地址。
+- 会话目标：修复需求待入厂阶段 opencode 错误输出导致的 JSON 解析失败。
 
 ## 已完成
 
@@ -20,6 +20,7 @@
 - [x] 增加阶段交接文档：需求澄清后生成 app 内 `handoff.md`，后续阶段提示优先阅读该交接文档。
 - [x] 精简需求展示：内部仍保留 `requirements.md` 与需求结构数据，但前端和助手不再单独展示“需求规格说明书”。
 - [x] 修正看板应用访问地址：部署探活继续使用 `healthUrl`，看板和访问按钮使用 `appUrl`/前端根地址；历史 `/api/...` 地址在前端访问层自动规范为同源根地址。
+- [x] 修复需求澄清错误处理：识别 opencode `type:error` 事件，提取可读错误原因，并在需求阶段启用基于原始需求的保底需求摘要，避免误报 `Unable to parse clarification JSON` 后卡死。
 
 ## 进行中
 
@@ -27,23 +28,19 @@
 
 ## 下一步
 
-1. 由用户在看板点击已部署应用确认打开的是前端页面，不再是 API JSON/健康检查地址。
-2. 由用户或产品负责人确认下一项具体工单。
+1. 由用户新建同类工单验证需求待入厂阶段可进入“准备智能开发”状态。
+2. 已经失败的 `WO-20260625-002` 是历史运行态数据；如需继续该工单，需要重新创建或后续单独增加失败工单恢复/重跑入口。
 
 ## 风险与注意事项
 
-- 工作区中 `docs/requirements/WO-20260625-001-requirements.md`、`node_modules/.package-lock.json`、`node_modules/.vite/deps/_metadata.json` 存在既有未提交变更，不属于本次地址修复范围。
-- `vite.config.js` 当前也有未提交的 watch ignored 配置变更；该文件不是本次地址修复的手工修改范围，未覆盖或回退。
+- 本次没有修改运行态 `WO-20260625-002/state.json`，因此已失败的历史工单不会自动恢复。
+- `./init.sh` 会生成 `dist/index.html` 资源哈希变化；本次已清理该生成产物 diff。
 
 ## 本会话修改文件
 
-- `server/lib/manifest.js`：支持可选 `appUrl`，并提供从 `healthUrl` 推导前端根地址的工具。
-- `server/lib/orchestrator.js`：部署阶段用 `healthUrl` 探活，用 `appUrl`/推导根地址写入 `deploymentUrl`、阶段输出和 SSE 事件。
-- `server/lib/store.js`：新增 `deploymentHealthUrl` 初始字段，保留探活地址用于排障。
-- `server/lib/opencode.js`：提示智能编码生成 manifest 时区分 `healthUrl` 和 `appUrl`。
-- `src/pages/KanbanBoard.jsx`：看板访问按钮和访问地址成果物会将历史 `/api/...` 地址规范为前端根地址。
-- `tests/backend.test.js`：增加部署 URL 分离、探活地址保留和 prompt 约束回归测试。
-- `tests/frontend-render.test.js`：增加历史 API 地址规范化和 `deploymentHealthUrl` 合并回归测试。
+- `server/lib/opencode.js`：识别 opencode `type:error` JSONL 事件，提取嵌套错误中的 `code/message`，并抛出 `OPENCODE_OUTPUT_ERROR`。
+- `server/lib/orchestrator.js`：需求澄清解析遇到 `OPENCODE_OUTPUT_ERROR` 时，记录告警日志并使用 `fallbackRequirementsMarkdown` / `fallbackRequirementsItems` 生成保底需求，继续进入 `READY_FOR_DEVELOPMENT`。
+- `tests/backend.test.js`：新增 opencode 错误事件解析和需求阶段保底需求回归测试。
 - `feature_list.json`、`progress.md`：记录本次事项和校验证据。
 
 ## 校验证据
@@ -59,6 +56,8 @@
 - [x] `./init.sh`：2026-06-25 04:12 后执行通过；`npm test` 41/41，`npm run build` 成功。
 - [x] 定向回归：2026-06-25 09:26 执行 `node --test --test-name-pattern='complete mock pipeline|subproject directories|applyGranularEventToOrder' tests/backend.test.js tests/frontend-render.test.js` 通过。
 - [x] `./init.sh`：2026-06-25 09:26 执行通过；`npm test` 41/41，`npm run build` 成功。
+- [x] 定向回归：2026-06-25 09:39 执行 `node --test --test-name-pattern='clarification|opencode error events|plain requirements markdown|multiline requirementsMarkdown' tests/backend.test.js` 通过。
+- [x] `./init.sh`：2026-06-25 09:39 执行通过；`npm test` 43/43，`npm run build` 成功。
 
 ## 构建提示
 
