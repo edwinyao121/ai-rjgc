@@ -41,7 +41,12 @@ async function routeRequest({ request, response, service, eventBus }) {
 
   if (request.method === 'POST' && pathname === '/api/work-orders') {
     const body = await readJsonBody(request)
-    const workOrder = await service.createWorkOrder({ message: body.message || body.requirement || body.text })
+    const workOrder = await service.createWorkOrder({
+      message: body.message || body.requirement || body.text,
+      title: body.title,
+      description: body.description,
+      deferClarification: body.deferClarification === true
+    })
     sendJson(response, 201, { workOrder })
     return
   }

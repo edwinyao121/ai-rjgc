@@ -15,10 +15,46 @@ test('renders application production line page without runtime errors', async ()
     const { default: KanbanBoard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
     const html = renderToString(React.createElement(KanbanBoard, { sidebarOpen: true }))
 
-    assert.match(html, /应用生产线/)
+    assert.match(html, /智能软件工厂/)
+    assert.doesNotMatch(html, /<h1[^>]*>应用生产线<\/h1>/)
+    assert.match(html, /<div class="[^"]*justify-center[^"]*text-center/)
     assert.match(html, /航母母港潮汐窗口计算器/)
     assert.doesNotMatch(html, /需求规格说明书/)
   } finally {
+    await server.close()
+  }
+})
+
+test('App shell renders the factory board without the left navigation menu', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  const originalWindow = globalThis.window
+  globalThis.window = {
+    location: { search: '' },
+    open: () => {},
+    close: () => {}
+  }
+
+  try {
+    const { default: App } = await server.ssrLoadModule('/src/App.jsx')
+    const html = renderToString(React.createElement(App))
+
+    assert.match(html, /智能软件工厂/)
+    assert.match(html, /航母母港潮汐窗口计算器/)
+    assert.doesNotMatch(html, /工作台大盘/)
+    assert.doesNotMatch(html, /应用生产线/)
+    assert.doesNotMatch(html, /应用商店/)
+    assert.doesNotMatch(html, /Agent中心/)
+    assert.doesNotMatch(html, /规则引擎/)
+    assert.doesNotMatch(html, /工程链路/)
+    assert.doesNotMatch(html, /系统设置/)
+    assert.doesNotMatch(html, /收起菜单|展开菜单/)
+  } finally {
+    globalThis.window = originalWindow
     await server.close()
   }
 })
@@ -123,6 +159,78 @@ test('RequirementsItemsCard does not label the internal requirements document as
   }
 })
 
+test('CreateWorkOrderModal collects app title and basic description before assistant requirements', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { CreateWorkOrderModal } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+
+    const html = renderToString(React.createElement(CreateWorkOrderModal, {
+      open: true,
+      form: {
+        title: '舰载任务态势应用',
+        description: '登记任务、风险等级和处置进度'
+      },
+      onChange: () => {},
+      onClose: () => {},
+      onSubmit: () => {},
+      submitting: false,
+      error: ''
+    }))
+
+    assert.match(html, /应用标题/)
+    assert.match(html, /基本描述/)
+    assert.match(html, /创建应用/)
+    assert.doesNotMatch(html, /输入应用目标、关键功能和验收口径/)
+  } finally {
+    await server.close()
+  }
+})
+
+test('AIChatPanel asks for original requirement after deferred app shell creation', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { AIChatPanel } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+
+    const html = renderToString(React.createElement(AIChatPanel, {
+      activeOrder: {
+        id: 'WO-20260625-101',
+        title: '舰载任务态势应用',
+        description: '登记任务、风险等级和处置进度',
+        status: 'CLARIFYING',
+        awaitingOriginalRequirement: true,
+        domain: 'AI生成',
+        creator: 'AI研发助手',
+        lastUpdate: '刚刚',
+        messages: [],
+        stages: []
+      },
+      onSendMessage: () => {},
+      onStartDevelopment: () => {},
+      onClose: () => {},
+      loading: false,
+      error: '',
+      startingDevelopment: false
+    }))
+
+    assert.match(html, /应用已创建/)
+    assert.match(html, /请输入原始需求/)
+    assert.match(html, /输入原始需求/)
+    assert.doesNotMatch(html, /请输入新的应用需求/)
+  } finally {
+    await server.close()
+  }
+})
+
 test('renders structured stage log modal with controls and empty state', async () => {
   const server = await createServer({
     server: { middlewareMode: true },
@@ -168,6 +276,95 @@ test('renders structured stage log modal with controls and empty state', async (
     }))
 
     assert.match(emptyHtml, /暂无实时日志/)
+  } finally {
+    await server.close()
+  }
+})
+
+test('WorkOrderCard shows only avatar title and description without operational clutter', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { WorkOrderCard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const longTitle = '这是一个需要在应用列表中完整展示的超长应用名称'
+    const longDescription = '这是一个很长的基本描述，用于解释应用要解决的问题、目标用户、核心能力和交付边界，列表中应该单行省略。'
+    const html = renderToString(React.createElement(WorkOrderCard, {
+      order: {
+        id: 'WO-20260625-102',
+        title: longTitle,
+        description: longDescription,
+        domain: 'AI生成',
+        creator: 'AI研发助手',
+        priority: 'critical',
+        progress: 95,
+        stages: [
+          { status: 'RUNNING', name: '部署交付' }
+        ]
+      },
+      isSelected: false,
+      onClick: () => {}
+    }))
+
+    assert.match(html, new RegExp(longTitle))
+    assert.doesNotMatch(html, /<h3 class="[^"]*truncate/)
+    assert.match(html, /title="这是一个很长的基本描述/)
+    assert.match(html, /列表中应该单行省略/)
+    assert.doesNotMatch(html, />(紧急|高|中|失败)</)
+    assert.doesNotMatch(html, /当前阶段|部署交付|执行失败|已完成/)
+    assert.doesNotMatch(html, /WO-20260625-102|95%|运行|访问|等待/)
+    assert.doesNotMatch(html, /bg-gradient-to-r from-blue-500 to-blue-600/)
+  } finally {
+    await server.close()
+  }
+})
+
+test('DeliverablesModal summarizes documents builds and urls before item detail is opened', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { DeliverablesModal } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const html = renderToString(React.createElement(DeliverablesModal, {
+      open: true,
+      order: {
+        id: 'WO-20260625-103',
+        title: '交付聚合应用',
+        deploymentUrl: 'http://127.0.0.1:4101',
+        stages: [
+          {
+            name: '系统设计',
+            outputs: [
+              { label: '系统设计说明', value: 'docs/design.md', url: '#' }
+            ]
+          },
+          {
+            name: '智能编码',
+            outputs: [
+              { label: '代码仓库', value: 'git@code.example.com:demo.git', isLink: true },
+              { label: '安装包', value: 'demo-v1.0.0.tar.gz', isFile: true }
+            ]
+          }
+        ]
+      },
+      onClose: () => {}
+    }))
+
+    assert.match(html, /成果物详情/)
+    assert.match(html, /文档/)
+    assert.match(html, /制品/)
+    assert.match(html, /访问地址/)
+    assert.match(html, /系统设计说明/)
+    assert.match(html, /代码仓库/)
+    assert.match(html, /部署地址/)
+    assert.match(html, /查看详情/)
+    assert.doesNotMatch(html, /详细内容/)
   } finally {
     await server.close()
   }

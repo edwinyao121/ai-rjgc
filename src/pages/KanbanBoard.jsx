@@ -6,6 +6,7 @@ const workOrders = [
   {
     id: 1,
     title: '航母母港潮汐窗口计算器',
+    description: '接入四大母港潮汐数据，根据吃水阈值计算可出港时间窗和倒计时。',
     domain: '海洋域',
     priority: 'high',
     creator: '张三',
@@ -140,6 +141,7 @@ const workOrders = [
   {
     id: 2,
     title: '甲板风实时计算器',
+    description: '基于甲板风速、风向和舰载机参数，辅助判断起降安全窗口。',
     domain: '航空域',
     priority: 'critical',
     creator: '李四',
@@ -247,6 +249,7 @@ const workOrders = [
   {
     id: 3,
     title: '海域网格商船密度异常告警器',
+    description: '按海域网格监控商船密度变化，识别异常聚集并输出告警。',
     domain: '监控域',
     priority: 'high',
     creator: '王五',
@@ -350,6 +353,7 @@ const workOrders = [
   {
     id: 4,
     title: '开源社区异常监测',
+    description: '监测开源社区活跃度、议题波动和异常行为趋势。',
     domain: '情报域',
     priority: 'medium',
     creator: '赵六',
@@ -452,7 +456,6 @@ const workOrders = [
   }
 ]
 
-const priorityTextColors = { critical: 'text-red-600 bg-red-50', high: 'text-orange-600 bg-orange-50', medium: 'text-yellow-600 bg-yellow-50', low: 'text-gray-600 bg-gray-100' }
 const stageColors = {
   1: { bg: 'bg-slate-50', border: 'border-slate-300', header: 'bg-slate-100', text: 'text-slate-700', icon: 'text-slate-600' },
   2: { bg: 'bg-indigo-50', border: 'border-indigo-300', header: 'bg-indigo-100', text: 'text-indigo-700', icon: 'text-indigo-600' },
@@ -1542,68 +1545,27 @@ export function AppSimulator({ appId, onClose, closeLabel = '返回研发看板'
   )
 }
 
-function WorkOrderCard({ order, isSelected, onClick, onGoToApp }) {
-  const activeStage = order.stages.find(s => normalizeStageStatus(s.status) === 'active')
-  const hasFailedStage = order.stages.some(s => normalizeStageStatus(s.status) === 'failed')
-  const canRun = !isRuntimeOrder(order) || Boolean(order.deploymentUrl)
-  const runLabel = isRuntimeOrder(order) ? (order.deploymentUrl ? '访问' : '等待') : '运行'
-
+export function WorkOrderCard({ order, isSelected, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`rounded-lg p-4 cursor-pointer transition-all ${
+      className={`rounded-lg p-4 cursor-pointer transition-all min-h-[112px] ${
         isSelected
           ? 'bg-blue-50 border-2 border-blue-500 shadow-sm'
           : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
     >
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          order.priority === 'critical' ? 'bg-gradient-to-br from-red-500 to-orange-600' :
-          'bg-gradient-to-br from-blue-500 to-purple-600'
-        }`}>
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-blue-500 to-purple-600">
           <span className="text-white font-bold text-[24px]">{order.title[0]}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4">
-            <h3 className="font-semibold text-gray-800 text-[28px] truncate">{order.title}</h3>
-            <span className={`px-3 py-1 rounded text-[24px] font-medium flex-shrink-0 ${priorityTextColors[order.priority] || priorityTextColors.medium}`}>
-              {hasFailedStage ? '失败' : order.priority === 'critical' ? '紧急' : order.priority === 'high' ? '高' : '中'}
-            </span>
-          </div>
-          <p className="text-[24px] text-gray-500 truncate">{order.domain} · {order.creator}</p>
-        </div>
-      </div>
-
-      <div className="mb-2">
-        <div className="flex items-center justify-between text-[24px] mb-1">
-          <span className="text-gray-500">当前阶段</span>
-          <span className={`font-medium truncate ml-2 ${hasFailedStage ? 'text-red-600' : 'text-blue-600'}`}>
-            {hasFailedStage ? '执行失败' : activeStage?.name?.replace('中', '') || '已完成'}
-          </span>
-        </div>
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
-            style={{ width: `${order.progress}%` }}
-          ></div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between text-[24px] text-gray-500 gap-2">
-        <span>{isRuntimeOrder(order) ? order.id : `WO-${String(order.id).padStart(3, '0')}`}</span>
-        <div className="flex items-center gap-3">
-          <span>{order.progress}%</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              if (canRun) onGoToApp(order)
-            }}
-            disabled={!canRun}
-            className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded text-[20px] font-semibold transition-all disabled:opacity-50 disabled:hover:scale-100 hover:scale-105"
-          >
-            {runLabel}
-          </button>
+          <h3 className="font-semibold text-gray-800 text-[26px] leading-tight break-words">{order.title}</h3>
+          {order.description && (
+            <p className="text-[22px] text-gray-500 truncate mt-1" title={order.description}>
+              {order.description}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -1746,7 +1708,9 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
       {
         id: 'demo-greeting',
         sender: 'ai',
-        text: `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入新的应用需求，我会创建真实工单并交给后端流水线执行。`,
+        text: activeOrder.awaitingOriginalRequirement
+          ? `应用已创建：【${activeOrder.title}】。请输入原始需求，我会结合应用标题和基本描述完成需求澄清。`
+          : `您好！我是【${activeOrder.title}】的 AI 研发专家。请输入新的应用需求，我会创建真实工单并交给后端流水线执行。`,
         time: '刚刚',
         stageId: null,
         kind: null,
@@ -1970,7 +1934,7 @@ export function AIChatPanel({ activeOrder, onSendMessage, onStartDevelopment, on
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder={`给【${activeOrder.title}】提需求...`}
+            placeholder={activeOrder.awaitingOriginalRequirement ? '输入原始需求...' : `给【${activeOrder.title}】提需求...`}
             disabled={loading}
             className="flex-1 min-w-0 text-[20px] px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white text-gray-800"
           />
@@ -2007,28 +1971,46 @@ function stageStatusColor(status) {
   return 'text-gray-400'
 }
 
-function CreateWorkOrderModal({ open, value, onChange, onClose, onSubmit, submitting, error }) {
+export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, submitting, error }) {
   if (!open) return null
+  const current = form || { title: '', description: '' }
+  const handleFieldChange = (field, value) => {
+    onChange?.({ ...current, [field]: value })
+  }
+  const canSubmit = current.title?.trim() && current.description?.trim()
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 flex items-center justify-center p-8">
       <div className="w-full max-w-2xl bg-white border border-gray-200 rounded-xl shadow-2xl p-10">
         <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-4">
           <div>
-            <h2 className="font-bold text-gray-800 text-[32px]">新建研发工单</h2>
-            <p className="text-[24px] text-gray-500 mt-1">输入应用目标、关键功能和验收口径，后端会先进行 AI 需求澄清。</p>
+            <h2 className="font-bold text-gray-800 text-[32px]">新建应用</h2>
+            <p className="text-[24px] text-gray-500 mt-1">先登记应用标题和基本描述，随后在 AI 研发助手中输入原始需求。</p>
           </div>
           <button onClick={onClose} className="p-3 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
             <X className="w-8 h-8" />
           </button>
         </div>
         <form onSubmit={onSubmit} className="space-y-8">
-          <textarea
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            className="w-full min-h-40 resize-y border border-gray-300 rounded-lg px-6 py-4 text-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="例如：做一个港口潮汐窗口计算器，支持四个母港潮高录入、12.8 米阈值判断、出港窗口倒计时和移动端看板。"
-            autoFocus
-          />
+          <label className="block">
+            <span className="block text-[24px] font-bold text-gray-700 mb-2">应用标题</span>
+            <input
+              type="text"
+              value={current.title || ''}
+              onChange={(event) => handleFieldChange('title', event.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-6 py-4 text-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="例如：港口潮汐窗口计算器"
+              autoFocus
+            />
+          </label>
+          <label className="block">
+            <span className="block text-[24px] font-bold text-gray-700 mb-2">基本描述</span>
+            <textarea
+              value={current.description || ''}
+              onChange={(event) => handleFieldChange('description', event.target.value)}
+              className="w-full min-h-32 resize-y border border-gray-300 rounded-lg px-6 py-4 text-[28px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="例如：用于登记四个母港潮高、吃水阈值和出港窗口倒计时的本机应用。"
+            />
+          </label>
           {error && (
             <div className="flex items-start gap-4 rounded-lg border border-red-200 bg-red-50 p-6 text-[28px] text-red-700">
               <AlertCircle className="w-8 h-8 mt-0.5 flex-shrink-0" />
@@ -2041,11 +2023,11 @@ function CreateWorkOrderModal({ open, value, onChange, onClose, onSubmit, submit
             </button>
             <button
               type="submit"
-              disabled={submitting || !value.trim()}
+              disabled={submitting || !canSubmit}
               className="px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-[28px] font-semibold flex items-center gap-4"
             >
               {submitting && <Loader2 className="w-8 h-8 animate-spin" />}
-              创建工单
+              创建应用
             </button>
           </div>
         </form>
@@ -2164,7 +2146,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [developmentStarting, setDevelopmentStarting] = useState(false)
   const [developmentError, setDevelopmentError] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [createText, setCreateText] = useState('')
+  const [createForm, setCreateForm] = useState({ title: '', description: '' })
   const [createError, setCreateError] = useState('')
   const [creating, setCreating] = useState(false)
   const [stageLogModal, setStageLogModal] = useState({
@@ -2176,7 +2158,6 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   })
   const lastCreateRequestRef = useRef(newWorkOrderRequest)
   const seenEventSequencesRef = useRef(new globalThis.Map())
-  const [activeDeliverablesType, setActiveDeliverablesType] = useState(null)
   const [deliverablesModalOpen, setDeliverablesModalOpen] = useState(false)
 
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -2184,7 +2165,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const runtimeOrderList = useMemo(() => runtimeOrders.map(normalizeRuntimeOrder), [runtimeOrders])
   const orders = useMemo(() => [...runtimeOrderList, ...workOrders.map(normalizeMockOrder)], [runtimeOrderList])
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0]
-  const { docs, builds, reqDocs, userDocs, sourceCode, installPacks } = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
+  const deliverables = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
+  const { reqDocs, userDocs, sourceCode, installPacks, urls } = deliverables
   const devProgress = useMemo(() => {
     if (!selectedOrder) return 0
     const devStages = selectedOrder.stages.filter(s => s.id >= 2 && s.id <= 5)
@@ -2197,6 +2179,9 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const pendingCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'pending').length
   const failedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'failed').length
   const canVisitSelected = !isRuntimeOrder(selectedOrder) || Boolean(selectedOrder.deploymentUrl)
+  const deliverableDocCount = reqDocs.length + userDocs.length
+  const deliverableBuildCount = sourceCode.length + installPacks.length
+  const deliverableUrlCount = urls.length
 
   useEffect(() => {
     return () => {
@@ -2315,14 +2300,20 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
 
   const handleCreateSubmit = async (event) => {
     event.preventDefault()
-    if (!createText.trim() || creating) return
+    const title = createForm.title.trim()
+    const description = createForm.description.trim()
+    if (!title || !description || creating) return
     setCreating(true)
     setCreateError('')
     try {
-      const created = await createWorkOrder(createText.trim())
+      const created = await createWorkOrder({
+        title,
+        description,
+        deferClarification: true
+      })
       setRuntimeOrders(prev => [created, ...prev.filter(order => order.id !== created.id)])
       setSelectedOrderId(created.id)
-      setCreateText('')
+      setCreateForm({ title: '', description: '' })
       setCreateModalOpen(false)
       setApiError('')
       setSidebarOpen?.(false)
@@ -2420,29 +2411,26 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <div className="h-12 w-1.5 bg-gradient-to-b from-blue-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-          <div>
-            <div className="flex items-center gap-4">
-              <h1 className="text-[48px] font-bold text-gray-800 title-gradient">应用生产线</h1>
-              <span className="flex items-center gap-2 text-[20px] px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-semibold tracking-wider uppercase">
-                <Radio className="w-7 h-7 text-blue-400 animate-pulse" />
-                Live
-              </span>
-            </div>
-            <p className="text-gray-400 text-[24px] mt-0.5 flex items-center gap-3">
-              <span className="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>软件系统生产全链路可视化</span>
-            </p>
+      <div className="relative flex items-start justify-center text-center">
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center justify-center gap-4">
+            <h1 className="text-[48px] font-bold text-gray-800 title-gradient">智能软件工厂</h1>
+            <span className="flex items-center gap-2 text-[20px] px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-semibold tracking-wider uppercase">
+              <Radio className="w-7 h-7 text-blue-400 animate-pulse" />
+              Live
+            </span>
           </div>
+          <p className="text-gray-400 text-[24px] mt-0.5 flex items-center justify-center gap-3">
+            <span className="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>软件系统生产全链路可视化</span>
+          </p>
         </div>
         <button
           onClick={() => {
             setCreateModalOpen(true)
             setCreateError('')
           }}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[24px] font-semibold flex items-center gap-3"
+          className="absolute right-0 top-0 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[24px] font-semibold flex items-center gap-3"
         >
           <Package className="w-5 h-5" />
           新建工单
@@ -2466,7 +2454,6 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                 order={order}
                 isSelected={selectedOrder?.id === order.id}
                 onClick={() => setSelectedOrderId(order.id)}
-                onGoToApp={handleGoToApp}
               />
             ))}
           </div>
@@ -2566,98 +2553,39 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                     <span className="font-bold text-[22px] text-emerald-800">成果物</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 2xl:grid-cols-1 gap-3">
-                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
-                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-emerald-700" />
-                        <span className="font-bold text-[20px] text-emerald-800">文档</span>
+                  <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[224px] overflow-hidden">
+                    <div className="bg-emerald-100/70 px-3 py-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Package className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                        <span className="font-bold text-[20px] text-emerald-800 truncate">交付汇总</span>
                       </div>
-                      <div className="flex-1 p-3 space-y-2">
-                        <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">需求文档</span>
-                          <span className="font-bold text-emerald-700 font-mono">{reqDocs.length}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">用户文档</span>
-                          <span className="font-bold text-emerald-700 font-mono">{userDocs.length}</span>
-                        </div>
+                      <span className={`text-[18px] font-bold px-2 py-0.5 rounded ${canVisitSelected ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-100 text-gray-500'}`}>
+                        {canVisitSelected ? '部署就绪' : '等待中'}
+                      </span>
+                    </div>
+                    <div className="flex-1 p-3 space-y-3">
+                      <div className="flex items-center justify-between rounded-md bg-white/70 border border-emerald-100 px-3 py-2 text-[20px]">
+                        <span className="text-gray-600 font-semibold flex items-center gap-2"><FileText className="w-5 h-5 text-emerald-600" />文档</span>
+                        <span className="font-bold text-emerald-700 font-mono">{deliverableDocCount}</span>
                       </div>
-                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveDeliverablesType('docs')
-                            setDeliverablesModalOpen(true)
-                          }}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1 text-[18px] font-bold text-white transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          详情
-                        </button>
+                      <div className="flex items-center justify-between rounded-md bg-white/70 border border-emerald-100 px-3 py-2 text-[20px]">
+                        <span className="text-gray-600 font-semibold flex items-center gap-2"><Package className="w-5 h-5 text-emerald-600" />制品</span>
+                        <span className="font-bold text-emerald-700 font-mono">{deliverableBuildCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-md bg-white/70 border border-emerald-100 px-3 py-2 text-[20px]">
+                        <span className="text-gray-600 font-semibold flex items-center gap-2"><Globe className="w-5 h-5 text-emerald-600" />访问地址</span>
+                        <span className="font-bold text-emerald-700 font-mono">{deliverableUrlCount}</span>
                       </div>
                     </div>
-
-                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
-                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
-                        <Package className="w-5 h-5 text-emerald-700" />
-                        <span className="font-bold text-[20px] text-emerald-800">制品</span>
-                      </div>
-                      <div className="flex-1 p-3 space-y-2">
-                        <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">源码地址</span>
-                          <span className="font-bold text-emerald-700 font-mono">{sourceCode.length}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-[20px]">
-                          <span className="text-gray-500 font-semibold">安装包</span>
-                          <span className="font-bold text-emerald-700 font-mono">{installPacks.length}</span>
-                        </div>
-                      </div>
-                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveDeliverablesType('builds')
-                            setDeliverablesModalOpen(true)
-                          }}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1 text-[18px] font-bold text-white transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          详情
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg bg-emerald-50/80 border border-emerald-200 flex flex-col min-h-[118px]">
-                      <div className="bg-emerald-100/70 rounded-t-lg px-3 py-2 flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-emerald-700" />
-                        <span className="font-bold text-[20px] text-emerald-800">访问地址</span>
-                      </div>
-                      <div className="flex-1 p-3 flex items-center justify-center">
-                        {canVisitSelected ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const appAccessUrl = toAppAccessUrl(selectedOrder.deploymentUrl)
-                              if (isRuntimeOrder(selectedOrder) && appAccessUrl) {
-                                window.open(appAccessUrl, '_blank', 'noopener,noreferrer')
-                              } else {
-                                window.open(`${window.location.origin}${window.location.pathname}?simulator=${selectedOrder.id}`, '_blank', 'noopener,noreferrer')
-                              }
-                            }}
-                            className="px-3 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-md text-[19px] font-extrabold shadow-sm transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Globe className="w-5 h-5" />
-                            访问应用
-                          </button>
-                        ) : (
-                          <span className="text-[20px] font-bold text-gray-400">等待部署就绪</span>
-                        )}
-                      </div>
-                      <div className="px-3 py-2 border-t border-emerald-100/60 rounded-b-lg flex justify-end">
-                        <span className="text-[18px] font-semibold text-gray-500 truncate max-w-full">
-                          {canVisitSelected ? '部署就绪' : '等待中'}
-                        </span>
-                      </div>
+                    <div className="px-3 py-2 border-t border-emerald-100/60 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setDeliverablesModalOpen(true)}
+                        className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 px-3 py-1 text-[18px] font-bold text-white transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                        详情
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2690,8 +2618,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       </div>
       <CreateWorkOrderModal
         open={createModalOpen}
-        value={createText}
-        onChange={setCreateText}
+        form={createForm}
+        onChange={setCreateForm}
         onClose={() => setCreateModalOpen(false)}
         onSubmit={handleCreateSubmit}
         submitting={creating}
@@ -2707,91 +2635,122 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       />
       <DeliverablesModal
         open={deliverablesModalOpen}
-        type={activeDeliverablesType}
         order={selectedOrder}
         onClose={() => {
           setDeliverablesModalOpen(false)
-          setActiveDeliverablesType(null)
         }}
       />
     </div>
   )
 }
 
-function DeliverablesModal({ open, type, order, onClose }) {
+export function DeliverablesModal({ open, order, onClose }) {
+  const [selectedItem, setSelectedItem] = useState(null)
+  useEffect(() => {
+    if (!open) setSelectedItem(null)
+  }, [open, order?.id])
   if (!open) return null
-  
-  const { reqDocs, userDocs, sourceCode, installPacks } = getDeliverables(order)
-  const title = type === 'docs' ? '文档交付详情' : '制品交付详情'
-
-  const renderItem = (item, index) => {
-    let ItemIcon = FileText
-    let iconBg = 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-    const isGit = item.value && item.value.startsWith('git@')
-    const isPack = item.isInstallPack || item.isFile
-    
-    if (isGit) {
-      ItemIcon = GitBranch
-      iconBg = 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-    } else if (isPack) {
-      ItemIcon = Package
-      iconBg = 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+  const { reqDocs, userDocs, sourceCode, installPacks, urls } = getDeliverables(order)
+  const sections = [
+    {
+      key: 'docs',
+      title: '文档',
+      icon: FileText,
+      accent: 'bg-blue-500',
+      items: [
+        ...reqDocs.map((item) => ({ ...item, category: '需求/设计文档', detailType: 'document' })),
+        ...userDocs.map((item) => ({ ...item, category: '用户文档', detailType: 'document' }))
+      ]
+    },
+    {
+      key: 'builds',
+      title: '制品',
+      icon: Package,
+      accent: 'bg-amber-500',
+      items: [
+        ...sourceCode.map((item) => ({ ...item, category: '源码地址', detailType: 'build' })),
+        ...installPacks.map((item) => ({ ...item, category: '安装包', detailType: 'build' }))
+      ]
+    },
+    {
+      key: 'urls',
+      title: '访问地址',
+      icon: Globe,
+      accent: 'bg-emerald-500',
+      items: urls.map((item) => ({ ...item, category: '访问地址', detailType: 'url' }))
     }
+  ]
 
+  const renderSummaryItem = (item, index) => (
+    <div key={`${item.detailType}-${index}`} className="flex items-center justify-between gap-5 rounded-lg border border-slate-700/60 bg-[#243340]/90 p-5">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[22px] font-bold text-white">{item.label || item.value}</p>
+        <p className="mt-1 truncate text-[18px] text-slate-400">{item.category} · 来源阶段: {item.stageName || '工单状态'}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setSelectedItem(item)}
+        className="flex-shrink-0 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-[20px] font-bold text-white hover:bg-blue-500"
+      >
+        <Eye className="w-5 h-5" />
+        查看详情
+      </button>
+    </div>
+  )
+
+  const renderDetailPanel = () => {
+    if (!selectedItem) return null
+    const value = selectedItem.value || selectedItem.url || selectedItem.label || '-'
+    const isUrl = selectedItem.detailType === 'url'
+    const isGit = String(value).startsWith('git@')
+    const isPack = selectedItem.isInstallPack || selectedItem.isFile
     return (
-      <div key={index} className="flex items-center justify-between p-6 bg-[#243340]/90 hover:bg-[#2d3e4e] rounded-xl border border-slate-700/60 hover:border-blue-500/30 transition-all duration-200 shadow-sm gap-8">
-        {/* Left Side: Icon & Details */}
-        <div className="flex items-start gap-6 min-w-0 flex-1">
-          <div className={`w-16 h-16 rounded-lg flex items-center justify-center border ${iconBg} flex-shrink-0 mt-0.5 shadow-inner`}>
-            <ItemIcon className="w-8 h-8" />
+      <div className="rounded-xl border border-blue-500/30 bg-slate-950/35 p-6">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <p className="text-[20px] font-bold text-blue-300">详细内容</p>
+            <h3 className="mt-1 break-words text-[26px] font-bold text-white">{selectedItem.label || value}</h3>
+            <p className="mt-2 text-[20px] text-slate-300">类型：{selectedItem.category}</p>
+            <p className="mt-1 text-[20px] text-slate-300">来源阶段：{selectedItem.stageName || '工单状态'}</p>
+            <p className="mt-3 break-all rounded-lg border border-slate-700 bg-slate-900/80 px-4 py-3 font-mono text-[19px] text-slate-100">{value}</p>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[24px] font-bold text-[#ffffff] truncate select-all">{item.label || item.value}</p>
-            {/* If it's a package file, display the filename */}
-            {isPack && item.value && (
-              <p className="text-[20px] font-mono text-slate-300 mt-1 select-all break-all bg-slate-950/40 px-3 py-1 rounded border border-slate-800/50 inline-block">
-                {item.value}
-              </p>
-            )}
-            <p className="text-[20px] text-slate-400 mt-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-slate-500"></span>
-              来源阶段: {item.stageName}
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedItem(null)}
+            className="rounded-lg border border-slate-600 px-4 py-2 text-[18px] font-bold text-slate-300 hover:bg-slate-800"
+          >
+            返回列表
+          </button>
         </div>
-
-        {/* Right Side: Action Button */}
-        <div className="flex-shrink-0">
-          {item.url && item.url !== '#' && (
+        <div className="mt-5 flex flex-wrap gap-3">
+          {isUrl && (
             <a
-              href={item.url}
+              href={value}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-2 text-[22px] bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-blue-600/25"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-[20px] font-bold text-white hover:bg-emerald-500"
             >
-              <Eye className="w-6 h-6" />
-              查看
+              <Globe className="w-5 h-5" />
+              访问应用
             </a>
           )}
-          {isGit && (
+          {(isUrl || isGit) && (
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(item.value)
-                alert('源码仓库地址已复制到剪贴板！')
-              }}
-              className="inline-flex items-center gap-2 px-6 py-2 text-[22px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-indigo-600/25"
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(value)}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-[20px] font-bold text-white hover:bg-indigo-500"
             >
-              <ClipboardCheck className="w-6 h-6" />
+              <ClipboardCheck className="w-5 h-5" />
               复制地址
             </button>
           )}
-          {isPack && item.value && (
+          {isPack && (
             <a
-              href={item.value}
+              href={value}
               download
-              className="inline-flex items-center gap-2 px-6 py-2 text-[22px] bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-sm shadow-amber-600/25"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-[20px] font-bold text-white hover:bg-amber-500"
             >
-              <Download className="w-6 h-6" />
+              <Download className="w-5 h-5" />
               下载
             </a>
           )}
@@ -2802,80 +2761,35 @@ function DeliverablesModal({ open, type, order, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-8 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-[#1B2732] border border-slate-700/50 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="w-full max-w-4xl bg-[#1B2732] border border-slate-700/50 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between border-b border-slate-700/50 px-10 py-8 bg-slate-800/40">
-          <h2 className="font-bold text-[#ffffff] text-[28px]">{title}</h2>
+          <h2 className="font-bold text-[#ffffff] text-[28px]">成果物详情</h2>
           <button onClick={onClose} className="p-3 hover:bg-slate-700/50 rounded-lg text-gray-400 hover:text-[#ffffff] transition-colors">
             <X className="w-8 h-8" />
           </button>
         </div>
         
-        <div className="p-10 max-h-[60vh] overflow-y-auto space-y-10">
-          {type === 'docs' ? (
-            <>
-              {/* Section 1: 需求文档 */}
-              <div>
-                <h3 className="text-[24px] font-bold text-slate-300 mb-2 flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                  需求文档 ({reqDocs.length})
+        <div className="p-10 max-h-[68vh] overflow-y-auto space-y-8">
+          {sections.map((section) => {
+            const SectionIcon = section.icon
+            return (
+              <section key={section.key}>
+                <h3 className="text-[24px] font-bold text-slate-300 mb-3 flex items-center gap-3">
+                  <span className={`w-3 h-3 rounded-full ${section.accent}`}></span>
+                  <SectionIcon className="w-6 h-6 text-slate-300" />
+                  {section.title} ({section.items.length})
                 </h3>
                 <div className="space-y-4">
-                  {reqDocs.length === 0 ? (
-                    <p className="text-[24px] text-slate-400 italic py-2 pl-6">暂无需求文档</p>
+                  {section.items.length === 0 ? (
+                    <p className="text-[22px] text-slate-400 italic py-2 pl-6">暂无{section.title}</p>
                   ) : (
-                    reqDocs.map((item, idx) => renderItem(item, idx))
+                    section.items.map((item, idx) => renderSummaryItem(item, idx))
                   )}
                 </div>
-              </div>
-
-              {/* Section 2: 用户文档 */}
-              <div className="pt-4">
-                <h3 className="text-[24px] font-bold text-slate-300 mb-2 flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                  用户文档 ({userDocs.length})
-                </h3>
-                <div className="space-y-4">
-                  {userDocs.length === 0 ? (
-                    <p className="text-[24px] text-slate-400 italic py-2 pl-6">暂无用户文档</p>
-                  ) : (
-                    userDocs.map((item, idx) => renderItem(item, idx))
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Section 1: 源码访问地址 */}
-              <div>
-                <h3 className="text-[24px] font-bold text-slate-300 mb-2 flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                  源码访问地址 ({sourceCode.length})
-                </h3>
-                <div className="space-y-4">
-                  {sourceCode.length === 0 ? (
-                    <p className="text-[24px] text-slate-400 italic py-2 pl-6">暂无源码地址</p>
-                  ) : (
-                    sourceCode.map((item, idx) => renderItem(item, idx))
-                  )}
-                </div>
-              </div>
-
-              {/* Section 2: 安装包访问地址 */}
-              <div className="pt-4">
-                <h3 className="text-[24px] font-bold text-slate-300 mb-2 flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                  安装包访问地址 ({installPacks.length})
-                </h3>
-                <div className="space-y-4">
-                  {installPacks.length === 0 ? (
-                    <p className="text-[24px] text-slate-400 italic py-2 pl-6">暂无安装包</p>
-                  ) : (
-                    installPacks.map((item, idx) => renderItem(item, idx))
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+              </section>
+            )
+          })}
+          {renderDetailPanel()}
         </div>
       </div>
     </div>

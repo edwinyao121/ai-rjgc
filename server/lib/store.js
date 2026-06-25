@@ -95,30 +95,43 @@ export class WorkOrderStore {
     return `${prefix}${String(maxSequence + 1).padStart(3, '0')}`
   }
 
-  async createWorkOrder({ message, now = new Date() }) {
+  async createWorkOrder({ message, title = null, description = '', deferClarification = false, now = new Date() }) {
     const id = await this.allocateId(now)
     const workOrderDir = this.getWorkOrderDir(id)
     const appDir = this.getAppDir(id)
     await fs.mkdir(appDir, { recursive: true })
 
-    const messages = [
-      createMessage({
-        role: 'user',
-        content: String(message || '').trim(),
-        createdAt: now.toISOString(),
-        phase: 'clarification'
-      }),
-      createMessage({
-        role: 'assistant',
-        content: '已创建工单，正在进行需求澄清。',
-        createdAt: now.toISOString(),
-        phase: 'clarification'
-      })
-    ]
+    const trimmedMessage = String(message || '').trim()
+    const trimmedTitle = String(title || '').trim()
+    const trimmedDescription = String(description || '').trim()
+    const messages = deferClarification
+      ? [
+        createMessage({
+          role: 'assistant',
+          content: `应用已创建：${trimmedTitle || inferTitle(trimmedMessage)}。请继续输入原始需求，我会根据标题、基本描述和原始需求进行需求澄清。`,
+          createdAt: now.toISOString(),
+          phase: 'clarification'
+        })
+      ]
+      : [
+        createMessage({
+          role: 'user',
+          content: trimmedMessage,
+          createdAt: now.toISOString(),
+          phase: 'clarification'
+        }),
+        createMessage({
+          role: 'assistant',
+          content: '已创建工单，正在进行需求澄清。',
+          createdAt: now.toISOString(),
+          phase: 'clarification'
+        })
+      ]
 
     const state = {
       id,
-      title: inferTitle(message),
+      title: trimmedTitle || inferTitle(trimmedMessage),
+      description: trimmedDescription,
       domain: 'AI生成',
       priority: 'medium',
       creator: 'AI研发助手',
@@ -134,8 +147,18 @@ export class WorkOrderStore {
       deploymentPort: null,
       requirementsPath: null,
       requirementsItems: null,
+      awaitingOriginalRequirement: Boolean(deferClarification),
       messages,
       stages: createPipelineStages(now)
+    }
+    if (deferClarification) {
+      state.stages[0].items = [
+        {
+          type: 'ai',
+          label: '等待原始需求',
+          value: '请在 AI 研发助手中输入原始需求'
+        }
+      ]
     }
 
     await this.saveWorkOrder(state)

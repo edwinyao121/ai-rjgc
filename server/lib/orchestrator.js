@@ -89,11 +89,24 @@ export class WorkOrderService {
     }
   }
 
-  async createWorkOrder({ message }, { startClarification = this.autoStart } = {}) {
-    const trimmed = validateMessage(message)
-    const state = await this.store.createWorkOrder({ message: trimmed })
+  async createWorkOrder({ message, title, description, deferClarification = false }, { startClarification = this.autoStart } = {}) {
+    const shouldDeferClarification = Boolean(deferClarification)
+    const trimmed = shouldDeferClarification ? '' : validateMessage(message)
+    const trimmedTitle = shouldDeferClarification ? validateTitle(title) : (title == null ? null : validateTitle(title))
+    const trimmedDescription = description == null ? '' : validateDescription(description)
+    if (shouldDeferClarification && !trimmedDescription) {
+      const error = new Error('Description is required')
+      error.code = 'VALIDATION_ERROR'
+      throw error
+    }
+    const state = await this.store.createWorkOrder({
+      message: trimmed,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      deferClarification: shouldDeferClarification
+    })
     await this.emit(state.id, 'work-order.created', { workOrder: state })
-    if (startClarification) {
+    if (startClarification && !shouldDeferClarification) {
       queueMicrotask(() => {
         this.processClarification(state.id).catch((error) => this.failFromUnexpectedError(state.id, 'requirements', error))
       })
@@ -114,6 +127,7 @@ export class WorkOrderService {
     })
     state.messages.push(userMessage)
     state.status = WORK_ORDER_STATUS.CLARIFYING
+    state.awaitingOriginalRequirement = false
     state.progress = Math.max(state.progress, 10)
     const requirementsStage = getStageByKey(state.stages, 'requirements')
     if (requirementsStage?.status !== STAGE_STATUS.COMPLETED) {
@@ -149,7 +163,10 @@ export class WorkOrderService {
       await this.store.saveWorkOrder(state)
       await this.emitStageStatus(id, state, requirementsStage, 'AI 正在分析需求完整性')
 
-      const prompt = createClarificationPrompt(state.messages)
+      const prompt = createClarificationPrompt(state.messages, {
+        title: state.title,
+        description: state.description
+      })
       const command = buildOpencodeCommand(prompt, state.appDir, { thinking: false })
       const result = await this.runCommandWithStageLogging(id, 'requirements', {
         label: '需求澄清',
@@ -1037,6 +1054,31 @@ function validateMessage(message) {
   }
   if (trimmed.length > 8000) {
     const error = new Error('Message is too long')
+    error.code = 'VALIDATION_ERROR'
+    throw error
+  }
+  return trimmed
+}
+
+function validateTitle(title) {
+  const trimmed = String(title || '').trim()
+  if (!trimmed) {
+    const error = new Error('Title is required')
+    error.code = 'VALIDATION_ERROR'
+    throw error
+  }
+  if (trimmed.length > 120) {
+    const error = new Error('Title is too long')
+    error.code = 'VALIDATION_ERROR'
+    throw error
+  }
+  return trimmed
+}
+
+function validateDescription(description) {
+  const trimmed = String(description || '').trim()
+  if (trimmed.length > 2000) {
+    const error = new Error('Description is too long')
     error.code = 'VALIDATION_ERROR'
     throw error
   }

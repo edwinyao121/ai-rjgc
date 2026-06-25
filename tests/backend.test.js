@@ -680,6 +680,96 @@ test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does
   }
 })
 
+test('deferred app shell creation stores title and description without starting clarification', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '不应被调用',
+        requirementsMarkdown: '# 不应生成'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: true
+    })
+
+    const state = await service.createWorkOrder({
+      title: '长应用名称需要完整展示',
+      description: '这是创建应用壳时输入的基本描述，用于先登记应用但不触发需求澄清。',
+      deferClarification: true
+    })
+
+    assert.equal(state.title, '长应用名称需要完整展示')
+    assert.equal(state.description, '这是创建应用壳时输入的基本描述，用于先登记应用但不触发需求澄清。')
+    assert.equal(state.status, WORK_ORDER_STATUS.CLARIFYING)
+    assert.equal(state.awaitingOriginalRequirement, true)
+    assert.equal(state.stages[0].items[0].label, '等待原始需求')
+    assert.equal(state.stages[0].items[0].value, '请在 AI 研发助手中输入原始需求')
+    assert.equal(runner.runs.length, 0, 'deferred app shell must not call opencode before original requirement')
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    assert.equal(persisted.title, '长应用名称需要完整展示')
+    assert.equal(persisted.description, '这是创建应用壳时输入的基本描述，用于先登记应用但不触发需求澄清。')
+    assert.equal(persisted.awaitingOriginalRequirement, true)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('deferred app shell clarification prompt includes title description and original requirement', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: false,
+        reply: '请补充验收标准',
+        requirementsMarkdown: '',
+        requirementsItems: {
+          detailedRequirements: [],
+          businessNecessity: ['需要先登记应用壳'],
+          expectedOutcome: ['后续需求澄清上下文完整'],
+          targetUsers: '',
+          coreFeatures: [],
+          inputData: '',
+          mainPages: '',
+          acceptanceCriteria: []
+        },
+        title: '舰载任务态势应用'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({
+      title: '舰载任务态势应用',
+      description: '用于登记舰载任务、风险等级和处置进度的应用。',
+      deferClarification: true
+    })
+    await service.appendUserMessage(state.id, {
+      message: '原始需求：需要任务列表、风险筛选、处置倒计时和移动端看板。'
+    }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const prompt = runner.runs[0].command.at(-1)
+    assert.match(prompt, /舰载任务态势应用/)
+    assert.match(prompt, /用于登记舰载任务、风险等级和处置进度的应用/)
+    assert.match(prompt, /原始需求：需要任务列表、风险筛选、处置倒计时和移动端看板/)
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    assert.equal(persisted.awaitingOriginalRequirement, false)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('clarification falls back to deterministic requirements when opencode returns an error event', async () => {
   const fixture = await createFixture()
   try {

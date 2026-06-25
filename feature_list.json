@@ -68,6 +68,50 @@
         "相关自动化测试与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25 09:39：复现 WO-20260625-002 的 opencode type:error 输出；新增 parser 错误识别和澄清阶段保底需求回归测试。定向执行 node --test --test-name-pattern='clarification|opencode error events|plain requirements markdown|multiline requirementsMarkdown' tests/backend.test.js 通过；随后执行 ./init.sh 通过（npm test 43/43、npm run build 成功）。"
+    },
+    {
+      "id": "product-005",
+      "name": "新建工单交互与成果物聚合优化",
+      "description": "新建工单先输入应用标题和基本描述，创建应用壳后再由 AI 研发助手接收原始需求；应用列表完整展示名称，成果物统一聚合展示。",
+      "dependencies": ["product-004"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "POST /api/work-orders 兼容 title、description、deferClarification；延迟澄清创建应用壳时不调用 opencode。",
+        "用户随后在 AI 研发助手输入原始需求后，需求澄清 prompt 同时包含应用标题、基本描述和原始需求。",
+        "前端新建应用弹窗包含应用标题和基本描述两个必填项，创建后打开 AI 研发助手并提示输入原始需求。",
+        "应用列表完整展示应用名，描述过长单行省略且保留完整 tooltip。",
+        "成果物区域聚合文档、制品和访问地址，详情弹窗先展示汇总列表，单条内容需要再次点击查看详情。"
+      ],
+      "evidence": "2026-06-25 15:31：新增后端延迟澄清创建和 prompt 上下文回归测试；新增前端新建弹窗、原始需求提示、应用列表和成果物聚合渲染测试。定向后端/前端回归通过；npm test 通过（49/49）；npm run build 成功；最终 ./init.sh 通过（npm test 49/49、npm run build 成功）。"
+    },
+    {
+      "id": "product-006",
+      "name": "应用列表极简化",
+      "description": "应用列表卡片只保留应用首字头像、应用名称和应用描述，删除紧急程度、运行按钮、当前阶段、进度和工单号等冗余信息。",
+      "dependencies": ["product-005"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "应用列表卡片仅展示头像、应用名称和应用描述。",
+        "卡片不再展示紧急程度、当前阶段、阶段名、进度条、工单号、进度百分比或运行/访问/等待按钮。",
+        "点击卡片仍可切换选中应用，访问应用入口保留在主内容区。",
+        "相关前端渲染测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 15:51：更新 WorkOrderCard 渲染测试，验证应用列表只保留头像、标题和描述，并排除紧急程度、当前阶段、进度、工单号和运行按钮；定向执行 node --test --test-name-pattern='WorkOrderCard|renders application production line' tests/frontend-render.test.js 通过；npm test 通过（49/49）；npm run build 成功；最终 ./init.sh 通过（npm test 49/49、npm run build 成功）。"
+    },
+    {
+      "id": "product-007",
+      "name": "移除全局左侧菜单并居中工厂标题",
+      "description": "删除全局左侧导航菜单，默认直接进入生产看板；将看板主标题从应用生产线改为智能软件工厂并居中展示。",
+      "dependencies": ["product-006"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "页面不再渲染工作台大盘、应用生产线、应用商店、Agent中心、规则引擎、工程链路、系统设置等左侧菜单入口。",
+        "默认入口直接展示生产看板和应用列表。",
+        "看板主标题展示为智能软件工厂，并在顶部居中。",
+        "新建工单按钮、应用列表、阶段流转、成果物和 AI 研发助手入口保持可用。",
+        "相关前端渲染测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 15:58：新增前端渲染测试覆盖无左侧菜单、默认看板入口、标题改名与居中；红灯执行 node --test --test-name-pattern='application production line|App shell' tests/frontend-render.test.js 失败，确认旧实现仍渲染应用生产线、左侧菜单和工作台大盘；实现后定向测试通过；npm test 通过（50/50）；npm run build 成功；最终 ./init.sh 通过（npm test 50/50、npm run build 成功）。"
     }
   ]
 }

@@ -20,10 +20,11 @@ export async function listWorkOrders() {
   return payload.workOrders || []
 }
 
-export async function createWorkOrder(message) {
+export async function createWorkOrder(input) {
+  const body = typeof input === 'string' ? { message: input } : input
   const payload = await apiFetch('/api/work-orders', {
     method: 'POST',
-    body: JSON.stringify({ message })
+    body: JSON.stringify(body)
   })
   return payload.workOrder
 }

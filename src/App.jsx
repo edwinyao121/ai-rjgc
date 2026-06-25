@@ -1,28 +1,9 @@
 import { useState } from 'react'
-import { LayoutDashboard, Kanban, Bot, Settings, FileText, Shield, Network, ChevronDown, Bell, Search, Plus, Menu, Factory, ShoppingBag } from 'lucide-react'
-import Dashboard from './pages/Dashboard'
+import { Bot } from 'lucide-react'
 import KanbanBoard, { AppSimulator } from './pages/KanbanBoard'
-import AppStore from './pages/AppStore'
-import AgentCenter from './pages/AgentCenter'
-import RuleEngine from './pages/RuleEngine'
-import EngineeringView from './pages/EngineeringView'
-import SettingsPage from './pages/SettingsPage'
-
-const navItems = [
-  { id: 'dashboard', label: '工作台大盘', icon: LayoutDashboard },
-  { id: 'kanban', label: '应用生产线', icon: Kanban },
-  { id: 'appstore', label: '应用商店', icon: ShoppingBag },
-  { id: 'agents', label: 'Agent中心', icon: Bot },
-  { id: 'rules', label: '规则引擎', icon: Shield },
-  { id: 'engineering', label: '工程链路', icon: Network },
-  { id: 'settings', label: '系统设置', icon: Settings }
-]
 
 function App() {
-  const [activePage, setActivePage] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showAgentTip, setShowAgentTip] = useState(false)
-  const [newWorkOrderRequest, setNewWorkOrderRequest] = useState(0)
 
   // Check for simulator mode
   const urlParams = new URLSearchParams(window.location.search)
@@ -38,91 +19,11 @@ function App() {
     )
   }
 
-  const renderPage = () => {
-    switch (activePage) {
-      case 'dashboard': return <Dashboard />
-      case 'kanban': return <KanbanBoard sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} newWorkOrderRequest={newWorkOrderRequest} />
-      case 'appstore': return <AppStore />
-      case 'agents': return <AgentCenter />
-      case 'rules': return <RuleEngine />
-      case 'engineering': return <EngineeringView />
-      case 'settings': return <SettingsPage />
-      default: return <Dashboard />
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <aside className={`${sidebarOpen ? 'w-56 border-r border-gray-200' : 'w-0 overflow-hidden border-none'} bg-white transition-all duration-300 flex flex-col`}>
-        <div className="h-16 flex items-center px-4 border-b border-gray-200 bg-white flex-shrink-0">
-          {sidebarOpen ? (
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
-                <Factory className="w-5 h-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="font-extrabold text-[20px] bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent tracking-wide leading-tight truncate">
-                  智能软件工厂
-                </h1>
-                <p className="text-[18px] text-gray-400 tracking-wider font-semibold uppercase leading-none mt-0.5 truncate">
-                  Smart Factory
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-[#3b82f6] to-[#22d3ee] rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20 mx-auto">
-              <Factory className="w-5 h-5 text-white" />
-            </div>
-          )}
-        </div>
-
-        <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
-          {navItems.map(item => {
-            const Icon = item.icon
-            const isActive = activePage === item.id
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActivePage(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 mx-3 my-0.5 rounded-lg transition-all duration-200 group text-[20px] ${
-                  isActive
-                    ? 'bg-blue-50/80 text-blue-600 font-semibold shadow-sm shadow-blue-500/5'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                }`}
-              >
-                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${
-                  isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
-                }`} />
-                {sidebarOpen && <span className="truncate">{item.label}</span>}
-              </button>
-            )
-          })}
-        </nav>
-
-        <div className="p-3 border-t border-gray-200">
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200 text-[20px] font-medium"
-          >
-            <Menu className="w-5 h-5 text-gray-400" />
-            {sidebarOpen && <span>收起菜单</span>}
-          </button>
-        </div>
-      </aside>
-
       <main className="flex-1 min-w-0 flex flex-col relative">
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="fixed top-4 left-4 z-50 p-3 bg-white hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 shadow-md flex items-center justify-center"
-            title="展开菜单"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
-
-        <div className={`flex-1 overflow-auto p-4 lg:p-6 ${sidebarOpen ? '' : 'pl-20 lg:pl-20'}`}>
-          {renderPage()}
+        <div className="flex-1 overflow-auto p-4 lg:p-6">
+          <KanbanBoard />
         </div>
       </main>
 

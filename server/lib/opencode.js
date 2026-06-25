@@ -14,10 +14,20 @@ export function buildOpencodeCommand(prompt, appDir, { thinking = false } = {}) 
   return command
 }
 
-export function createClarificationPrompt(messages) {
+export function createClarificationPrompt(messages, context = {}) {
   const conversation = messages
     .map((message) => `${message.sender === 'user' ? '用户' : 'AI'}: ${message.text}`)
     .join('\n')
+  const title = String(context.title || '').trim()
+  const description = String(context.description || '').trim()
+  const appContext = title || description
+    ? [
+      '当前应用初始信息：',
+      title ? `- 应用标题：${title}` : '',
+      description ? `- 基本描述：${description}` : '',
+      ''
+    ].filter(Boolean).join('\n')
+    : ''
 
   return `你是单机版 AI 研发助手的「需求分析 Agent」，负责根据用户原始需求判断是否足够进入自动研发流水线。
 
@@ -67,7 +77,7 @@ export function createClarificationPrompt(messages) {
 
 进入流水线的最低条件：目标用户、核心功能、输入数据、主要页面或交互、验收标准基本清楚。若缺少关键信息，complete=false，但仍要先输出场景深化理解和多条细化需求；最多只补充 1-2 个关键问题。complete=true 时 requirementsItems 中的 detailedRequirements 至少包含 2 条，且每条 requirement、businessNecessity、expectedOutcome 都不能为空，否则视为需求分析未完成。
 
-当前对话：
+${appContext}当前对话：
 ${conversation}`
 }
 
