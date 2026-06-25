@@ -911,18 +911,16 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
 
       {/* Body: Center status and duration */}
       <div className="flex-1 p-2.5 flex flex-col justify-center items-center text-center gap-2 min-h-0">
-        <span className={`text-[19px] font-bold tracking-wider ${
-          visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
-          visualStatus === 'failed' ? 'text-red-500' :
-          visualStatus === 'completed' ? 'text-green-650' :
-          visualStatus === 'skipped' ? 'text-slate-500' : 'text-gray-400'
-        }`}>
-          {visualStatus === 'completed' && '已完成'}
-          {visualStatus === 'active' && '进行中'}
-          {visualStatus === 'pending' && '等待中'}
-          {visualStatus === 'skipped' && '已跳过'}
-          {visualStatus === 'failed' && '开发失败'}
-        </span>
+        {(visualStatus === 'active' || visualStatus === 'pending' || visualStatus === 'failed') && (
+          <span className={`text-[19px] font-bold tracking-wider ${
+            visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
+            visualStatus === 'failed' ? 'text-red-500' : 'text-gray-400'
+          }`}>
+            {visualStatus === 'active' && '进行中'}
+            {visualStatus === 'pending' && '等待中'}
+            {visualStatus === 'failed' && '开发失败'}
+          </span>
+        )}
 
         {visualStatus === 'active' && repairStatusText && (
           <div className="max-w-full rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[18px] font-bold text-amber-700 truncate">
@@ -957,9 +955,9 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
           </div>
         )}
 
-        <div className="w-full rounded-md border border-white/70 bg-white/70 px-2.5 py-1.5 text-left shadow-sm">
-          <span className="block text-[17px] font-semibold text-gray-500">{timing.label}</span>
-          <span className={`block text-[20px] font-bold font-mono tracking-tight ${
+        <div className="w-full rounded-md border border-white/70 bg-white/70 px-2.5 py-1.5 flex items-center justify-between shadow-sm">
+          <span className="text-[17px] font-semibold text-gray-500">{timing.label}</span>
+          <span className={`text-[20px] font-bold font-mono tracking-tight ${
           visualStatus === 'active' ? 'text-blue-600' :
           visualStatus === 'failed' ? 'text-red-500' :
           visualStatus === 'completed' ? 'text-gray-500' :
@@ -1591,11 +1589,6 @@ export function WorkOrderCard({ order, isSelected, onClick }) {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-800 text-[26px] leading-tight break-words">{order.title}</h3>
-          {order.description && (
-            <p className="text-[22px] text-gray-500 truncate mt-1" title={order.description}>
-              {order.description}
-            </p>
-          )}
         </div>
       </div>
     </div>
@@ -2495,7 +2488,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
           className="absolute right-0 top-0 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[24px] font-semibold flex items-center gap-3"
         >
           <Package className="w-5 h-5" />
-          新建工单
+          新建项目
         </button>
       </div>
 

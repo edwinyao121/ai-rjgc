@@ -311,8 +311,8 @@ test('WorkOrderCard shows only avatar title and description without operational 
 
     assert.match(html, new RegExp(longTitle))
     assert.doesNotMatch(html, /<h3 class="[^"]*truncate/)
-    assert.match(html, /title="这是一个很长的基本描述/)
-    assert.match(html, /列表中应该单行省略/)
+    assert.doesNotMatch(html, /title="这是一个很长的基本描述/)
+    assert.doesNotMatch(html, /列表中应该单行省略/)
     assert.doesNotMatch(html, />(紧急|高|中|失败)</)
     assert.doesNotMatch(html, /当前阶段|部署交付|执行失败|已完成/)
     assert.doesNotMatch(html, /WO-20260625-102|95%|运行|访问|等待/)
