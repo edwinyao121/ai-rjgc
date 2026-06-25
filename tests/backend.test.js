@@ -7,11 +7,12 @@ import path from 'node:path'
 import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
+import { createApiServer } from '../server/index.js'
 import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt, createStagePrompt } from '../server/lib/opencode.js'
 import { inferAppUrlFromHealthUrl, substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
-import { STAGE_STATUS, WORK_ORDER_STATUS, createPipelineStages, markStageCompleted, markStageRunning } from '../server/lib/stages.js'
+import { STAGE_STATUS, WORK_ORDER_STATUS, createPipelineStages, markStageCompleted, markStageFailed, markStageRunning } from '../server/lib/stages.js'
 
 test('allocates work order ids and persists state and requirements files', async () => {
   const fixture = await createFixture()
@@ -337,6 +338,137 @@ test('validates manifest command arrays and substitutes deployment port', () => 
   assert.throws(() => validateManifest({ ...manifest, test: 'npm test' }), /command array/)
 })
 
+test('skipStage marks pending development stages as skipped with events and progress', async () => {
+  const fixture = await createFixture()
+  try {
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner: new FakeRunner([
+        clarificationHandler({
+          complete: true,
+          reply: '需求已确认。',
+          requirementsMarkdown: '# 跳过阶段需求',
+          title: '跳过阶段应用'
+        })
+      ]),
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个跳过阶段应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    for (const stageKey of ['design', 'coding', 'testing', 'deployment']) {
+      const updated = await service.skipStage(state.id, stageKey)
+      const stage = updated.stages.find((item) => item.key === stageKey)
+      assert.equal(stage.status, STAGE_STATUS.SKIPPED)
+      assert.equal(stage.items[0].value, '已跳过')
+    }
+
+    const skipped = await fixture.store.readWorkOrder(state.id)
+    assert.equal(skipped.progress, 100)
+
+    const events = await fixture.store.readEvents(state.id)
+    assert.ok(events.some((event) => event.type === 'stage.log.append' && event.stageId === 'design' && /已跳过/.test(event.entry?.text || '')))
+    assert.ok(events.some((event) => event.type === 'stage.status.changed' && event.stageId === 'deployment' && event.status === STAGE_STATUS.SKIPPED))
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('skipStage rejects requirements invalid stages and non-pending stages', async () => {
+  const fixture = await createFixture()
+  try {
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner: new FakeRunner([
+        clarificationHandler({
+          complete: true,
+          reply: '需求已确认。',
+          requirementsMarkdown: '# 跳过校验需求',
+          title: '跳过校验应用'
+        })
+      ]),
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个跳过校验应用' }, { startClarification: false })
+    await assert.rejects(() => service.skipStage(state.id, 'design'), { code: 'CONFLICT' })
+
+    await service.processClarification(state.id)
+
+    await assert.rejects(() => service.skipStage(state.id, 'requirements'), { code: 'VALIDATION_ERROR' })
+    await assert.rejects(() => service.skipStage(state.id, 'unknown'), { code: 'VALIDATION_ERROR' })
+
+    const runningState = await fixture.store.readWorkOrder(state.id)
+    markStageRunning(runningState.stages.find((stage) => stage.key === 'design'), new Date())
+    await fixture.store.saveWorkOrder(runningState)
+    await assert.rejects(() => service.skipStage(state.id, 'design'), { code: 'CONFLICT' })
+
+    const completedState = await fixture.store.readWorkOrder(state.id)
+    markStageCompleted(completedState.stages.find((stage) => stage.key === 'design'), new Date())
+    await fixture.store.saveWorkOrder(completedState)
+    await assert.rejects(() => service.skipStage(state.id, 'design'), { code: 'CONFLICT' })
+
+    const failedState = await fixture.store.readWorkOrder(state.id)
+    markStageFailed(failedState.stages.find((stage) => stage.key === 'design'), '失败', '失败')
+    await fixture.store.saveWorkOrder(failedState)
+    await assert.rejects(() => service.skipStage(state.id, 'design'), { code: 'CONFLICT' })
+
+    const skippedState = await fixture.store.readWorkOrder(state.id)
+    skippedState.stages.find((stage) => stage.key === 'design').status = STAGE_STATUS.PENDING
+    skippedState.status = WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT
+    await fixture.store.saveWorkOrder(skippedState)
+    await service.skipStage(state.id, 'design')
+    await assert.rejects(() => service.skipStage(state.id, 'design'), { code: 'CONFLICT' })
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('POST /api/work-orders/:id/stage-skips returns the updated work order', async () => {
+  const fixture = await createFixture()
+  let apiServer
+  try {
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner: new FakeRunner([
+        clarificationHandler({
+          complete: true,
+          reply: '需求已确认。',
+          requirementsMarkdown: '# 接口跳过需求',
+          title: '接口跳过应用'
+        })
+      ]),
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ message: '做一个接口跳过应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    apiServer = createApiServer({ service, eventBus: fixture.eventBus })
+    await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve))
+    const { port } = apiServer.address()
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/stage-skips`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageKey: 'design' })
+    })
+    const payload = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.workOrder.id, state.id)
+    assert.equal(payload.workOrder.stages.find((stage) => stage.key === 'design').status, STAGE_STATUS.SKIPPED)
+  } finally {
+    if (apiServer) {
+      await new Promise((resolve) => apiServer.close(resolve))
+    }
+    await fixture.cleanup()
+  }
+})
+
 test('runs a complete mock pipeline and writes the deployment URL', async () => {
   const fixture = await createFixture()
   try {
@@ -405,6 +537,152 @@ test('runs a complete mock pipeline and writes the deployment URL', async () => 
     assert.match(testingLog.content, /install ok/)
     assert.match(testingLog.content, /build ok/)
     assert.match(testingLog.content, /test ok/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('runPipeline skips deployment without starting an app and completes the work order', async () => {
+  const fixture = await createFixture()
+  try {
+    const healthChecks = []
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 跳过部署需求',
+        title: '跳过部署应用'
+      }),
+      async () => ok('design ok'),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'skip-deploy-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install ok'),
+      async () => ok('build ok'),
+      async () => ok('test ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4101,
+      healthCheck: async (url) => {
+        healthChecks.push(url)
+        return true
+      }
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个跳过部署应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.skipStage(state.id, 'deployment')
+    const completed = await service.runPipeline(state.id)
+
+    assert.equal(completed.status, WORK_ORDER_STATUS.COMPLETED)
+    assert.equal(completed.deploymentUrl, null)
+    assert.equal(completed.stages.find((stage) => stage.key === 'deployment').status, STAGE_STATUS.SKIPPED)
+    assert.equal(runner.starts.length, 0)
+    assert.deepEqual(healthChecks, [])
+    assert.equal(runner.runs.length, 7)
+
+    const events = await fixture.store.readEvents(state.id)
+    assert.equal(events.some((event) => event.type === 'deployment.updated'), false)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('runPipeline continues after a skipped middle stage', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 跳过设计需求',
+        title: '跳过设计应用'
+      }),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'skip-design-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install ok'),
+      async () => ok('build ok'),
+      async () => ok('test ok'),
+      async () => ok('deployment prep ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4101,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个跳过设计应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.skipStage(state.id, 'design')
+    const completed = await service.runPipeline(state.id)
+
+    assert.equal(completed.status, WORK_ORDER_STATUS.DEPLOYED)
+    assert.equal(completed.stages.find((stage) => stage.key === 'design').status, STAGE_STATUS.SKIPPED)
+    assert.equal(completed.stages.find((stage) => stage.key === 'coding').status, STAGE_STATUS.COMPLETED)
+    assert.equal(completed.stages.find((stage) => stage.key === 'testing').status, STAGE_STATUS.COMPLETED)
+    assert.equal(completed.stages.find((stage) => stage.key === 'deployment').status, STAGE_STATUS.COMPLETED)
+    assert.equal(runner.runs.some((run) => String(run.command.at(-1)).includes('系统设计阶段')), false)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('skipped coding stays skipped when testing later fails on missing manifest', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 缺失产物需求',
+        title: '缺失产物应用'
+      }),
+      async () => ok('design ok'),
+      async () => ok('testing prep ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个缺失产物应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.skipStage(state.id, 'coding')
+
+    await assert.rejects(() => service.runPipeline(state.id), /factory\.manifest\.json/)
+
+    const failed = await fixture.store.readWorkOrder(state.id)
+    assert.equal(failed.status, WORK_ORDER_STATUS.FAILED)
+    assert.equal(failed.stages.find((stage) => stage.key === 'coding').status, STAGE_STATUS.SKIPPED)
+    assert.equal(failed.stages.find((stage) => stage.key === 'testing').status, STAGE_STATUS.FAILED)
   } finally {
     await fixture.cleanup()
   }

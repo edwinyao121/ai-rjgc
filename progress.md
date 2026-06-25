@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 16:22（Asia/Shanghai）
+- 最后更新：2026-06-25 16:43（Asia/Shanghai）
 - 当前分支：`0630`
 - 当前事项：无。
-- 会话目标：完成看板交互与界面布局微调（重命名详情按钮为日志、日志文字变白、去除新建工单基本描述、移除智脑浮标、移除 Live 图标、AI 研发助手缩放）。
+- 会话目标：新增系统设计、智能编码、测试质检、部署交付四个待执行阶段的持久化跳过能力，并让后端流水线与前端看板正确识别 `SKIPPED`。
 
 ## 已完成
 
@@ -33,6 +33,13 @@
   - 去除了页面右下角的“智脑”浮动气泡按钮。
   - 去除了页面顶部“智能软件工厂”标题旁边的 Radio 闪动 Live 图标。
   - AI 研发助手顶部栏新增了放大/缩小按钮，放大后以 fixed 遮罩形式占据屏幕 80% 大小并居中，且可恢复原样。
+- [x] 阶段卡片跳过功能：
+  - 新增 `SKIPPED` 阶段状态，跳过阶段计入整体进度且持久化为“已跳过”。
+  - 新增 `POST /api/work-orders/:id/stage-skips`，仅允许跳过 `design`、`coding`、`testing`、`deployment` 四个 `PENDING` 阶段。
+  - 后端流水线执行每个阶段前重新读取状态，`SKIPPED` 阶段不调用对应 opencode、测试或部署逻辑。
+  - 跳过部署交付时工单最终状态为 `COMPLETED`，不写 `deploymentUrl`，不发送 `deployment.updated` 成功事件。
+  - 前端阶段卡片在 2-5 号待执行阶段显示“跳过”按钮，`SKIPPED` 阶段显示“已跳过”，顶部统计新增“跳过”数量。
+  - 产品文档已补充 `SKIPPED` 状态、跳过规则、跳过接口和 SSE 状态说明。
 
 ## 进行中
 
@@ -40,8 +47,8 @@
 
 ## 下一步
 
-1. 由用户在浏览器中刷新页面，手工确认无左侧导航菜单，顶部居中显示“智能软件工厂”。
-2. 由用户在浏览器中点击“新建工单”，手工确认新建应用壳和 AI 助手输入原始需求流程仍符合预期。
+1. 由用户在浏览器中刷新页面，针对 READY/RUNNING 工单手工确认待执行开发阶段显示“跳过”按钮。
+2. 后续若需要运行中阶段取消能力，应作为独立事项设计，不复用本次“跳过待执行阶段”逻辑。
 
 ## 风险与注意事项
 
@@ -49,6 +56,8 @@
 - `./init.sh` / `npm run build` 会刷新 `dist/index.html` 资源哈希；当前工作区也保留了既有 `node_modules/.vite/deps/_metadata.json` 缓存变更，提交时应单独确认是否纳入。
 - 左侧应用列表不再提供运行/访问入口；访问部署应用统一保留在主内容区顶部按钮。
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
+- 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
+- 跳过部署交付后工单状态为 `COMPLETED` 而非 `DEPLOYED`，访问部署应用按钮仍因没有 `deploymentUrl` 保持不可用。
 
 ## 本会话修改文件
 
@@ -60,6 +69,11 @@
 - `tests/frontend-render.test.js`：新增新建弹窗、原始需求提示、应用列表、成果物聚合渲染测试，并更新应用列表极简展示断言。
 - `tests/frontend-render.test.js`：新增无左侧菜单、默认看板入口、标题改名和居中断言。
 - `feature_list.json`、`progress.md`：记录本次事项和校验证据。
+- `server/lib/stages.js`、`server/lib/orchestrator.js`、`server/index.js`：新增 `SKIPPED` 状态、跳过阶段服务逻辑、阶段跳过接口与流水线跳过判定。
+- `src/api/workOrders.js`、`src/pages/KanbanBoard.jsx`：新增跳过阶段 API 调用、StageCard 跳过按钮、已跳过视觉状态和顶部跳过统计。
+- `tests/backend.test.js`：新增跳过阶段、接口、部署跳过、中间阶段跳过和缺失产物失败归属回归测试。
+- `tests/frontend-render.test.js`：新增 StageCard 跳过按钮/已跳过渲染断言和 `SKIPPED` 事件合并断言。
+- `docs/AI研发助手单机版需求文档.md`、`docs/AI研发助手实时日志与对话需求补充.md`：补充跳过规则、状态模型、接口和 SSE 状态说明。
 
 ## 校验证据
 
@@ -90,6 +104,13 @@
 - [x] `npm test`：2026-06-25 15:58 执行通过，50 个测试全部通过。
 - [x] `npm run build`：2026-06-25 15:58 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-25 15:58 执行通过；`npm test` 50/50，`npm run build` 成功。
+- [x] 红灯验证：2026-06-25 16:43 执行 `node --test --test-name-pattern='skipStage|skips deployment|skipped middle|skipped coding' tests/backend.test.js` 失败，确认旧实现缺少 `service.skipStage`。
+- [x] 红灯验证：2026-06-25 16:43 执行 `node --test --test-name-pattern='StageCard shows|applyGranularEventToOrder' tests/frontend-render.test.js` 失败，确认旧 StageCard 未渲染“跳过”按钮。
+- [x] 定向后端回归：2026-06-25 16:43 执行 `node --test --test-name-pattern='skipStage|stage-skips|skips deployment|skipped middle|skipped coding' tests/backend.test.js` 通过。
+- [x] 定向前端回归：2026-06-25 16:43 执行 `node --test --test-name-pattern='StageCard shows|applyGranularEventToOrder' tests/frontend-render.test.js` 通过。
+- [x] `npm test`：2026-06-25 16:43 执行通过，56 个测试全部通过。
+- [x] `npm run build`：2026-06-25 16:43 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-25 16:43 执行通过；`npm test` 56/56，`npm run build` 成功。
 
 ## 构建提示
 

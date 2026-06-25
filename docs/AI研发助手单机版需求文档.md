@@ -119,6 +119,19 @@
   - 健康检查通过。
   - 看板可展示访问地址。
 
+### 5.6 阶段跳过
+
+- 允许跳过阶段：
+  - `系统设计`
+  - `智能编码`
+  - `测试质检`
+  - `部署交付`
+- 仅允许跳过尚未开始的 `PENDING` 阶段。
+- `需求待入厂`、`RUNNING`、`COMPLETED`、`FAILED`、`SKIPPED` 阶段不得跳过。
+- 跳过后阶段状态持久化为 `SKIPPED`，看板显示“已跳过”，整体进度按该阶段已完成计算。
+- 流水线继续按原顺序执行；执行每个阶段前必须重新读取阶段状态，若阶段为 `SKIPPED`，不得调用该阶段的 opencode、测试或部署逻辑。
+- 若 `部署交付` 被跳过，工单最终状态为 `COMPLETED`，不写入 `deploymentUrl`，也不发送部署成功事件。
+
 ## 6. 状态模型
 
 每个工单维护统一状态：
@@ -148,13 +161,16 @@
 - `PENDING`
 - `RUNNING`
 - `COMPLETED`
+- `SKIPPED`
 - `FAILED`
 
 工单状态枚举：
 
 - `CLARIFYING`
+- `READY_FOR_DEVELOPMENT`
 - `RUNNING`
 - `DEPLOYED`
+- `COMPLETED`
 - `FAILED`
 
 ## 7. 后端接口
@@ -220,6 +236,41 @@ GET /api/work-orders/:id/events
   "message": "正在运行测试用例 18/24"
 }
 ```
+
+### 7.5 跳过阶段
+
+```http
+POST /api/work-orders/:id/stage-skips
+```
+
+请求：
+
+```json
+{
+  "stageKey": "design"
+}
+```
+
+`stageKey` 仅允许：
+
+- `design`
+- `coding`
+- `testing`
+- `deployment`
+
+响应：
+
+```json
+{
+  "workOrder": {}
+}
+```
+
+校验规则：
+
+- 仅允许状态为 `READY_FOR_DEVELOPMENT` 或 `RUNNING` 的工单跳过阶段。
+- 仅允许跳过 `PENDING` 阶段。
+- 无效阶段、`requirements` 或不允许跳过的阶段返回结构化错误。
 
 ## 8. opencode 执行策略
 

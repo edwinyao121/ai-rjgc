@@ -67,6 +67,15 @@ async function routeRequest({ request, response, service, eventBus }) {
     return
   }
 
+  const stageSkipMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})\/stage-skips$/)
+  if (stageSkipMatch && request.method === 'POST') {
+    const [, id] = stageSkipMatch
+    const body = await readJsonBody(request)
+    const workOrder = await service.skipStage(id, body.stageKey)
+    sendJson(response, 200, { workOrder })
+    return
+  }
+
   const workOrderMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})(?:\/(messages|events))?$/)
   if (workOrderMatch) {
     const [, id, child] = workOrderMatch

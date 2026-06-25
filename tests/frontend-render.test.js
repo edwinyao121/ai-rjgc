@@ -442,6 +442,55 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
 
     assert.match(repairingHtml, /第 1\/3 次返修中/)
     assert.doesNotMatch(repairingHtml, /开发失败/)
+
+    const pendingDesignHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 2,
+        key: 'design',
+        name: '系统设计',
+        icon: Icon,
+        status: 'PENDING',
+        gate: { exit: '设计完备' },
+        items: []
+      },
+      onShowLogs: () => {},
+      onSkipStage: () => {}
+    }))
+    assert.match(pendingDesignHtml, /跳过/)
+
+    const pendingRequirementsHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 1,
+        key: 'requirements',
+        name: '需求待入厂',
+        icon: Icon,
+        status: 'PENDING',
+        gate: { exit: '需求校验' },
+        items: []
+      },
+      onShowLogs: () => {},
+      onSkipStage: () => {}
+    }))
+    assert.doesNotMatch(pendingRequirementsHtml, /跳过/)
+
+    const skippedHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 3,
+        key: 'coding',
+        name: '智能编码',
+        icon: Icon,
+        status: 'SKIPPED',
+        duration: '已跳过',
+        gate: { exit: '编译通过' },
+        items: []
+      },
+      onShowLogs: () => {},
+      onSkipStage: () => {}
+    }))
+    assert.match(skippedHtml, /已跳过/)
+    assert.match(skippedHtml, /100%/)
+    assert.doesNotMatch(skippedHtml, /等待中/)
+    assert.doesNotMatch(skippedHtml, /开发失败/)
   } finally {
     await server.close()
   }
@@ -763,6 +812,29 @@ test('applyGranularEventToOrder merges SSE deltas into the same message without 
     assert.equal(deployed.status, 'DEPLOYED')
     assert.equal(deployed.deploymentUrl, 'http://127.0.0.1:4101')
     assert.equal(deployed.deploymentHealthUrl, 'http://127.0.0.1:4101/api/health')
+
+    const skipped = applyGranularEventToOrder({
+      ...baseOrder,
+      progress: 40,
+      stages: [
+        { id: 2, key: 'design', status: 'PENDING', items: [] }
+      ]
+    }, {
+      type: 'stage.status.changed',
+      workOrderId: baseOrder.id,
+      stageId: 'design',
+      status: 'SKIPPED',
+      progress: 60,
+      stage: {
+        id: 2,
+        key: 'design',
+        status: 'SKIPPED',
+        items: [{ type: 'skipped', label: '阶段跳过', value: '已跳过' }]
+      }
+    })
+    assert.equal(skipped.progress, 60)
+    assert.equal(skipped.stages[0].status, 'SKIPPED')
+    assert.equal(skipped.stages[0].items[0].value, '已跳过')
   } finally {
     await server.close()
   }

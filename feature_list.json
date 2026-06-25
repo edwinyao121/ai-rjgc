@@ -128,6 +128,22 @@
         "全部 50 个自动化测试均执行通过，npm run build 构建无异常。"
       ],
       "evidence": "2026-06-25：已在 KanbanBoard.jsx 中修改 StageCard 按钮名和 StageLogModal 样式；在 App.jsx 中删除智脑浮标；在 KanbanBoard.jsx 中实现 AIChatPanel 局部 state 缩放与遮罩，移除 Radio 图标，修改 CreateWorkOrderModal；在 tests/frontend-render.test.js 中更新了 Form 与 Card 的对应断言。运行 ./init.sh 全套自动化测试 50/50 全部通过，Vite 编译通过。"
+    },
+    {
+      "id": "product-009",
+      "name": "阶段卡片跳过功能",
+      "description": "允许跳过系统设计、智能编码、测试质检、部署交付四个尚未开始的阶段，并让流水线按既有顺序继续执行。",
+      "dependencies": ["product-008"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "新增 SKIPPED 阶段状态，已跳过阶段持久化并计入整体进度。",
+        "POST /api/work-orders/:id/stage-skips 支持跳过 design、coding、testing、deployment，并拒绝 requirements、无效阶段和非 PENDING 阶段。",
+        "流水线执行阶段前重新读取状态，SKIPPED 阶段不调用对应 opencode、测试或部署逻辑。",
+        "跳过部署交付时工单最终状态为 COMPLETED，不写 deploymentUrl，且不发送 deployment.updated 成功事件。",
+        "前端阶段卡片仅在 2-5 号 PENDING 阶段显示跳过按钮，SKIPPED 阶段显示已跳过，顶部统计显示跳过数量。",
+        "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-25 16:43：新增后端 skipStage、stage-skips 接口、SKIPPED 状态、流水线跳过与缺失产物失败归属测试；新增前端 StageCard 跳过按钮、已跳过状态与 SSE 合并断言。定向后端/前端回归通过；npm test 通过（56/56）；npm run build 成功；最终 ./init.sh 通过（npm test 56/56、npm run build 成功）。"
     }
   ]
 }

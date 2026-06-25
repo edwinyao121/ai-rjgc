@@ -2,6 +2,7 @@ export const STAGE_STATUS = Object.freeze({
   PENDING: 'PENDING',
   RUNNING: 'RUNNING',
   COMPLETED: 'COMPLETED',
+  SKIPPED: 'SKIPPED',
   FAILED: 'FAILED'
 })
 
@@ -100,7 +101,7 @@ export function getStageByKey(stages, key) {
 
 export function getStageProgress(stages) {
   if (!Array.isArray(stages) || stages.length === 0) return 0
-  const completed = stages.filter((stage) => stage.status === STAGE_STATUS.COMPLETED).length
+  const completed = stages.filter((stage) => stage.status === STAGE_STATUS.COMPLETED || stage.status === STAGE_STATUS.SKIPPED).length
   const running = stages.some((stage) => stage.status === STAGE_STATUS.RUNNING) ? 0.5 : 0
   return Math.min(100, Math.round(((completed + running) / stages.length) * 100))
 }
@@ -110,6 +111,7 @@ export function markStageRunning(stage, now = new Date(), item) {
   stage.startedAt = stage.startedAt || now.toISOString()
   stage.completedAt = null
   stage.failedAt = null
+  stage.skippedAt = null
   stage.duration = '进行中'
   applyRunningTiming(stage, now)
   stage.logSummary = ''
@@ -124,6 +126,7 @@ export function markStageCompleted(stage, now = new Date(), item, outputs = []) 
   stage.status = STAGE_STATUS.COMPLETED
   stage.completedAt = now.toISOString()
   stage.failedAt = null
+  stage.skippedAt = null
   applyFinishedTiming(stage, now)
   if (item) {
     stage.items = [item]
@@ -131,6 +134,28 @@ export function markStageCompleted(stage, now = new Date(), item, outputs = []) 
   if (outputs.length > 0) {
     stage.outputs = outputs
   }
+}
+
+export function markStageSkipped(stage, now = new Date(), item = null) {
+  stage.status = STAGE_STATUS.SKIPPED
+  stage.skippedAt = now.toISOString()
+  stage.completedAt = null
+  stage.failedAt = null
+  stage.actualDurationMs = 0
+  stage.actualDuration = '0秒'
+  stage.duration = '已跳过'
+  stage.estimatedRemainingMs = 0
+  stage.estimatedRemaining = '0秒'
+  stage.estimatedCompletedAt = null
+  stage.logSummary = '阶段已跳过'
+  stage.logPath = null
+  stage.outputs = []
+  stage.reviews = []
+  stage.items = [item || {
+    type: 'skipped',
+    label: '阶段跳过',
+    value: '已跳过'
+  }]
 }
 
 export function markStageFailed(stage, errorMessage, logSummary, now = new Date(), logPath = null) {
@@ -163,6 +188,12 @@ export function refreshStageTiming(stage, now = new Date()) {
   ensureStageEstimate(stage)
   if (stage.status === STAGE_STATUS.RUNNING) {
     applyRunningTiming(stage, now)
+  } else if (stage.status === STAGE_STATUS.SKIPPED) {
+    stage.actualDurationMs = 0
+    stage.actualDuration = '0秒'
+    stage.duration = '已跳过'
+    stage.estimatedRemainingMs = 0
+    stage.estimatedRemaining = '0秒'
   } else if ((stage.status === STAGE_STATUS.COMPLETED || stage.status === STAGE_STATUS.FAILED) && !stage.actualDuration && stage.startedAt) {
     const finishedAt = stage.completedAt || stage.failedAt || now.toISOString()
     applyFinishedTiming(stage, new Date(finishedAt))

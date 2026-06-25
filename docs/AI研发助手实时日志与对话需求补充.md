@@ -102,6 +102,8 @@ AI 研发助手不展示模型内部推理链，只展示面向用户可审计�
 }
 ```
 
+`stage.status.changed.status` 可取 `PENDING`、`RUNNING`、`COMPLETED`、`SKIPPED`、`FAILED`；`SKIPPED` 表示该阶段已被用户跳过，前端应按终态合并。
+
 ```json
 {
   "type": "stage.log.append",
@@ -274,4 +276,3 @@ AI 助手消息：
 - 刷新页面后，历史日志和历史 AI 消息仍然可见。
 - 阶段失败时，看板状态、阶段详情日志和 AI 助手说明保持一致。
 - 部署成功后，AI 助手展示交付说明，看板展示本机访问地址。
-

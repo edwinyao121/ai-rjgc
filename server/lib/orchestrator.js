@@ -10,6 +10,7 @@ import {
   markStageCompleted,
   markStageFailed,
   markStageRunning,
+  markStageSkipped,
   refreshStageTiming
 } from './stages.js'
 import { fallbackRequirementsMarkdown, fallbackRequirementsItems, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, createTestingRepairPrompt, parseClarificationResponse } from './opencode.js'
@@ -18,6 +19,7 @@ import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth
 
 const HANDOFF_FILE = 'handoff.md'
 const TESTING_MAX_REPAIR_RETRIES = 3
+const SKIPPABLE_STAGE_KEYS = new Set(['design', 'coding', 'testing', 'deployment'])
 
 export class WorkOrderService {
   constructor({
@@ -288,11 +290,16 @@ export class WorkOrderService {
     try {
       await this.runOpencodePipelineStage(id, 'design')
       await this.runOpencodePipelineStage(id, 'coding')
-      await this.ensureManifest(id)
+      if (!await this.isStageSkipped(id, 'coding')) {
+        await this.ensureManifest(id, 'coding')
+      }
       await this.runTestingStage(id)
       await this.runDeploymentStage(id)
       const state = await this.requireWorkOrder(id)
-      state.status = WORK_ORDER_STATUS.DEPLOYED
+      const deploymentStage = getStageByKey(state.stages, 'deployment')
+      state.status = deploymentStage?.status === STAGE_STATUS.SKIPPED
+        ? WORK_ORDER_STATUS.COMPLETED
+        : WORK_ORDER_STATUS.DEPLOYED
       state.progress = 100
       state.currentStage = 5
       await this.store.saveWorkOrder(state)
@@ -330,9 +337,53 @@ export class WorkOrderService {
     return state
   }
 
+  async skipStage(id, stageKey) {
+    const targetStageKey = validateSkippableStageKey(stageKey)
+    const state = await this.requireWorkOrder(id)
+    if (![WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT, WORK_ORDER_STATUS.RUNNING].includes(state.status)) {
+      const error = new Error(`当前工单状态为 ${state.status}，无法跳过阶段`)
+      error.code = 'CONFLICT'
+      throw error
+    }
+
+    const stage = getStageByKey(state.stages, targetStageKey)
+    if (!stage) {
+      const error = new Error('Stage not found')
+      error.code = 'NOT_FOUND'
+      throw error
+    }
+    if (stage.status !== STAGE_STATUS.PENDING) {
+      const error = new Error(`当前阶段状态为 ${stage.status}，只能跳过待执行阶段`)
+      error.code = 'CONFLICT'
+      throw error
+    }
+
+    markStageSkipped(stage, new Date(), {
+      type: 'skipped',
+      label: '阶段跳过',
+      value: '已跳过'
+    })
+    if (state.status === WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT) {
+      const nextPendingStage = state.stages.find((item) => item.status === STAGE_STATUS.PENDING)
+      state.currentStage = nextPendingStage?.id || stage.id
+    }
+    state.progress = getStageProgress(state.stages)
+    await this.store.saveWorkOrder(state)
+    await this.appendStageLogEntry(id, targetStageKey, {
+      level: 'INFO',
+      source: 'system',
+      text: `${stage.name}已跳过`
+    })
+    await this.emitStageStatus(id, state, stage, `${stage.name}已跳过`)
+    return state
+  }
+
   async runOpencodePipelineStage(id, stageKey) {
     let state = await this.requireWorkOrder(id)
     const stage = getStageByKey(state.stages, stageKey)
+    if (stage.status === STAGE_STATUS.SKIPPED) {
+      return state
+    }
     state.currentStage = stage.id
     markStageRunning(stage, new Date(), {
       type: 'ai',
@@ -397,7 +448,10 @@ export class WorkOrderService {
   }
 
   async runTestingStage(id) {
-    await this.runOpencodePipelineStage(id, 'testing')
+    const preparedState = await this.runOpencodePipelineStage(id, 'testing')
+    if (getStageByKey(preparedState.stages, 'testing')?.status === STAGE_STATUS.SKIPPED) {
+      return preparedState
+    }
     let repairAttempts = 0
 
     while (true) {
@@ -453,7 +507,7 @@ export class WorkOrderService {
 
   async runTestingCommandChain(id) {
     const state = await this.requireWorkOrder(id)
-    const manifest = await this.ensureManifest(id)
+    const manifest = await this.ensureManifest(id, 'testing')
     const commands = [
       ['install', '安装依赖', manifest.install],
       ['build', '构建应用', manifest.build],
@@ -604,10 +658,13 @@ export class WorkOrderService {
   }
 
   async runDeploymentStage(id) {
-    await this.runOpencodePipelineStage(id, 'deployment')
+    const preparedState = await this.runOpencodePipelineStage(id, 'deployment')
+    if (getStageByKey(preparedState.stages, 'deployment')?.status === STAGE_STATUS.SKIPPED) {
+      return preparedState
+    }
     let state = await this.requireWorkOrder(id)
     const stage = getStageByKey(state.stages, 'deployment')
-    const manifest = await this.ensureManifest(id)
+    const manifest = await this.ensureManifest(id, 'deployment')
     const port = await this.allocatePort(4101)
     const startCommand = substitutePortInCommand(manifest.start, port)
     const healthUrl = substitutePortInUrl(manifest.healthUrl, port)
@@ -710,14 +767,14 @@ export class WorkOrderService {
     return state
   }
 
-  async ensureManifest(id) {
+  async ensureManifest(id, failureStageKey = 'coding') {
     const state = await this.requireWorkOrder(id)
     try {
       return await readManifest(state.appDir)
     } catch (error) {
       const manifestPath = path.join(state.appDir, MANIFEST_FILE)
       const appFiles = await listRelativeFiles(state.appDir)
-      const logPath = await this.appendStageLog(id, 'coding', [
+      const logPath = await this.appendStageLog(id, failureStageKey, [
         '',
         '# 交付清单校验失败',
         `expected: ${manifestPath}`,
@@ -727,9 +784,14 @@ export class WorkOrderService {
         appFiles.length ? appFiles.map((file) => `- ${file}`).join('\n') : '- <empty>',
         ''
       ].join('\n'))
-      await this.failStage(id, 'coding', '缺少或无法解析 factory.manifest.json', error.message, logPath)
+      await this.failStage(id, failureStageKey, '缺少或无法解析 factory.manifest.json', error.message, logPath)
       throw error
     }
+  }
+
+  async isStageSkipped(id, stageKey) {
+    const state = await this.requireWorkOrder(id)
+    return getStageByKey(state.stages, stageKey)?.status === STAGE_STATUS.SKIPPED
   }
 
   async failStage(id, stageKey, message, logSummary = '', logPath = null) {
@@ -1085,6 +1147,16 @@ function validateDescription(description) {
   return trimmed
 }
 
+function validateSkippableStageKey(stageKey) {
+  const normalized = String(stageKey || '').trim()
+  if (!SKIPPABLE_STAGE_KEYS.has(normalized)) {
+    const error = new Error('Stage cannot be skipped')
+    error.code = 'VALIDATION_ERROR'
+    throw error
+  }
+  return normalized
+}
+
 function stageFromState(state, key) {
   return getStageByKey(state.stages, key)
 }
@@ -1132,8 +1204,11 @@ function splitOutputLines(content) {
 
 function buildHandoffDocument(state, note = '') {
   const completedStages = (state.stages || [])
-    .filter((stage) => stage.status === STAGE_STATUS.COMPLETED)
-    .map((stage) => `- ${stage.name}：${stage.logSummary || stage.items?.[0]?.value || '已完成'}`)
+    .filter((stage) => stage.status === STAGE_STATUS.COMPLETED || stage.status === STAGE_STATUS.SKIPPED)
+    .map((stage) => {
+      const statusText = stage.status === STAGE_STATUS.SKIPPED ? '已跳过' : (stage.logSummary || stage.items?.[0]?.value || '已完成')
+      return `- ${stage.name}：${statusText}`
+    })
   const runningStage = (state.stages || []).find((stage) => stage.status === STAGE_STATUS.RUNNING)
   const failedStage = (state.stages || []).find((stage) => stage.status === STAGE_STATUS.FAILED)
   const repairAttempts = state.repairAttempts?.testing

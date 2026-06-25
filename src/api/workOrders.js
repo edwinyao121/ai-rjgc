@@ -44,6 +44,14 @@ export async function startDevelopmentRun(id) {
   return payload.workOrder
 }
 
+export async function skipWorkOrderStage(id, stageKey) {
+  const payload = await apiFetch(`/api/work-orders/${id}/stage-skips`, {
+    method: 'POST',
+    body: JSON.stringify({ stageKey })
+  })
+  return payload.workOrder
+}
+
 export async function fetchStageLog(workOrderId, stageKey) {
   const payload = await apiFetch(`/api/work-orders/${workOrderId}/stages/${stageKey}/logs`)
   return payload.stageLog

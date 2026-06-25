@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2 } from 'lucide-react'
-import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
+import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2, Ban } from 'lucide-react'
+import { createWorkOrder, fetchStageLog, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -495,6 +495,7 @@ const runtimeStatusMap = {
   PENDING: 'pending',
   RUNNING: 'active',
   COMPLETED: 'completed',
+  SKIPPED: 'skipped',
   FAILED: 'failed'
 }
 
@@ -552,6 +553,10 @@ function getStageTimingDisplay(stage, visualStatus, progress, nowMs = Date.now()
 
   if (visualStatus === 'completed') {
     return { label: '实际耗时', value: stage?.actualDuration || stage?.duration || '-' }
+  }
+
+  if (visualStatus === 'skipped') {
+    return { label: '阶段状态', value: '已跳过' }
   }
 
   if (visualStatus === 'failed') {
@@ -773,7 +778,7 @@ const getDeliverables = (order) => {
   return { docs, builds, urls, reqDocs, userDocs, sourceCode, installPacks }
 }
 
-export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null }) {
+export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = null, onSkipStage = null, skipLoading = false }) {
   const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
   const visualStatus = normalizeStageStatus(stage.status)
@@ -788,7 +793,7 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
   }
 
   const progress = (() => {
-    if (visualStatus === 'completed') return 100
+    if (visualStatus === 'completed' || visualStatus === 'skipped') return 100
     if (visualStatus === 'pending') return 0
     if (visualStatus === 'failed') return 0
 
@@ -860,6 +865,13 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
     onShowLogs?.(stage)
   }
 
+  const canSkipStage = Boolean(onSkipStage) && stage.id >= 2 && stage.id <= 5 && visualStatus === 'pending'
+
+  const handleSkipClick = (event) => {
+    event.stopPropagation()
+    onSkipStage?.(stage)
+  }
+
   return (
     <div
       onClick={handleCardClick}
@@ -868,7 +880,7 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
       } ${
         isSelected ? 'ring-2 ring-blue-500 shadow-md shadow-blue-200' :
         visualStatus === 'active' ? 'ring-2 ring-blue-400 shadow-md shadow-blue-100' : ''
-      } ${visualStatus === 'pending' ? 'opacity-65' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-md shadow-red-100' : ''}`}
+      } ${visualStatus === 'pending' ? 'opacity-65' : ''} ${visualStatus === 'failed' ? 'ring-2 ring-red-400 shadow-md shadow-red-100' : ''} ${visualStatus === 'skipped' ? 'ring-2 ring-slate-300 shadow-md shadow-slate-100' : ''}`}
       title={onSelect ? `点击查看「${stage.name}」阶段思考过程` : undefined}
     >
 
@@ -890,6 +902,7 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
             {visualStatus === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
             {visualStatus === 'active' && <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>}
             {visualStatus === 'pending' && <Lock className="w-5 h-5 text-gray-400" />}
+            {visualStatus === 'skipped' && <Ban className="w-5 h-5 text-slate-500" />}
             {visualStatus === 'failed' && <AlertCircle className="w-5 h-5 text-red-500" />}
           </div>
         </div>
@@ -901,11 +914,13 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
         <span className={`text-[19px] font-bold tracking-wider ${
           visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
           visualStatus === 'failed' ? 'text-red-500' :
-          visualStatus === 'completed' ? 'text-green-650' : 'text-gray-400'
+          visualStatus === 'completed' ? 'text-green-650' :
+          visualStatus === 'skipped' ? 'text-slate-500' : 'text-gray-400'
         }`}>
           {visualStatus === 'completed' && '已完成'}
           {visualStatus === 'active' && '进行中'}
           {visualStatus === 'pending' && '等待中'}
+          {visualStatus === 'skipped' && '已跳过'}
           {visualStatus === 'failed' && '开发失败'}
         </span>
 
@@ -929,6 +944,7 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
                 className={`h-full rounded-full transition-all duration-500 ${
                   visualStatus === 'completed' ? 'bg-green-500' :
                   visualStatus === 'active' ? 'bg-blue-500 animate-pulse' :
+                  visualStatus === 'skipped' ? 'bg-slate-400' :
                   visualStatus === 'failed' ? 'bg-red-500' : 'bg-gray-300'
                 }`}
                 style={{ width: `${progress}%` }}
@@ -946,7 +962,8 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
           <span className={`block text-[20px] font-bold font-mono tracking-tight ${
           visualStatus === 'active' ? 'text-blue-600' :
           visualStatus === 'failed' ? 'text-red-500' :
-          visualStatus === 'completed' ? 'text-gray-500' : 'text-gray-400'
+          visualStatus === 'completed' ? 'text-gray-500' :
+          visualStatus === 'skipped' ? 'text-slate-500' : 'text-gray-400'
           }`}>
             {timing.value}
           </span>
@@ -955,17 +972,30 @@ export function StageCard({ stage, onShowLogs, isSelected = false, onSelect = nu
 
       {/* Footer */}
       <div className="px-3 py-1.5 border-t border-gray-150/60 bg-white/40 rounded-b-lg flex items-center justify-between text-[18px] gap-2">
-        <span className="text-gray-450 truncate max-w-[96px] font-medium text-[18px]">
+        <span className="text-gray-450 truncate max-w-[72px] font-medium text-[18px]">
           {stage.gate.exit ? `准出: ${stage.gate.exit}` : '-'}
         </span>
-        <button
-          type="button"
-          onClick={handleDetailsClick}
-          className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/90 px-2 py-1 text-[18px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
-        >
-          <Eye className="w-4 h-4" />
-          日志
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {canSkipStage && (
+            <button
+              type="button"
+              onClick={handleSkipClick}
+              disabled={skipLoading}
+              className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[18px] font-bold text-amber-700 hover:bg-amber-100 transition-colors shadow-sm disabled:opacity-60"
+            >
+              {skipLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
+              跳过
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleDetailsClick}
+            className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white/90 px-2 py-1 text-[18px] font-bold text-gray-600 hover:bg-white hover:text-blue-600 transition-colors shadow-sm"
+          >
+            <Eye className="w-4 h-4" />
+            日志
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -1989,6 +2019,7 @@ function stageStatusColor(status) {
   if (status === 'completed') return 'text-green-500'
   if (status === 'active') return 'text-blue-500'
   if (status === 'failed') return 'text-red-500'
+  if (status === 'skipped') return 'text-slate-500'
   return 'text-gray-400'
 }
 
@@ -2161,6 +2192,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [createForm, setCreateForm] = useState({ title: '', description: '' })
   const [createError, setCreateError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [stageSkipInFlight, setStageSkipInFlight] = useState(null)
   const [stageLogModal, setStageLogModal] = useState({
     open: false,
     stage: null,
@@ -2183,10 +2215,14 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     if (!selectedOrder) return 0
     const devStages = selectedOrder.stages.filter(s => s.id >= 2 && s.id <= 5)
     if (devStages.length === 0) return 0
-    const completedDevCount = devStages.filter(s => normalizeStageStatus(s.status) === 'completed').length
+    const completedDevCount = devStages.filter(s => {
+      const status = normalizeStageStatus(s.status)
+      return status === 'completed' || status === 'skipped'
+    }).length
     return Math.round((completedDevCount / devStages.length) * 100)
   }, [selectedOrder])
   const completedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'completed').length
+  const skippedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'skipped').length
   const activeCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'active').length
   const pendingCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'pending').length
   const failedCount = selectedOrder.stages.filter(s => normalizeStageStatus(s.status) === 'failed').length
@@ -2370,6 +2406,22 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     }
   }
 
+  const handleSkipStage = async (stage) => {
+    if (!isRuntimeOrder(selectedOrder) || !stage?.key) return
+    const requestKey = `${selectedOrder.id}:${stage.key}`
+    setStageSkipInFlight(requestKey)
+    setApiError('')
+    try {
+      const updated = await skipWorkOrderStage(selectedOrder.id, stage.key)
+      setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
+      setSelectedOrderId(updated.id)
+    } catch (error) {
+      setApiError(error.message || '跳过阶段失败')
+    } finally {
+      setStageSkipInFlight(null)
+    }
+  }
+
   const handleShowStageLogs = async (stage) => {
     setStageLogModal({
       open: true,
@@ -2506,6 +2558,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-green-700">{completedCount} 完成</span>
                 </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded">
+                  <Ban className="w-5 h-5 text-slate-500" />
+                  <span className="text-slate-600">{skippedCount} 跳过</span>
+                </div>
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded">
                   <Clock className="w-5 h-5 text-blue-600" />
                   <span className="text-blue-700">{activeCount} 进行中</span>
@@ -2552,6 +2608,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         onShowLogs={handleShowStageLogs}
                         isSelected={selectedStageKey === stage.key}
                         onSelect={(s) => setSelectedStageKey(s.key)}
+                        onSkipStage={isRuntimeOrder(selectedOrder) ? handleSkipStage : null}
+                        skipLoading={stageSkipInFlight === `${selectedOrder.id}:${stage.key}`}
                       />
                     ))}
                   </div>
