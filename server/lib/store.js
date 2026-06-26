@@ -5,6 +5,7 @@ import { createPipelineStages, WORK_ORDER_STATUS } from './stages.js'
 
 const WORK_ORDER_ID_PATTERN = /^WO-\d{8}-\d{3}$/
 const STAGE_KEY_PATTERN = /^[a-z]+$/
+const DEFAULT_OPENCODE_AGENT = 'build'
 
 export function toDateKey(date = new Date()) {
   const year = date.getFullYear()
@@ -105,7 +106,8 @@ export class WorkOrderStore {
     appId = null,
     workspaceDir = null,
     appDir = null,
-    modelSelections = null
+    modelSelections = null,
+    agentSelections = null
   }) {
     const id = await this.allocateId(now)
     const workOrderDir = this.getWorkOrderDir(id)
@@ -161,6 +163,7 @@ export class WorkOrderStore {
       requirementsPath: null,
       requirementsItems: null,
       modelSelections: normalizeModelSelectionsForState(modelSelections),
+      agentSelections: normalizeAgentSelectionsForState(agentSelections),
       awaitingOriginalRequirement: Boolean(deferClarification),
       messages,
       stages: createPipelineStages(now)
@@ -189,6 +192,7 @@ export class WorkOrderStore {
       await this.writeMessages(state.id, state.messages)
     }
     state.modelSelections = normalizeModelSelectionsForState(state.modelSelections)
+    state.agentSelections = normalizeAgentSelectionsForState(state.agentSelections)
     const statePath = this.getStatePath(state.id)
     await writeFileAtomically(statePath, `${JSON.stringify(state, null, 2)}\n`)
     return state
@@ -199,6 +203,8 @@ export class WorkOrderStore {
     try {
       const raw = await fs.readFile(this.getStatePath(id), 'utf8')
       const state = JSON.parse(raw)
+      state.modelSelections = normalizeModelSelectionsForState(state.modelSelections)
+      state.agentSelections = normalizeAgentSelectionsForState(state.agentSelections)
       const persistedMessages = await this.readMessages(id)
       if (persistedMessages) {
         state.messages = persistedMessages
@@ -479,6 +485,18 @@ function normalizeModelSelectionsForState(modelSelections) {
   for (const stageKey of ['requirements', 'design', 'coding', 'testing', 'deployment']) {
     const value = String(source[stageKey] || '').trim()
     result[stageKey] = value || null
+  }
+  return result
+}
+
+function normalizeAgentSelectionsForState(agentSelections) {
+  const source = agentSelections && typeof agentSelections === 'object' && !Array.isArray(agentSelections)
+    ? agentSelections
+    : {}
+  const result = {}
+  for (const stageKey of ['requirements', 'design', 'coding', 'testing', 'deployment']) {
+    const value = String(source[stageKey] || '').trim()
+    result[stageKey] = value || DEFAULT_OPENCODE_AGENT
   }
   return result
 }

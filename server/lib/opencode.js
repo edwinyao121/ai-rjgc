@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnostics = false, model = null } = {}) {
+export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnostics = false, model = null, agent = null } = {}) {
   const command = [
     'opencode',
     'run',
@@ -16,6 +16,10 @@ export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnos
   const selectedModel = String(model || '').trim()
   if (selectedModel) {
     command.push('--model', selectedModel)
+  }
+  const selectedAgent = String(agent || '').trim()
+  if (selectedAgent) {
+    command.push('--agent', selectedAgent)
   }
   command.push('--dangerously-skip-permissions', '--dir', path.resolve(appDir), prompt)
   return command
@@ -114,14 +118,23 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：系统设计。
-请使用"frontend-design" skill 输出前端设计文档，可创建 docs/front-end-design.md。若已有代码请保持兼容。`
+请使用"frontend-design" skill 输出可指导后续编码和质检的前端设计文档，可创建 docs/front-end-design.md。若已有代码请保持兼容。
+设计文档必须包含：
+- 用户旅程：核心角色如何从进入页面到完成关键任务。
+- 页面结构：主要页面、布局区域、导航关系和关键交互状态。
+- 技术方案：框架、目录结构、核心模块、构建和本机启动策略。
+- 数据结构：关键实体、字段、状态枚举、示例数据和本地持久化方式。
+- 验收场景：至少 3 条可执行验收路径。
+- Playwright 端到端测试计划：Web/浏览器应用必须覆盖核心用户路径；若不是浏览器应用，说明等价自动化测试方案和原因。`
   }
 
   if (stageKey === 'coding') {
     return `${shared}
 
 当前阶段：智能编码。
-请根据requirements.md和docs/front-end-design.md文档，生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
+请根据requirements.md和docs/front-end-design.md文档，生成可运行 MVP、真实交互和可访问 UI，避免只交付静态占位页面。
+若生成物是 Web/浏览器应用，必须配置并提交 Playwright 端到端测试，覆盖核心用户路径，并让 manifest.test 能执行这些测试；若不是浏览器应用，使用等价自动化测试并在 handoff.md 说明原因。
+请生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
 {
   "name": "app-name",
   "install": ["npm", "install"],
@@ -137,14 +150,17 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：测试质检。
-请补齐或修复测试，保证 manifest 中的 build/test 命令能通过。不要启动长期运行进程。`
+请优先补齐并执行 Playwright 端到端测试，覆盖核心用户路径、主要表单/按钮交互、错误或空状态，以及页面可访问性基础行为。
+保证 manifest 中的 build/test 命令能通过。不要删除有价值的测试，不要以跳过或弱化断言代替修复。不要启动长期运行进程。
+若生成物不是 Web/浏览器应用，请补齐等价自动化测试，并在 handoff.md 说明未使用 Playwright 的原因。`
   }
 
   if (stageKey === 'deployment') {
     return `${shared}
 
 当前阶段：部署交付准备。
-请检查启动脚本、健康检查路径和 manifest 是否适合本机部署。不要启动长期运行进程。`
+请检查启动脚本、健康检查路径和 manifest 是否适合本机部署。不要启动长期运行进程。
+必须确认 manifest.appUrl 指向用户可打开的真实前端页面，而不是 /api/health、/health 或其他健康检查接口；healthUrl 只用于后端探活。`
   }
 
   return shared
@@ -185,7 +201,7 @@ ${logSummary || '<empty>'}
 - 读取 handoff.md 与 ${repairContextPath} 后定位失败原因。
 - 可以修改源码、测试、依赖脚本、factory.manifest.json 或本机启动脚本。
 - 修复后不要启动长期运行进程，不要部署。
-- 不要绕过测试，不要删除有价值的测试，不要使用破坏系统环境的参数。
+- 保留并修复 Playwright 端到端测试；不允许绕过测试，不要删除有价值的测试，不要使用破坏系统环境的参数。
 - 完成后更新 handoff.md，说明修复内容和下一步质检注意事项。`
 }
 

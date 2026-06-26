@@ -22,6 +22,8 @@ const HANDOFF_FILE = 'handoff.md'
 const TESTING_MAX_REPAIR_RETRIES = 3
 const SKIPPABLE_STAGE_KEYS = new Set(['design', 'coding', 'testing', 'deployment'])
 const MODEL_STAGE_KEYS = new Set(['requirements', 'design', 'coding', 'testing', 'deployment'])
+const AGENT_STAGE_KEYS = new Set(['requirements', 'design', 'coding', 'testing', 'deployment'])
+const DEFAULT_OPENCODE_AGENT = 'build'
 
 function parseOpencodeModels(output) {
   return String(output || '')
@@ -35,12 +37,37 @@ function parseOpencodeModels(output) {
     })
 }
 
+function parseOpencodeAgents(output) {
+  const agents = []
+  const seen = new Set()
+  for (const line of String(output || '').split(/\r?\n/)) {
+    const match = line.match(/^([A-Za-z][A-Za-z0-9_-]*)\s+\(([^)]+)\)\s*$/)
+    if (!match) continue
+    const id = match[1]
+    if (seen.has(id)) continue
+    seen.add(id)
+    const marker = match[2].toLowerCase()
+    agents.push({
+      id,
+      label: id,
+      isPrimary: marker.includes('primary')
+    })
+  }
+  return agents
+}
+
 function getSelectedModelForStage(state, stageKey) {
   const selections = state?.modelSelections || {}
   if (MODEL_STAGE_KEYS.has(stageKey)) {
     return selections[stageKey] || (stageKey === 'testing' || stageKey === 'deployment' ? selections.coding || null : null)
   }
   return null
+}
+
+function getSelectedAgentForStage(state, stageKey) {
+  const selections = state?.agentSelections || {}
+  if (!AGENT_STAGE_KEYS.has(stageKey)) return DEFAULT_OPENCODE_AGENT
+  return String(selections[stageKey] || '').trim() || DEFAULT_OPENCODE_AGENT
 }
 
 export class WorkOrderService {
@@ -53,7 +80,8 @@ export class WorkOrderService {
     healthCheck = waitForHealth,
     logger = console,
     appWorkspaceRoot = path.resolve(process.cwd(), '.runtime/app-workspaces'),
-    modelCacheTtlMs = 60 * 1000
+    modelCacheTtlMs = 60 * 1000,
+    agentCacheTtlMs = 60 * 1000
   }) {
     this.store = store
     this.eventBus = eventBus
@@ -68,6 +96,8 @@ export class WorkOrderService {
     this.appWorkspaceRoot = appWorkspaceRoot
     this.modelCacheTtlMs = modelCacheTtlMs
     this.modelCache = null
+    this.agentCacheTtlMs = agentCacheTtlMs
+    this.agentCache = null
   }
 
   async init() {
@@ -100,6 +130,25 @@ export class WorkOrderService {
     const models = parseOpencodeModels(result.stdout)
     this.modelCache = { loadedAt: now, models }
     return models
+  }
+
+  async listOpencodeAgents({ force = false } = {}) {
+    const now = Date.now()
+    if (!force && this.agentCache && now - this.agentCache.loadedAt < this.agentCacheTtlMs) {
+      return this.agentCache.agents
+    }
+    const result = await this.runner.run(['opencode', 'agent', 'list'], {
+      cwd: process.cwd(),
+      timeoutMs: 15 * 1000
+    })
+    if (result.exitCode !== 0) {
+      const error = new Error(`Unable to list opencode agents: ${summarizeCommandResult(result) || `exit ${result.exitCode}`}`)
+      error.code = 'OPENCODE_AGENTS_ERROR'
+      throw error
+    }
+    const agents = parseOpencodeAgents(result.stdout)
+    this.agentCache = { loadedAt: now, agents }
+    return agents
   }
 
   async getWorkOrder(id) {
@@ -142,7 +191,7 @@ export class WorkOrderService {
     }
   }
 
-  async createWorkOrder({ message, title, description, deferClarification = false, appId = null, modelSelections = null }, { startClarification = this.autoStart } = {}) {
+  async createWorkOrder({ message, title, description, deferClarification = false, appId = null, modelSelections = null, agentSelections = null }, { startClarification = this.autoStart } = {}) {
     const shouldDeferClarification = Boolean(deferClarification)
     const trimmed = shouldDeferClarification ? '' : validateMessage(message)
     const appContext = await this.resolveAppContext(appId)
@@ -150,6 +199,7 @@ export class WorkOrderService {
     const trimmedTitle = shouldDeferClarification ? validateTitle(effectiveTitle) : (effectiveTitle == null ? null : validateTitle(effectiveTitle))
     const trimmedDescription = description == null ? '' : validateDescription(description)
     const normalizedModelSelections = await this.normalizeAndValidateModelSelections(modelSelections)
+    const normalizedAgentSelections = await this.normalizeAndValidateAgentSelections(agentSelections)
     const state = await this.store.createWorkOrder({
       message: trimmed,
       title: trimmedTitle,
@@ -158,7 +208,8 @@ export class WorkOrderService {
       appId: appContext?.id || null,
       workspaceDir: appContext?.workspaceDir || null,
       appDir: appContext?.appDir || null,
-      modelSelections: normalizedModelSelections
+      modelSelections: normalizedModelSelections,
+      agentSelections: normalizedAgentSelections
     })
     await this.emit(state.id, 'work-order.created', { workOrder: state })
     if (startClarification && !shouldDeferClarification) {
@@ -225,7 +276,8 @@ export class WorkOrderService {
       const command = buildOpencodeCommand(prompt, state.appDir, {
         thinking: false,
         diagnostics: true,
-        model: getSelectedModelForStage(state, 'requirements')
+        model: getSelectedModelForStage(state, 'requirements'),
+        agent: getSelectedAgentForStage(state, 'requirements')
       })
       const result = await this.runCommandWithStageLogging(id, 'requirements', {
         label: '需求澄清',
@@ -366,9 +418,12 @@ export class WorkOrderService {
     }
   }
 
-  async startDevelopmentRun(id, modelSelections = null) {
+  async startDevelopmentRun(id, modelSelections = null, agentSelections = null) {
     if (modelSelections) {
       await this.updateModelSelections(id, modelSelections)
+    }
+    if (agentSelections) {
+      await this.updateAgentSelections(id, agentSelections)
     }
     const state = await this.requireWorkOrder(id)
     if (this.activePipelines.has(id) || this.activeClarifications.has(id)) {
@@ -408,6 +463,22 @@ export class WorkOrderService {
     await this.store.saveWorkOrder(state)
     await this.emit(id, 'work-order.model-selections.updated', {
       modelSelections: state.modelSelections,
+      workOrder: state
+    })
+    return state
+  }
+
+  async updateAgentSelections(id, agentSelections) {
+    const state = await this.requireWorkOrder(id)
+    if (![WORK_ORDER_STATUS.CLARIFYING, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT].includes(state.status)) {
+      const error = new Error(`当前工单状态为 ${state.status}，无法修改 Agent 配置`)
+      error.code = 'CONFLICT'
+      throw error
+    }
+    state.agentSelections = await this.normalizeAndValidateAgentSelections(agentSelections, state.agentSelections)
+    await this.store.saveWorkOrder(state)
+    await this.emit(id, 'work-order.agent-selections.updated', {
+      agentSelections: state.agentSelections,
       workOrder: state
     })
     return state
@@ -483,7 +554,8 @@ export class WorkOrderService {
     })
     const command = buildOpencodeCommand(prompt, state.appDir, {
       thinking: true,
-      model: getSelectedModelForStage(state, stageKey)
+      model: getSelectedModelForStage(state, stageKey),
+      agent: getSelectedAgentForStage(state, stageKey)
     })
     const result = await this.runCommandWithStageLogging(id, stageKey, {
       label: stage.name,
@@ -713,7 +785,8 @@ export class WorkOrderService {
     })
     const repairCommand = buildOpencodeCommand(prompt, state.appDir, {
       thinking: true,
-      model: getSelectedModelForStage(state, 'testing')
+      model: getSelectedModelForStage(state, 'testing'),
+      agent: getSelectedAgentForStage(state, 'testing')
     })
     const result = await this.runCommandWithStageLogging(id, 'testing', {
       label: `智能编码/修复 第 ${attempt}/${maxAttempts} 次`,
@@ -1322,6 +1395,39 @@ export class WorkOrderService {
     }
     return merged
   }
+
+  async normalizeAndValidateAgentSelections(input, base = null) {
+    const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+    const merged = {
+      requirements: base?.requirements || DEFAULT_OPENCODE_AGENT,
+      design: base?.design || DEFAULT_OPENCODE_AGENT,
+      coding: base?.coding || DEFAULT_OPENCODE_AGENT,
+      testing: base?.testing || DEFAULT_OPENCODE_AGENT,
+      deployment: base?.deployment || DEFAULT_OPENCODE_AGENT
+    }
+    const keys = Object.keys(source)
+    for (const key of keys) {
+      if (!AGENT_STAGE_KEYS.has(key)) {
+        const error = new Error(`Unsupported agent selection stage: ${key}`)
+        error.code = 'VALIDATION_ERROR'
+        throw error
+      }
+      const value = String(source[key] || '').trim()
+      merged[key] = value || DEFAULT_OPENCODE_AGENT
+    }
+    if (keys.length === 0) return merged
+
+    const availableAgents = await this.listOpencodeAgents()
+    const availableIds = new Set(availableAgents.map((agent) => agent.id))
+    for (const agent of new Set(Object.values(merged))) {
+      if (!availableIds.has(agent)) {
+        const error = new Error(`Agent is not available from opencode agent list: ${agent}`)
+        error.code = 'VALIDATION_ERROR'
+        throw error
+      }
+    }
+    return merged
+  }
 }
 
 function validateMessage(message) {
@@ -1576,7 +1682,7 @@ function buildHandoffDocument(state, note = '') {
     '## 第一阅读项',
     '',
     '- 后续所有阶段必须先阅读本文件。',
-    '- 如果本文件不存在或信息不足，再读取 requirements.md、docs/design.md 和当前项目完整上下文。',
+    '- 如果本文件不存在或信息不足，再读取 requirements.md、docs/front-end-design.md 和当前项目完整上下文。',
     '',
     '## 当前工单',
     '',

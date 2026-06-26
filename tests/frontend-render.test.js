@@ -273,7 +273,7 @@ test('AIChatPanel asks for original requirement after deferred app shell creatio
   }
 })
 
-test('work order API sends model selections to persistence and start-development endpoints', async () => {
+test('work order API sends model and agent selections to persistence and start-development endpoints', async () => {
   const originalFetch = globalThis.fetch
   const calls = []
   globalThis.fetch = async (path, options = {}) => {
@@ -286,12 +286,20 @@ test('work order API sends model selections to persistence and start-development
           coding: 'opencode/deepseek-v4-flash-free',
           testing: 'openai/gpt-5.2',
           deployment: 'opencode/deepseek-v4-flash-free'
+        },
+        agentSelections: {
+          requirements: 'build',
+          design: 'design-agent',
+          coding: 'coding-agent',
+          testing: 'qa-agent',
+          deployment: 'deploy-agent'
         }
       },
       apps: [],
-      models: []
+      models: [],
+      agents: []
     }), {
-      status: path.includes('opencode-models') || path.includes('apps') ? 200 : (path.includes('development-runs') ? 202 : 200),
+      status: path.includes('opencode-models') || path.includes('opencode-agents') || path.includes('apps') ? 200 : (path.includes('development-runs') ? 202 : 200),
       headers: { 'Content-Type': 'application/json' }
     })
   }
@@ -300,11 +308,32 @@ test('work order API sends model selections to persistence and start-development
     const api = await import('../src/api/workOrders.js')
     assert.equal(typeof api.listApps, 'function')
     assert.equal(typeof api.listOpencodeModels, 'function')
+    assert.equal(typeof api.listOpencodeAgents, 'function')
     assert.equal(typeof api.updateWorkOrderModelSelections, 'function')
+    assert.equal(typeof api.updateWorkOrderAgentSelections, 'function')
     assert.equal(typeof api.fetchWorkOrder, 'function')
 
     await api.listApps()
     await api.listOpencodeModels()
+    await api.listOpencodeAgents()
+    await api.createWorkOrder({
+      title: '模型与 Agent 选择应用',
+      deferClarification: true,
+      modelSelections: {
+        requirements: 'opencode/deepseek-v4-flash-free',
+        design: 'openai/gpt-5.2',
+        coding: 'opencode/deepseek-v4-flash-free',
+        testing: 'openai/gpt-5.2',
+        deployment: 'opencode/deepseek-v4-flash-free'
+      },
+      agentSelections: {
+        requirements: 'build',
+        design: 'design-agent',
+        coding: 'coding-agent',
+        testing: 'qa-agent',
+        deployment: 'deploy-agent'
+      }
+    })
     await api.updateWorkOrderModelSelections('WO-20260625-201', {
       requirements: 'opencode/deepseek-v4-flash-free',
       design: 'openai/gpt-5.2',
@@ -312,20 +341,43 @@ test('work order API sends model selections to persistence and start-development
       testing: 'openai/gpt-5.2',
       deployment: 'opencode/deepseek-v4-flash-free'
     })
+    await api.updateWorkOrderAgentSelections('WO-20260625-201', {
+      requirements: 'build',
+      design: 'design-agent',
+      coding: 'coding-agent',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    })
     await api.startDevelopmentRun('WO-20260625-201', {
       requirements: 'opencode/deepseek-v4-flash-free',
       design: 'openai/gpt-5.2',
       coding: 'opencode/deepseek-v4-flash-free',
       testing: 'openai/gpt-5.2',
       deployment: 'opencode/deepseek-v4-flash-free'
+    }, {
+      requirements: 'build',
+      design: 'design-agent',
+      coding: 'coding-agent',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
     })
     const fetched = await api.fetchWorkOrder('WO-20260625-201')
 
     assert.equal(calls[0].path, '/api/apps')
     assert.equal(calls[1].path, '/api/opencode-models')
-    assert.equal(calls[2].path, '/api/work-orders/WO-20260625-201/model-selections')
-    assert.equal(calls[2].options.method, 'PATCH')
-    assert.deepEqual(JSON.parse(calls[2].options.body), {
+    assert.equal(calls[2].path, '/api/opencode-agents')
+    assert.equal(calls[3].path, '/api/work-orders')
+    assert.equal(calls[3].options.method, 'POST')
+    assert.deepEqual(JSON.parse(calls[3].options.body).agentSelections, {
+      requirements: 'build',
+      design: 'design-agent',
+      coding: 'coding-agent',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    })
+    assert.equal(calls[4].path, '/api/work-orders/WO-20260625-201/model-selections')
+    assert.equal(calls[4].options.method, 'PATCH')
+    assert.deepEqual(JSON.parse(calls[4].options.body), {
       modelSelections: {
         requirements: 'opencode/deepseek-v4-flash-free',
         design: 'openai/gpt-5.2',
@@ -334,17 +386,35 @@ test('work order API sends model selections to persistence and start-development
         deployment: 'opencode/deepseek-v4-flash-free'
       }
     })
-    assert.equal(calls[3].path, '/api/work-orders/WO-20260625-201/development-runs')
-    assert.deepEqual(JSON.parse(calls[3].options.body), {
+    assert.equal(calls[5].path, '/api/work-orders/WO-20260625-201/agent-selections')
+    assert.equal(calls[5].options.method, 'PATCH')
+    assert.deepEqual(JSON.parse(calls[5].options.body), {
+      agentSelections: {
+        requirements: 'build',
+        design: 'design-agent',
+        coding: 'coding-agent',
+        testing: 'qa-agent',
+        deployment: 'deploy-agent'
+      }
+    })
+    assert.equal(calls[6].path, '/api/work-orders/WO-20260625-201/development-runs')
+    assert.deepEqual(JSON.parse(calls[6].options.body), {
       modelSelections: {
         requirements: 'opencode/deepseek-v4-flash-free',
         design: 'openai/gpt-5.2',
         coding: 'opencode/deepseek-v4-flash-free',
         testing: 'openai/gpt-5.2',
         deployment: 'opencode/deepseek-v4-flash-free'
+      },
+      agentSelections: {
+        requirements: 'build',
+        design: 'design-agent',
+        coding: 'coding-agent',
+        testing: 'qa-agent',
+        deployment: 'deploy-agent'
       }
     })
-    assert.equal(calls[4].path, '/api/work-orders/WO-20260625-201')
+    assert.equal(calls[7].path, '/api/work-orders/WO-20260625-201')
     assert.equal(fetched.id, 'WO-20260625-201')
   } finally {
     globalThis.fetch = originalFetch
@@ -709,6 +779,87 @@ test('StageCard hides model details behind a compact configuration button', asyn
       assert.doesNotMatch(configurableHtml, /openai\/gpt-5\.2/)
       assert.doesNotMatch(configurableHtml, /opencode\/deepseek-v4-flash-free/)
       assert.doesNotMatch(configurableHtml, /<select/)
+    }
+  } finally {
+    await server.close()
+  }
+})
+
+test('StageCard exposes agent configuration for all five stages without leaking real agent ids on the card', async () => {
+  const server = await createServer({
+    server: { middlewareMode: true },
+    appType: 'custom',
+    logLevel: 'silent'
+  })
+
+  try {
+    const { StageCard } = await server.ssrLoadModule('/src/pages/KanbanBoard.jsx')
+    const Icon = () => React.createElement('span')
+    const agentOptions = [
+      { id: 'build', label: 'build', isPrimary: true },
+      { id: 'design-agent', label: 'design-agent', isPrimary: false },
+      { id: 'qa-agent', label: 'qa-agent', isPrimary: false },
+      { id: 'deploy-agent', label: 'deploy-agent', isPrimary: false }
+    ]
+    const agentSelections = {
+      requirements: 'qa-agent',
+      design: 'design-agent',
+      coding: 'build',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    }
+
+    const requirementsHtml = renderToString(React.createElement(StageCard, {
+      stage: {
+        id: 1,
+        key: 'requirements',
+        name: '需求待入厂',
+        icon: Icon,
+        status: 'RUNNING',
+        duration: '进行中',
+        gate: { exit: '需求校验' },
+        items: []
+      },
+      agentOptions,
+      agentSelections,
+      agentLocked: false,
+      onAgentChange: () => {},
+      onShowLogs: () => {}
+    }))
+
+    assert.match(requirementsHtml, /配置阶段 Agent/)
+    assert.match(requirementsHtml, /需求设计 Agent/)
+    assert.doesNotMatch(requirementsHtml, /qa-agent/)
+    assert.doesNotMatch(requirementsHtml, /<select/)
+
+    for (const stage of [
+      { id: 2, key: 'design', name: '系统设计', virtualAgent: '需求设计 Agent' },
+      { id: 3, key: 'coding', name: '智能编码', virtualAgent: '代码生成 Agent' },
+      { id: 4, key: 'testing', name: '测试质检', virtualAgent: '测试质量 Agent' },
+      { id: 5, key: 'deployment', name: '部署交付', virtualAgent: '部署交付 Agent' }
+    ]) {
+      const html = renderToString(React.createElement(StageCard, {
+        stage: {
+          id: stage.id,
+          key: stage.key,
+          name: stage.name,
+          icon: Icon,
+          status: 'PENDING',
+          duration: '-',
+          gate: { exit: '准出' },
+          items: []
+        },
+        agentOptions,
+        agentSelections,
+        agentLocked: false,
+        onAgentChange: () => {},
+        onShowLogs: () => {}
+      }))
+
+      assert.match(html, /配置阶段 Agent/)
+      assert.match(html, new RegExp(stage.virtualAgent))
+      assert.doesNotMatch(html, /design-agent|qa-agent|deploy-agent/)
+      assert.doesNotMatch(html, /<select/)
     }
   } finally {
     await server.close()

@@ -6,8 +6,8 @@
 
 - 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-016` 补齐阶段模型配置与默认模型继承，已完成。
-- 会话目标：将新建项目模型选择升级为项目默认模型并填入五个阶段，补齐测试质检/部署交付阶段模型配置入口，让测试自动返修使用 testing 阶段模型。
+- 当前事项：`product-017` 补齐阶段 Agent 配置并强化生成提示词，已完成。
+- 会话目标：从本机 opencode 全局 Agent 中选择真实执行 Agent，五个阶段均支持 Agent 配置，并强化设计、编码、测试、部署和自动返修提示词。
 
 ## 已完成
 
@@ -78,6 +78,13 @@
   - 系统设计、智能编码、测试质检准备、部署交付准备分别使用对应阶段模型；历史工单缺少 `testing`/`deployment` 时后端兼容回落到旧的 `coding` 配置。
   - 测试质检自动返修改用 `testing` 阶段模型。
   - 测试质检和部署交付阶段卡片在 READY_FOR_DEVELOPMENT 且待执行时显示齿轮配置入口，主卡片不直接展示模型名或下拉框，启动后锁定隐藏。
+- [x] 补齐阶段 Agent 配置并强化生成提示词：
+  - 新增 `GET /api/opencode-agents`，通过 `opencode agent list` 获取本机全局 Agent，只解析顶层 Agent 标识并返回 `id`、`label`、`isPrimary`。
+  - `agentSelections` 已扩展为 `requirements`、`design`、`coding`、`testing`、`deployment` 五个阶段键；空值和历史工单默认使用 `build`，并且只允许保存本机 Agent 目录返回的值。
+  - `POST /api/work-orders`、`PATCH /api/work-orders/:id/agent-selections`、`POST /api/work-orders/:id/development-runs` 支持提交并保存阶段 Agent 配置。
+  - 需求澄清、系统设计、智能编码、测试质检准备、测试自动返修、部署交付准备均按阶段向 opencode 传入 `--agent`，缺失时传 `build`。
+  - 五个阶段卡片齿轮均支持 Agent 配置；主卡片继续展示产品化虚拟 Agent 名称，不暴露真实 opencode Agent id。
+  - 系统设计、编码、测试质检、部署交付和测试自动返修提示词已强化；Web/浏览器应用明确要求优先补齐并执行 Playwright 端到端测试。
 
 ## 进行中
 
@@ -85,12 +92,14 @@
 
 ## 下一步
 
-1. 重启或等待 Vite 热更新后，在浏览器中确认系统设计、智能编码、测试质检、部署交付卡片只显示齿轮配置按钮，不直接显示模型名称。
-2. 新建项目或从内设应用首次输入需求时，确认“项目默认模型”会作为五阶段默认模型提交。
+1. 重启或等待 Vite 热更新后，在浏览器中确认五个阶段齿轮均可配置 Agent，且阶段主卡片仍只显示产品化虚拟 Agent 名称。
+2. 如需进一步验收真实执行链路，可新建工单选择非默认 Agent，启动流水线后查看阶段命令日志确认对应 `--agent` 生效。
 
 ## 风险与注意事项
 
-- 本次没有修改运行态历史工单 state，因此已失败的历史工单不会自动恢复；历史工单若没有 `modelSelections` 会按 opencode 默认模型执行。
+- 本次没有修改运行态历史工单 state，因此已失败的历史工单不会自动恢复；历史工单若没有 `agentSelections` 会按默认 `build` Agent 执行。
+- Agent 列表完全来自本机 `opencode agent list`，未配置或不存在的 Agent 不会展示，也不能保存到工单配置中。
+- 前端 Agent 配置已通过 SSR/渲染测试覆盖；本次未额外执行真实浏览器 DevTools 手工验收，若需要可按“下一步”进行交互确认。
 - `./init.sh` / `npm run build` 会刷新 `dist/index.html` 资源哈希；当前工作区也保留了既有 `node_modules/.vite/deps/_metadata.json` 缓存变更，提交时应单独确认是否纳入。
 - `.runtime/app-workspaces/` 是运行态工作空间，不纳入 git；后续可直接向对应应用的 `agents/` 或 `skills/` 放置专属能力文件。
 - 模型列表完全来自本机 `opencode models`，未配置的 GLM5.2 不会展示，也不能保存到工单配置中。
@@ -101,7 +110,7 @@
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
 - 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
 - 跳过部署交付后工单状态为 `COMPLETED` 而非 `DEPLOYED`，访问部署应用按钮仍因没有 `deploymentUrl` 保持不可用。
-- 本次不修改 15 分钟超时策略，不新增前端 API；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
+- 本次不修改 15 分钟超时策略；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
 
 ## 本会话修改文件
 
@@ -141,6 +150,12 @@
 - `tests/backend.test.js`、`tests/frontend-render.test.js`：新增/更新五阶段模型保存校验、阶段命令传参、测试返修模型、项目默认模型和测试/部署卡片齿轮入口回归测试。
 - `docs/AI研发助手单机版需求文档.md`：更新五阶段模型选择接口、执行策略和前端改造点。
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-016` 状态与校验证据。
+- `server/index.js`、`server/lib/orchestrator.js`、`server/lib/store.js`、`server/lib/opencode.js`：新增 opencode Agent 目录接口、五阶段 `agentSelections` 校验/持久化、阶段执行 `--agent` 传参和生成提示词强化。
+- `src/api/workOrders.js`、`src/pages/KanbanBoard.jsx`：新增 Agent 目录/配置 API 调用、五阶段 Agent 配置齿轮、创建工单与启动开发时提交 `agentSelections`，并保持主卡片不暴露真实 Agent id。
+- `tests/backend.test.js`、`tests/frontend-render.test.js`：新增/更新 Agent 目录解析、Agent 选择保存校验、阶段命令传参、测试返修 Agent、Playwright 提示词和前端 Agent 配置回归测试。
+- `docs/AI研发助手单机版需求文档.md`：补充 Agent 目录接口、阶段 Agent 配置接口、开发启动请求体和 opencode `--agent` 执行策略。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-017` 状态与校验证据。
+- `server/lib/opencode.js`、`server/lib/orchestrator.js`：解决拉取冲突，保留 `docs/front-end-design.md` 设计产物路径，并合并远端 Agent/Playwright 提示词强化。
 
 ## 校验证据
 
@@ -211,6 +226,13 @@
 - [x] `npm test`：2026-06-26 执行通过，72 个测试全部通过。
 - [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-26 执行通过；`npm test` 72/72，`npm run build` 成功。
+- [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js` 失败，确认旧实现缺少 Agent 目录、`agentSelections`、`--agent`、Playwright 提示词和前端 API/UI 支持。
+- [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js` 通过，9 个测试全部通过。
+- [x] 后端/前端回归：2026-06-26 执行 `node --test tests/backend.test.js tests/frontend-render.test.js` 通过，80 个测试全部通过。
+- [x] `npm test`：2026-06-26 执行通过，80 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 80/80，`npm run build` 成功。
+- [x] 拉取冲突处理：2026-06-26 执行 `git pull --no-rebase` 时 `server/lib/opencode.js` 冲突；已保留 `docs/front-end-design.md` 路径并合并 Agent/Playwright 提示词增强。定向执行 `node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js` 通过 9/9；随后 `./init.sh` 通过（`npm test` 80/80，`npm run build` 成功）。
 
 ## 构建提示
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2, Ban, Settings } from 'lucide-react'
-import { createWorkOrder, fetchStageLog, fetchWorkOrder, listApps, listOpencodeModels, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents, updateWorkOrderModelSelections } from '../api/workOrders'
+import { createWorkOrder, fetchStageLog, fetchWorkOrder, listApps, listOpencodeAgents, listOpencodeModels, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents, updateWorkOrderAgentSelections, updateWorkOrderModelSelections } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -508,6 +508,8 @@ const stageEstimateMsById = {
 }
 
 const MODEL_STAGE_KEYS = ['requirements', 'design', 'coding', 'testing', 'deployment']
+const AGENT_STAGE_KEYS = ['requirements', 'design', 'coding', 'testing', 'deployment']
+const DEFAULT_OPENCODE_AGENT = 'build'
 
 function normalizeStageStatus(status) {
   return runtimeStatusMap[status] || status || 'pending'
@@ -537,12 +539,49 @@ function normalizeModelSelections(selections = {}) {
   return result
 }
 
+function normalizeAgentOptions(agents) {
+  return (Array.isArray(agents) ? agents : [])
+    .map((agent) => {
+      const id = String(agent?.id || agent || '').trim()
+      if (!id) return null
+      return {
+        id,
+        label: String(agent?.label || id),
+        isPrimary: Boolean(agent?.isPrimary)
+      }
+    })
+    .filter(Boolean)
+}
+
+function normalizeAgentSelections(selections = {}) {
+  const result = {}
+  for (const key of AGENT_STAGE_KEYS) {
+    const value = String(selections?.[key] || '').trim()
+    result[key] = value || DEFAULT_OPENCODE_AGENT
+  }
+  return result
+}
+
+function getDefaultAgentSelections() {
+  return AGENT_STAGE_KEYS.reduce((acc, key) => {
+    acc[key] = DEFAULT_OPENCODE_AGENT
+    return acc
+  }, {})
+}
+
 function modelSelectionsFromDefault(modelId) {
   const value = String(modelId || '').trim() || null
   return MODEL_STAGE_KEYS.reduce((acc, key) => {
     acc[key] = value
     return acc
   }, {})
+}
+
+function fillMissingAgentSelections(selections) {
+  return {
+    ...getDefaultAgentSelections(),
+    ...normalizeAgentSelections(selections)
+  }
 }
 
 function getDefaultModelSelections(modelOptions) {
@@ -627,6 +666,7 @@ function normalizeRuntimeOrder(order) {
     progress: order.progress ?? 0,
     lastUpdate: order.lastUpdate || '刚刚',
     modelSelections: normalizeModelSelections(order.modelSelections),
+    agentSelections: normalizeAgentSelections(order.agentSelections),
     stages: (order.stages || []).map((stage) => ({
       ...stage,
       key: ensureStageKey(stage),
@@ -642,6 +682,7 @@ function normalizeMockOrder(order) {
   return {
     ...order,
     modelSelections: normalizeModelSelections(order.modelSelections),
+    agentSelections: normalizeAgentSelections(order.agentSelections),
     stages: (order.stages || []).map((stage) => ({
       ...stage,
       key: ensureStageKey(stage),
@@ -786,6 +827,14 @@ export function applyGranularEventToOrder(order, event) {
     }
   }
 
+  if (event.type === 'work-order.agent-selections.updated') {
+    return {
+      ...order,
+      agentSelections: normalizeAgentSelections(event.agentSelections || event.workOrder?.agentSelections || order.agentSelections),
+      lastUpdate: '刚刚'
+    }
+  }
+
   if (event.type === 'deployment.updated') {
     return {
       ...order,
@@ -888,7 +937,11 @@ export function StageCard({
   modelOptions = [],
   modelSelections = {},
   modelLocked = true,
-  onModelChange = null
+  onModelChange = null,
+  agentOptions = [],
+  agentSelections = {},
+  agentLocked = true,
+  onAgentChange = null
 }) {
   const colors = stageColors[stage.id] || stageColors[1]
   const Icon = stage.icon
@@ -898,6 +951,15 @@ export function StageCard({
   const stageModelKey = ['design', 'coding', 'testing', 'deployment'].includes(stage.key) ? stage.key : null
   const selectedModel = stageModelKey ? normalizeModelSelections(modelSelections)[stageModelKey] : null
   const canEditModel = Boolean(stageModelKey && onModelChange && modelOptions.length > 0 && !modelLocked && visualStatus === 'pending')
+  const stageAgentKey = AGENT_STAGE_KEYS.includes(stage.key) ? stage.key : null
+  const selectedAgent = stageAgentKey ? normalizeAgentSelections(agentSelections)[stageAgentKey] : DEFAULT_OPENCODE_AGENT
+  const canEditAgent = Boolean(stageAgentKey && onAgentChange && agentOptions.length > 0 && !agentLocked && (stage.key === 'requirements' || visualStatus === 'pending'))
+  const canOpenConfig = canEditModel || canEditAgent
+  const configButtonLabel = canEditModel && canEditAgent
+    ? '配置阶段模型与 Agent'
+    : canEditAgent
+      ? '配置阶段 Agent'
+      : '配置阶段模型'
 
   const stageAgents = {
     1: '需求设计 Agent',
@@ -960,10 +1022,10 @@ export function StageCard({
   }, [visualStatus, stage.startedAt, stage.estimatedDurationMs])
 
   useEffect(() => {
-    if (!canEditModel) {
+    if (!canOpenConfig) {
       setModelConfigOpen(false)
     }
-  }, [canEditModel])
+  }, [canOpenConfig])
 
   const timing = getStageTimingDisplay(stage, visualStatus, progress, nowMs)
   const repairStatusText = (() => {
@@ -996,6 +1058,11 @@ export function StageCard({
   const handleModelChange = (event) => {
     event.stopPropagation()
     onModelChange?.(stageModelKey, event.target.value || null)
+  }
+
+  const handleAgentChange = (event) => {
+    event.stopPropagation()
+    onAgentChange?.(stageAgentKey, event.target.value || DEFAULT_OPENCODE_AGENT)
   }
 
   const handleModelConfigClick = (event) => {
@@ -1088,25 +1155,42 @@ export function StageCard({
         </div>
       </div>
 
-      {modelConfigOpen && canEditModel && (
+      {modelConfigOpen && canOpenConfig && (
         <div
           className="absolute left-3 right-3 bottom-12 z-20 rounded-lg border border-blue-200 bg-white p-3 shadow-xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <label className="mb-2 block text-[17px] font-bold text-gray-600" htmlFor={`stage-model-${stage.key}`}>
-            阶段模型
-          </label>
-          <select
-            id={`stage-model-${stage.key}`}
-            value={selectedModel || modelOptions[0]?.id || ''}
-            onChange={handleModelChange}
-            className="w-full min-w-0 rounded-md border border-blue-200 bg-white px-2 py-1.5 text-[17px] font-semibold text-gray-700"
-            title="选择该阶段调用 opencode 的模型"
-          >
-            {modelOptions.map((model) => (
-              <option key={model.id} value={model.id}>{model.label}</option>
-            ))}
-          </select>
+          {canEditAgent && (
+            <label className="block">
+              <span className="mb-2 block text-[17px] font-bold text-gray-600">阶段 Agent</span>
+              <select
+                value={selectedAgent || DEFAULT_OPENCODE_AGENT}
+                onChange={handleAgentChange}
+                className="w-full min-w-0 rounded-md border border-blue-200 bg-white px-2 py-1.5 text-[17px] font-semibold text-gray-700"
+                title="选择该阶段调用 opencode 的 Agent"
+              >
+                {agentOptions.map((agent) => (
+                  <option key={agent.id} value={agent.id}>{agent.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {canEditModel && (
+            <label className={`block ${canEditAgent ? 'mt-3' : ''}`}>
+              <span className="mb-2 block text-[17px] font-bold text-gray-600">阶段模型</span>
+              <select
+                id={`stage-model-${stage.key}`}
+                value={selectedModel || modelOptions[0]?.id || ''}
+                onChange={handleModelChange}
+                className="w-full min-w-0 rounded-md border border-blue-200 bg-white px-2 py-1.5 text-[17px] font-semibold text-gray-700"
+                title="选择该阶段调用 opencode 的模型"
+              >
+                {modelOptions.map((model) => (
+                  <option key={model.id} value={model.id}>{model.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       )}
 
@@ -1116,7 +1200,7 @@ export function StageCard({
           {stage.gate.exit ? `准出: ${stage.gate.exit}` : '-'}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
-          {canEditModel && (
+          {canOpenConfig && (
             <button
               type="button"
               onClick={handleModelConfigClick}
@@ -1125,8 +1209,8 @@ export function StageCard({
                   ? 'border-blue-300 bg-blue-50 text-blue-600'
                   : 'border-gray-200 bg-white/90 hover:bg-white hover:text-blue-600'
               }`}
-              title="配置阶段模型"
-              aria-label="配置阶段模型"
+              title={configButtonLabel}
+              aria-label={configButtonLabel}
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -2392,6 +2476,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [runtimeOrders, setRuntimeOrders] = useState([])
   const [registeredApps, setRegisteredApps] = useState([])
   const [modelOptions, setModelOptions] = useState([])
+  const [agentOptions, setAgentOptions] = useState([])
   const [selectedOrderId, setSelectedOrderId] = useState(null)
   const [activeAppView, setActiveAppView] = useState(null)
   const [apiError, setApiError] = useState('')
@@ -2401,7 +2486,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   const [developmentError, setDevelopmentError] = useState('')
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [draftModelSelections, setDraftModelSelections] = useState({})
-  const [createForm, setCreateForm] = useState({ title: '', description: '', modelSelections: {} })
+  const [draftAgentSelections, setDraftAgentSelections] = useState(getDefaultAgentSelections())
+  const [createForm, setCreateForm] = useState({ title: '', description: '', modelSelections: {}, agentSelections: getDefaultAgentSelections() })
   const [createError, setCreateError] = useState('')
   const [creating, setCreating] = useState(false)
   const [stageSkipInFlight, setStageSkipInFlight] = useState(null)
@@ -2426,6 +2512,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     if (!selectedOrder) return fillMissingModelSelections(draftModelSelections, modelOptions)
     return fillMissingModelSelections(selectedOrder.modelSelections || draftModelSelections, modelOptions)
   }, [selectedOrder, draftModelSelections, modelOptions])
+  const effectiveAgentSelections = useMemo(() => {
+    if (!selectedOrder) return fillMissingAgentSelections(draftAgentSelections)
+    return fillMissingAgentSelections(selectedOrder.agentSelections || draftAgentSelections)
+  }, [selectedOrder, draftAgentSelections])
   const deliverables = useMemo(() => getDeliverables(selectedOrder), [selectedOrder])
   const { reqDocs, userDocs, sourceCode, installPacks, urls } = deliverables
   const devProgress = useMemo(() => {
@@ -2501,6 +2591,27 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       })
       .catch((error) => {
         if (!cancelled) setApiError(error.message || 'opencode 模型列表加载失败')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    listOpencodeAgents()
+      .then((agents) => {
+        if (cancelled) return
+        const options = normalizeAgentOptions(agents)
+        setAgentOptions(options)
+        setDraftAgentSelections(prev => fillMissingAgentSelections(prev))
+        setCreateForm(prev => ({
+          ...prev,
+          agentSelections: fillMissingAgentSelections(prev.agentSelections)
+        }))
+      })
+      .catch((error) => {
+        if (!cancelled) setApiError(error.message || 'opencode Agent 列表加载失败')
       })
     return () => {
       cancelled = true
@@ -2609,11 +2720,17 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         title,
         description: '',
         deferClarification: true,
-        modelSelections: normalizeModelSelections(createForm.modelSelections)
+        modelSelections: normalizeModelSelections(createForm.modelSelections),
+        agentSelections: normalizeAgentSelections(createForm.agentSelections)
       })
       setRuntimeOrders(prev => [created, ...prev.filter(order => order.id !== created.id)])
       setSelectedOrderId(created.id)
-      setCreateForm({ title: '', description: '', modelSelections: fillMissingModelSelections({}, modelOptions) })
+      setCreateForm({
+        title: '',
+        description: '',
+        modelSelections: fillMissingModelSelections({}, modelOptions),
+        agentSelections: getDefaultAgentSelections()
+      })
       setCreateModalOpen(false)
       setApiError('')
       setSidebarOpen?.(false)
@@ -2635,7 +2752,8 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
           appId: order.appId || null,
           title: order.title,
           message: `${order.title}\n\n${message}`,
-          modelSelections: normalizeModelSelections(draftModelSelections)
+          modelSelections: normalizeModelSelections(draftModelSelections),
+          agentSelections: normalizeAgentSelections(draftAgentSelections)
         })
       setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
       setSelectedOrderId(updated.id)
@@ -2659,7 +2777,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     setDevelopmentStarting(true)
     setDevelopmentError('')
     try {
-      const updated = await startDevelopmentRun(order.id, normalizeModelSelections(effectiveModelSelections))
+      const updated = await startDevelopmentRun(order.id, normalizeModelSelections(effectiveModelSelections), normalizeAgentSelections(effectiveAgentSelections))
       setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
       setSelectedOrderId(updated.id)
       setApiError('')
@@ -2691,6 +2809,28 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     setCreateForm(prev => ({
       ...prev,
       modelSelections: nextSelections
+    }))
+  }
+
+  const handleAgentSelectionChange = async (stageKey, agentId) => {
+    const nextSelections = {
+      ...effectiveAgentSelections,
+      [stageKey]: agentId || DEFAULT_OPENCODE_AGENT
+    }
+    if (isRuntimeOrder(selectedOrder) && ['CLARIFYING', 'READY_FOR_DEVELOPMENT'].includes(selectedOrder.status)) {
+      try {
+        const updated = await updateWorkOrderAgentSelections(selectedOrder.id, nextSelections)
+        setRuntimeOrders(prev => [updated, ...prev.filter(item => item.id !== updated.id)])
+        setApiError('')
+      } catch (error) {
+        setApiError(error.message || '保存 Agent 配置失败')
+      }
+      return
+    }
+    setDraftAgentSelections(nextSelections)
+    setCreateForm(prev => ({
+      ...prev,
+      agentSelections: nextSelections
     }))
   }
 
@@ -2752,6 +2892,15 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
         error: error.message || '读取日志失败'
       })
     }
+  }
+
+  const canConfigureAgentForStage = (stage) => {
+    if (!stage?.key) return false
+    if (!isRuntimeOrder(selectedOrder)) return true
+    if (stage.key === 'requirements') {
+      return selectedOrder.status === 'CLARIFYING' && selectedOrder.awaitingOriginalRequirement === true
+    }
+    return selectedOrder.status === 'READY_FOR_DEVELOPMENT' && normalizeStageStatus(stage.status) === 'pending'
   }
 
   if (activeAppView !== null) {
@@ -2902,6 +3051,10 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
                         modelSelections={effectiveModelSelections}
                         modelLocked={isRuntimeOrder(selectedOrder) ? selectedOrder.status !== 'READY_FOR_DEVELOPMENT' : false}
                         onModelChange={handleModelSelectionChange}
+                        agentOptions={agentOptions}
+                        agentSelections={effectiveAgentSelections}
+                        agentLocked={!canConfigureAgentForStage(stage)}
+                        onAgentChange={handleAgentSelectionChange}
                       />
                     ))}
                   </div>

@@ -44,6 +44,11 @@ async function routeRequest({ request, response, service, eventBus }) {
     return
   }
 
+  if (request.method === 'GET' && pathname === '/api/opencode-agents') {
+    sendJson(response, 200, { agents: await service.listOpencodeAgents() })
+    return
+  }
+
   if (request.method === 'GET' && pathname === '/api/work-orders') {
     sendJson(response, 200, { workOrders: await service.listWorkOrders() })
     return
@@ -57,7 +62,8 @@ async function routeRequest({ request, response, service, eventBus }) {
       description: body.description,
       deferClarification: body.deferClarification === true,
       appId: body.appId,
-      modelSelections: body.modelSelections
+      modelSelections: body.modelSelections,
+      agentSelections: body.agentSelections
     })
     sendJson(response, 201, { workOrder })
     return
@@ -75,7 +81,7 @@ async function routeRequest({ request, response, service, eventBus }) {
   if (developmentRunMatch && request.method === 'POST') {
     const [, id] = developmentRunMatch
     const body = await readJsonBody(request)
-    const workOrder = await service.startDevelopmentRun(id, body.modelSelections || null)
+    const workOrder = await service.startDevelopmentRun(id, body.modelSelections || null, body.agentSelections || null)
     sendJson(response, 202, { workOrder })
     return
   }
@@ -85,6 +91,15 @@ async function routeRequest({ request, response, service, eventBus }) {
     const [, id] = modelSelectionsMatch
     const body = await readJsonBody(request)
     const workOrder = await service.updateModelSelections(id, body.modelSelections || body)
+    sendJson(response, 200, { workOrder })
+    return
+  }
+
+  const agentSelectionsMatch = pathname.match(/^\/api\/work-orders\/(WO-\d{8}-\d{3})\/agent-selections$/)
+  if (agentSelectionsMatch && request.method === 'PATCH') {
+    const [, id] = agentSelectionsMatch
+    const body = await readJsonBody(request)
+    const workOrder = await service.updateAgentSelections(id, body.agentSelections || body)
     sendJson(response, 200, { workOrder })
     return
   }
