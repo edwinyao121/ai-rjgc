@@ -507,7 +507,7 @@ const stageEstimateMsById = {
   5: 15 * 60 * 1000
 }
 
-const MODEL_STAGE_KEYS = ['requirements', 'design', 'coding']
+const MODEL_STAGE_KEYS = ['requirements', 'design', 'coding', 'testing', 'deployment']
 
 function normalizeStageStatus(status) {
   return runtimeStatusMap[status] || status || 'pending'
@@ -537,24 +537,26 @@ function normalizeModelSelections(selections = {}) {
   return result
 }
 
+function modelSelectionsFromDefault(modelId) {
+  const value = String(modelId || '').trim() || null
+  return MODEL_STAGE_KEYS.reduce((acc, key) => {
+    acc[key] = value
+    return acc
+  }, {})
+}
+
 function getDefaultModelSelections(modelOptions) {
   const first = modelOptions[0]?.id || null
-  const deepseek = modelOptions.find((model) => model.id.includes('deepseek-v4-flash'))?.id || first
-  return {
-    requirements: first,
-    design: first,
-    coding: deepseek
-  }
+  return modelSelectionsFromDefault(first)
 }
 
 function fillMissingModelSelections(selections, modelOptions) {
   const normalized = normalizeModelSelections(selections)
   const defaults = getDefaultModelSelections(modelOptions)
-  return {
-    requirements: normalized.requirements || defaults.requirements || null,
-    design: normalized.design || defaults.design || null,
-    coding: normalized.coding || defaults.coding || null
-  }
+  return MODEL_STAGE_KEYS.reduce((acc, key) => {
+    acc[key] = normalized[key] || defaults[key] || null
+    return acc
+  }, {})
 }
 
 function formatDurationForUi(ms) {
@@ -893,7 +895,7 @@ export function StageCard({
   const visualStatus = normalizeStageStatus(stage.status)
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [modelConfigOpen, setModelConfigOpen] = useState(false)
-  const stageModelKey = stage.key === 'design' || stage.key === 'coding' ? stage.key : null
+  const stageModelKey = ['design', 'coding', 'testing', 'deployment'].includes(stage.key) ? stage.key : null
   const selectedModel = stageModelKey ? normalizeModelSelections(modelSelections)[stageModelKey] : null
   const canEditModel = Boolean(stageModelKey && onModelChange && modelOptions.length > 0 && !modelLocked && visualStatus === 'pending')
 
@@ -2026,10 +2028,10 @@ export function AIChatPanel({
 
         {canConfigureRequirementsModel && (
           <div className="mb-3 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-[20px] flex-shrink-0">
-            <span className="font-bold text-blue-700 flex-shrink-0">需求澄清模型</span>
+            <span className="font-bold text-blue-700 flex-shrink-0">项目默认模型</span>
             <select
               value={effectiveModelSelections.requirements || ''}
-              onChange={(event) => onModelChange('requirements', event.target.value || null)}
+              onChange={(event) => onModelChange('projectDefault', event.target.value || null)}
               className="min-w-0 flex-1 rounded-md border border-blue-200 bg-white px-3 py-2 text-[19px] font-semibold text-gray-700"
             >
               {modelOptions.map((model) => (
@@ -2210,12 +2212,15 @@ export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, 
     onChange?.({ ...current, [field]: value })
   }
   const handleModelChange = (stageKey, value) => {
+    const nextSelections = stageKey === 'projectDefault'
+      ? modelSelectionsFromDefault(value)
+      : {
+          ...(current.modelSelections || {}),
+          [stageKey]: value || null
+        }
     onChange?.({
       ...current,
-      modelSelections: {
-        ...(current.modelSelections || {}),
-        [stageKey]: value || null
-      }
+      modelSelections: nextSelections
     })
   }
   const canSubmit = !!current.title?.trim()
@@ -2246,10 +2251,10 @@ export function CreateWorkOrderModal({ open, form, onChange, onClose, onSubmit, 
           </label>
           {modelOptions.length > 0 && (
             <label className="block">
-              <span className="block text-[24px] font-bold text-gray-700 mb-2">需求澄清模型</span>
+              <span className="block text-[24px] font-bold text-gray-700 mb-2">项目默认模型</span>
               <select
                 value={currentModels.requirements || ''}
-                onChange={(event) => handleModelChange('requirements', event.target.value)}
+                onChange={(event) => handleModelChange('projectDefault', event.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-6 py-4 text-[24px] focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
               >
                 {modelOptions.map((model) => (
@@ -2666,10 +2671,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
   }
 
   const handleModelSelectionChange = async (stageKey, modelId) => {
-    const nextSelections = {
-      ...effectiveModelSelections,
-      [stageKey]: modelId || null
-    }
+    const nextSelections = stageKey === 'projectDefault'
+      ? modelSelectionsFromDefault(modelId)
+      : {
+          ...effectiveModelSelections,
+          [stageKey]: modelId || null
+        }
     if (isRuntimeOrder(selectedOrder) && ['CLARIFYING', 'READY_FOR_DEVELOPMENT'].includes(selectedOrder.status)) {
       try {
         const updated = await updateWorkOrderModelSelections(selectedOrder.id, nextSelections)
@@ -2683,10 +2690,7 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
     setDraftModelSelections(nextSelections)
     setCreateForm(prev => ({
       ...prev,
-      modelSelections: {
-        ...(prev.modelSelections || {}),
-        [stageKey]: modelId || null
-      }
+      modelSelections: nextSelections
     }))
   }
 

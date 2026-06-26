@@ -21,7 +21,7 @@ import { CommandRunner, findAvailablePort, summarizeCommandResult, waitForHealth
 const HANDOFF_FILE = 'handoff.md'
 const TESTING_MAX_REPAIR_RETRIES = 3
 const SKIPPABLE_STAGE_KEYS = new Set(['design', 'coding', 'testing', 'deployment'])
-const MODEL_STAGE_KEYS = new Set(['requirements', 'design', 'coding'])
+const MODEL_STAGE_KEYS = new Set(['requirements', 'design', 'coding', 'testing', 'deployment'])
 
 function parseOpencodeModels(output) {
   return String(output || '')
@@ -37,10 +37,8 @@ function parseOpencodeModels(output) {
 
 function getSelectedModelForStage(state, stageKey) {
   const selections = state?.modelSelections || {}
-  if (stageKey === 'requirements') return selections.requirements || null
-  if (stageKey === 'design') return selections.design || null
-  if (stageKey === 'coding' || stageKey === 'testing' || stageKey === 'deployment') {
-    return selections.coding || null
+  if (MODEL_STAGE_KEYS.has(stageKey)) {
+    return selections[stageKey] || (stageKey === 'testing' || stageKey === 'deployment' ? selections.coding || null : null)
   }
   return null
 }
@@ -715,7 +713,7 @@ export class WorkOrderService {
     })
     const repairCommand = buildOpencodeCommand(prompt, state.appDir, {
       thinking: true,
-      model: getSelectedModelForStage(state, 'coding')
+      model: getSelectedModelForStage(state, 'testing')
     })
     const result = await this.runCommandWithStageLogging(id, 'testing', {
       label: `智能编码/修复 第 ${attempt}/${maxAttempts} 次`,
@@ -1297,7 +1295,9 @@ export class WorkOrderService {
     const merged = {
       requirements: base?.requirements || null,
       design: base?.design || null,
-      coding: base?.coding || null
+      coding: base?.coding || null,
+      testing: base?.testing || null,
+      deployment: base?.deployment || null
     }
     const keys = Object.keys(source)
     for (const key of keys) {

@@ -476,7 +476,7 @@ function normalizeModelSelectionsForState(modelSelections) {
     ? modelSelections
     : {}
   const result = {}
-  for (const stageKey of ['requirements', 'design', 'coding']) {
+  for (const stageKey of ['requirements', 'design', 'coding', 'testing', 'deployment']) {
     const value = String(source[stageKey] || '').trim()
     result[stageKey] = value || null
   }

@@ -267,7 +267,9 @@ test('built-in app work orders bind to the app workspace and persist model selec
       modelSelections: {
         requirements: 'opencode/deepseek-v4-flash-free',
         design: 'openai/gpt-5.2',
-        coding: 'opencode/deepseek-v4-flash-free'
+        coding: 'opencode/deepseek-v4-flash-free',
+        testing: 'openai/gpt-5.2',
+        deployment: 'opencode/deepseek-v4-flash-free'
       }
     }, { startClarification: false })
 
@@ -277,7 +279,9 @@ test('built-in app work orders bind to the app workspace and persist model selec
     assert.deepEqual(state.modelSelections, {
       requirements: 'opencode/deepseek-v4-flash-free',
       design: 'openai/gpt-5.2',
-      coding: 'opencode/deepseek-v4-flash-free'
+      coding: 'opencode/deepseek-v4-flash-free',
+      testing: 'openai/gpt-5.2',
+      deployment: 'opencode/deepseek-v4-flash-free'
     })
 
     const persisted = await fixture.store.readWorkOrder(state.id)
@@ -696,7 +700,9 @@ test('PATCH /api/work-orders/:id/model-selections validates and persists model s
         modelSelections: {
           requirements: 'opencode/deepseek-v4-flash-free',
           design: 'openai/gpt-5.2',
-          coding: 'opencode/deepseek-v4-flash-free'
+          coding: 'opencode/deepseek-v4-flash-free',
+          testing: 'openai/gpt-5.2',
+          deployment: 'opencode/deepseek-v4-flash-free'
         }
       })
     })
@@ -704,11 +710,13 @@ test('PATCH /api/work-orders/:id/model-selections validates and persists model s
 
     assert.equal(response.status, 200)
     assert.equal(payload.workOrder.modelSelections.design, 'openai/gpt-5.2')
+    assert.equal(payload.workOrder.modelSelections.testing, 'openai/gpt-5.2')
+    assert.equal(payload.workOrder.modelSelections.deployment, 'opencode/deepseek-v4-flash-free')
 
     const invalidResponse = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/model-selections`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modelSelections: { design: 'missing/model' } })
+      body: JSON.stringify({ modelSelections: { testing: 'missing/model' } })
     })
     assert.equal(invalidResponse.status, 400)
   } finally {
@@ -985,11 +993,22 @@ test('testing failure triggers one automatic repair attempt before deployment', 
 
     const state = await service.createWorkOrder({ message: '做一个自动返修应用' }, { startClarification: false })
     await service.processClarification(state.id)
+    const ready = await fixture.store.readWorkOrder(state.id)
+    ready.modelSelections = {
+      requirements: null,
+      design: null,
+      coding: 'opencode/deepseek-v4-flash-free',
+      testing: 'openai/gpt-5.2',
+      deployment: null
+    }
+    await fixture.store.saveWorkOrder(ready)
     const completed = await service.runPipeline(state.id)
 
     assert.equal(completed.status, WORK_ORDER_STATUS.DEPLOYED)
     assert.equal(completed.repairAttempts?.testing, 1)
     assert.equal(repairPrompts.length, 1)
+    const repairCommand = runner.runs[7].command
+    assert.equal(repairCommand[repairCommand.indexOf('--model') + 1], 'openai/gpt-5.2')
     assert.match(repairPrompts[0], /智能编码\/修复/)
     assert.match(repairPrompts[0], /第 1\/3 次/)
     assert.match(repairPrompts[0], /vitest failed/)
@@ -1480,7 +1499,7 @@ test('clarification opencode command uses the selected requirements model', asyn
   }
 })
 
-test('design and coding opencode stages use their saved model selections', async () => {
+test('opencode stages use their saved model selections', async () => {
   const fixture = await createFixture()
   try {
     const runner = new FakeRunner([
@@ -1491,7 +1510,9 @@ test('design and coding opencode stages use their saved model selections', async
         title: '分阶段模型应用'
       }),
       streamingHandler(['design ok'], { exitCode: 0 }),
-      streamingHandler(['coding ok'], { exitCode: 0 })
+      streamingHandler(['coding ok'], { exitCode: 0 }),
+      streamingHandler(['testing prep ok'], { exitCode: 0 }),
+      streamingHandler(['deployment prep ok'], { exitCode: 0 })
     ])
     const service = new WorkOrderService({
       store: fixture.store,
@@ -1506,15 +1527,21 @@ test('design and coding opencode stages use their saved model selections', async
     ready.modelSelections = {
       requirements: null,
       design: 'openai/gpt-5.2',
-      coding: 'opencode/deepseek-v4-flash-free'
+      coding: 'opencode/deepseek-v4-flash-free',
+      testing: 'anthropic/claude-sonnet-4.5',
+      deployment: 'openai/gpt-5.2'
     }
     await fixture.store.saveWorkOrder(ready)
 
     await service.runOpencodePipelineStage(state.id, 'design')
     await service.runOpencodePipelineStage(state.id, 'coding')
+    await service.runOpencodePipelineStage(state.id, 'testing')
+    await service.runOpencodePipelineStage(state.id, 'deployment')
 
     assert.equal(runner.runs[1].command[runner.runs[1].command.indexOf('--model') + 1], 'openai/gpt-5.2')
     assert.equal(runner.runs[2].command[runner.runs[2].command.indexOf('--model') + 1], 'opencode/deepseek-v4-flash-free')
+    assert.equal(runner.runs[3].command[runner.runs[3].command.indexOf('--model') + 1], 'anthropic/claude-sonnet-4.5')
+    assert.equal(runner.runs[4].command[runner.runs[4].command.indexOf('--model') + 1], 'openai/gpt-5.2')
   } finally {
     await fixture.cleanup()
   }

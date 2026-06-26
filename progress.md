@@ -6,8 +6,8 @@
 
 - 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-015` 阶段卡片模型配置收纳与需求流实时刷新，已完成。
-- 会话目标：将阶段卡片模型选择收纳到齿轮配置按钮，移除卡片内冗余状态文案，并修复首次输入需求后需求待入厂思考过程需要刷新才可见的问题。
+- 当前事项：`product-016` 补齐阶段模型配置与默认模型继承，已完成。
+- 会话目标：将新建项目模型选择升级为项目默认模型并填入五个阶段，补齐测试质检/部署交付阶段模型配置入口，让测试自动返修使用 testing 阶段模型。
 
 ## 已完成
 
@@ -72,6 +72,12 @@
   - 阶段卡片主体移除了“进行中”“等待中”“开发失败”“已跳过”等状态文案，保留图标、进度条、颜色、耗时和日志入口。
   - 前端新增 `fetchWorkOrder` 快照读取；用户首次输入需求创建真实工单后立即补取工单快照。
   - `assistant.message.delta` 到达但对应 stream append 已错过时，前端会创建 opencode-stream 占位消息并继续追加增量，避免需求待入厂思考过程必须刷新才可见。
+- [x] 补齐阶段模型配置与默认模型继承：
+  - `modelSelections` 已扩展为 `requirements`、`design`、`coding`、`testing`、`deployment` 五个阶段键，后端仍只允许保存本机 `opencode models` 返回的模型。
+  - 新建项目弹窗和内设应用首次需求前的模型选择统一命名为“项目默认模型”，选择后填入五个阶段。
+  - 系统设计、智能编码、测试质检准备、部署交付准备分别使用对应阶段模型；历史工单缺少 `testing`/`deployment` 时后端兼容回落到旧的 `coding` 配置。
+  - 测试质检自动返修改用 `testing` 阶段模型。
+  - 测试质检和部署交付阶段卡片在 READY_FOR_DEVELOPMENT 且待执行时显示齿轮配置入口，主卡片不直接展示模型名或下拉框，启动后锁定隐藏。
 
 ## 进行中
 
@@ -79,8 +85,8 @@
 
 ## 下一步
 
-1. 重启或等待 Vite 热更新后，在浏览器中确认系统设计/智能编码卡片只显示齿轮配置按钮，不直接显示模型名称。
-2. 从内设应用首次输入需求，确认需求待入厂阶段的思考过程无需刷新即可出现。
+1. 重启或等待 Vite 热更新后，在浏览器中确认系统设计、智能编码、测试质检、部署交付卡片只显示齿轮配置按钮，不直接显示模型名称。
+2. 新建项目或从内设应用首次输入需求时，确认“项目默认模型”会作为五阶段默认模型提交。
 
 ## 风险与注意事项
 
@@ -89,6 +95,7 @@
 - `.runtime/app-workspaces/` 是运行态工作空间，不纳入 git；后续可直接向对应应用的 `agents/` 或 `skills/` 放置专属能力文件。
 - 模型列表完全来自本机 `opencode models`，未配置的 GLM5.2 不会展示，也不能保存到工单配置中。
 - 阶段卡片已隐藏直接模型展示；如需确认当前锁定模型，应以后续配置确认面板或日志/工单状态详情承载，不再放回主卡片。
+- 历史工单若只保存了 `coding` 模型，测试质检和部署交付仍会兼容使用旧的 `coding` 配置；新建或重新提交模型选择后会保存五阶段配置。
 - 首次需求流修复依赖前端快照补取和 SSE delta 占位合并；若后端长时间完全无输出，仍需要等待 opencode 输出或超时诊断日志。
 - 左侧应用列表不再提供运行/访问入口；访问部署应用统一保留在主内容区顶部按钮。
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
@@ -129,6 +136,11 @@
 - `tests/frontend-render.test.js`：新增/更新卡片齿轮配置、状态文案移除、API 快照读取和缺失 append 的需求流回归测试。
 - `docs/AI研发助手单机版需求文档.md`：补充阶段卡片配置收纳、状态文案精简和首次需求实时刷新要求。
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-015` 状态与校验证据。
+- `server/lib/orchestrator.js`、`server/lib/store.js`：将模型选择扩展为五阶段，测试/部署使用对应模型，测试自动返修使用 `testing` 模型，并兼容旧工单缺失 `testing`/`deployment` 的情况。
+- `src/pages/KanbanBoard.jsx`：项目默认模型一次填入五个阶段，测试质检/部署交付阶段卡片支持齿轮配置入口。
+- `tests/backend.test.js`、`tests/frontend-render.test.js`：新增/更新五阶段模型保存校验、阶段命令传参、测试返修模型、项目默认模型和测试/部署卡片齿轮入口回归测试。
+- `docs/AI研发助手单机版需求文档.md`：更新五阶段模型选择接口、执行策略和前端改造点。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-016` 状态与校验证据。
 
 ## 校验证据
 
@@ -191,6 +203,11 @@
 - [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='work order API sends model selections|StageCard shows estimated|StageCard hides model details|applyGranularEventToOrder merges SSE deltas' tests/frontend-render.test.js` 失败，确认旧实现缺少 `fetchWorkOrder`、仍直接展示模型 select/模型名、仍展示卡片状态文案，且缺失 append 的 delta 会被丢弃。
 - [x] 定向前端回归：2026-06-26 执行 `node --test --test-name-pattern='work order API sends model selections|StageCard shows estimated|StageCard hides model details|applyGranularEventToOrder merges SSE deltas' tests/frontend-render.test.js` 通过。
 - [x] 前端渲染回归：2026-06-26 执行 `node --test tests/frontend-render.test.js` 通过，17 个测试全部通过。
+- [x] `npm test`：2026-06-26 执行通过，72 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 72/72，`npm run build` 成功。
+- [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='model selections|opencode stages use|testing failure triggers one automatic repair attempt|StageCard hides model details|work order API sends model selections|project default model' tests/backend.test.js tests/frontend-render.test.js` 失败，确认旧实现拒绝 `testing/deployment`、测试/部署/返修仍沿用 `coding`，且前端仍显示“需求澄清模型”、测试/部署无齿轮入口。
+- [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='model selections|opencode stages use|testing failure triggers one automatic repair attempt|StageCard hides model details|work order API sends model selections|project default model' tests/backend.test.js tests/frontend-render.test.js` 通过。
 - [x] `npm test`：2026-06-26 执行通过，72 个测试全部通过。
 - [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-26 执行通过；`npm test` 72/72，`npm run build` 成功。
