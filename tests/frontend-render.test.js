@@ -957,6 +957,32 @@ test('AIChatPanel renders opencode-stream messages with pre-wrap and start butto
 
     assert.doesNotMatch(clarifyingHtml, /开始智能开发/)
 
+    const clarifyingWithOutputSpecOrder = {
+      ...readyOrder,
+      status: 'CLARIFYING',
+      outputSpec: {
+        data: '潮汐预报',
+        rule: '高潮位+2小时',
+        target: '可出港窗口',
+        updateFrequency: '1小时',
+        outputForm: '折线图',
+        sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+      },
+      messages: []
+    }
+    const clarifyingWithOutputSpecHtml = renderToString(React.createElement(AIChatPanel, {
+      activeOrder: clarifyingWithOutputSpecOrder,
+      onSendMessage: () => {},
+      onStartDevelopment: () => {},
+      onClose: () => {},
+      loading: false,
+      error: '',
+      startingDevelopment: false
+    }))
+
+    assert.match(clarifyingWithOutputSpecHtml, /开始智能开发/)
+    assert.match(clarifyingWithOutputSpecHtml, /点击即确认输出规格并启动智能开发流水线/)
+
     const deployedOrder = { ...readyOrder, status: 'DEPLOYED', deploymentUrl: 'http://127.0.0.1:4101', messages: [] }
     const deployedHtml = renderToString(React.createElement(AIChatPanel, {
       activeOrder: deployedOrder,

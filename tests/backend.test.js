@@ -98,6 +98,14 @@ test('parses clarification JSON from opencode JSON events and markdown fences', 
       mainPages: '',
       acceptanceCriteria: []
     },
+    outputSpec: {
+      data: '',
+      rule: '',
+      target: '',
+      updateFrequency: '',
+      outputForm: '',
+      sentence: ''
+    },
     title: '潮汐应用'
   })
 })
@@ -114,6 +122,16 @@ test('clarification prompt asks the agent to deepen scenarios into detailed requ
   assert.match(prompt, /预期成效/)
   assert.match(prompt, /尽量不要向用户提问题/)
   assert.match(prompt, /每条细化需求之间必须用 \\n\\n 分隔/)
+  assert.match(prompt, /输出规格（必填）/)
+  assert.match(prompt, /基于【<数据>】数据，按照【<规则>】规则，判断【<判断对象>】每【<更新频率>】更新一次，以【<输出形式>】形式输出/)
+  assert.match(prompt, /柱状图、条形图、折线图、历史轨迹、表格、网页/)
+  assert.match(prompt, /"outputSpec"/)
+  assert.match(prompt, /"outputForm": "必须精确取值：柱状图\|条形图\|折线图\|历史轨迹\|表格\|网页"/)
+  assert.match(prompt, /outputSpec 中 data\/rule\/target\/updateFrequency\/outputForm 五个空位均非空/)
+  assert.match(prompt, /满足上述条件时首轮即输出 complete=true，无需等待用户在对话中再次确认/)
+  assert.match(prompt, /直接点击前端“开始智能开发”按钮即视为确认/)
+  assert.doesNotMatch(prompt, /用户可在下一条消息中直接回贴该句/)
+  assert.doesNotMatch(prompt, /当用户最近一条消息明显确认或复述/)
 })
 
 test('clarification prompt ignores execution stream logs from previous opencode runs', () => {
@@ -201,6 +219,128 @@ test('treats plain requirements markdown as a completed clarification', () => {
   assert.equal(parsed.complete, true)
   assert.equal(parsed.title, '航母母港潮汐窗口计算器需求规格说明书')
   assert.match(parsed.requirementsMarkdown, /时间窗口列表/)
+})
+
+test('parses structured outputSpec from clarification JSON into parts and sentence', () => {
+  const payload = {
+    complete: false,
+    reply: '我对需求场景的理解如下：\n\n1. 需求内容：xxx\n业务需求必要性：xxx\n预期成效：xxx\n\n输出规格：基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出',
+    requirementsMarkdown: '',
+    requirementsItems: {
+      detailedRequirements: [],
+      businessNecessity: [],
+      expectedOutcome: [],
+      targetUsers: '',
+      coreFeatures: [],
+      inputData: '',
+      mainPages: '',
+      acceptanceCriteria: []
+    },
+    outputSpec: {
+      data: '潮汐预报',
+      rule: '高潮位+2小时',
+      target: '可出港窗口',
+      updateFrequency: '1小时',
+      outputForm: '折线图',
+      sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+    },
+    title: '潮汐窗口应用'
+  }
+  const raw = JSON.stringify({
+    type: 'text',
+    part: {
+      type: 'text',
+      text: JSON.stringify(payload)
+    }
+  })
+
+  const parsed = parseClarificationResponse(raw)
+
+  assert.equal(parsed.complete, false)
+  assert.equal(parsed.title, '潮汐窗口应用')
+  assert.deepEqual(parsed.outputSpec, {
+    data: '潮汐预报',
+    rule: '高潮位+2小时',
+    target: '可出港窗口',
+    updateFrequency: '1小时',
+    outputForm: '折线图',
+    sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+  })
+})
+
+test('falls back to regex extraction of outputSpec parts from reply when structured field is missing', () => {
+  const payload = {
+    complete: false,
+    reply: '我对需求场景的理解如下：\n\n1. 需求内容：xxx\n业务需求必要性：xxx\n预期成效：xxx\n\n输出规格：基于【AIS船位】数据，按照【航迹预测】规则，判断【碰撞风险】每【5分钟】更新一次，以【历史轨迹】形式输出',
+    requirementsMarkdown: '',
+    requirementsItems: {
+      detailedRequirements: [],
+      businessNecessity: [],
+      expectedOutcome: [],
+      targetUsers: '',
+      coreFeatures: [],
+      inputData: '',
+      mainPages: '',
+      acceptanceCriteria: []
+    },
+    title: '态势应用'
+  }
+  const raw = JSON.stringify({
+    type: 'text',
+    part: {
+      type: 'text',
+      text: JSON.stringify(payload)
+    }
+  })
+
+  const parsed = parseClarificationResponse(raw)
+
+  assert.equal(parsed.title, '态势应用')
+  assert.deepEqual(parsed.outputSpec, {
+    data: 'AIS船位',
+    rule: '航迹预测',
+    target: '碰撞风险',
+    updateFrequency: '5分钟',
+    outputForm: '历史轨迹',
+    sentence: '基于【AIS船位】数据，按照【航迹预测】规则，判断【碰撞风险】每【5分钟】更新一次，以【历史轨迹】形式输出'
+  })
+})
+
+test('returns empty outputSpec parts and sentence when neither structured field nor reply sentence is present', () => {
+  const payload = {
+    complete: false,
+    reply: '请补充目标用户和验收标准',
+    requirementsMarkdown: '',
+    requirementsItems: {
+      detailedRequirements: [],
+      businessNecessity: [],
+      expectedOutcome: [],
+      targetUsers: '',
+      coreFeatures: [],
+      inputData: '',
+      mainPages: '',
+      acceptanceCriteria: []
+    },
+    title: '空规格应用'
+  }
+  const raw = JSON.stringify({
+    type: 'text',
+    part: {
+      type: 'text',
+      text: JSON.stringify(payload)
+    }
+  })
+
+  const parsed = parseClarificationResponse(raw)
+
+  assert.deepEqual(parsed.outputSpec, {
+    data: '',
+    rule: '',
+    target: '',
+    updateFrequency: '',
+    outputForm: '',
+    sentence: ''
+  })
 })
 
 test('reports opencode error events from clarification output', () => {
@@ -1684,6 +1824,195 @@ test('startDevelopmentRun on a failed work order is rejected with CONFLICT', asy
       if (failed.status === WORK_ORDER_STATUS.FAILED) break
     }
     assert.equal(failed.status, WORK_ORDER_STATUS.FAILED)
+
+    await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('processClarification persists outputSpec on state when clarification completes', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '我对需求场景的理解如下：\n\n输出规格：基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出',
+        requirementsMarkdown: '# 输出规格持久化需求',
+        outputSpec: {
+          data: '潮汐预报',
+          rule: '高潮位+2小时',
+          target: '可出港窗口',
+          updateFrequency: '1小时',
+          outputForm: '折线图',
+          sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+        },
+        title: '输出规格持久化应用'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个潮汐窗口应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    assert.equal(persisted.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
+    assert.deepEqual(persisted.outputSpec, {
+      data: '潮汐预报',
+      rule: '高潮位+2小时',
+      target: '可出港窗口',
+      updateFrequency: '1小时',
+      outputForm: '折线图',
+      sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+    })
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('runOpencodePipelineStage injects confirmed outputSpec sentence into stage prompt userInput', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '我对需求场景的理解如下：\n\n输出规格：基于【AIS船位】数据，按照【航迹预测】规则，判断【碰撞风险】每【5分钟】更新一次，以【历史轨迹】形式输出',
+        requirementsMarkdown: '# 注入测试需求',
+        outputSpec: {
+          data: 'AIS船位',
+          rule: '航迹预测',
+          target: '碰撞风险',
+          updateFrequency: '5分钟',
+          outputForm: '历史轨迹',
+          sentence: '基于【AIS船位】数据，按照【航迹预测】规则，判断【碰撞风险】每【5分钟】更新一次，以【历史轨迹】形式输出'
+        },
+        title: '注入测试应用'
+      }),
+      async () => ok('design ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个态势感知应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.runOpencodePipelineStage(state.id, 'design')
+
+    const designCommand = runner.runs[1].command
+    const designPrompt = designCommand[designCommand.length - 1]
+    assert.match(designPrompt, /做一个态势感知应用/)
+    assert.match(designPrompt, /基于【AIS船位】数据，按照【航迹预测】规则，判断【碰撞风险】每【5分钟】更新一次，以【历史轨迹】形式输出/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('startDevelopmentRun force-starts from CLARIFYING when outputSpec sentence is present', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: false,
+        reply: '我对需求场景的理解如下：\n\n输出规格：基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出',
+        requirementsMarkdown: '',
+        outputSpec: {
+          data: '潮汐预报',
+          rule: '高潮位+2小时',
+          target: '可出港窗口',
+          updateFrequency: '1小时',
+          outputForm: '折线图',
+          sentence: '基于【潮汐预报】数据，按照【高潮位+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出'
+        },
+        title: '强制启动应用'
+      }),
+      async () => ok('design ok'),
+      async (_command, options) => {
+        await writeFile(path.join(options.cwd, 'factory.manifest.json'), JSON.stringify({
+          name: 'mock-app',
+          install: ['node', '--version'],
+          build: ['node', '--version'],
+          test: ['node', '--version'],
+          start: ['node', 'server.js', '--port', '${PORT}'],
+          healthUrl: 'http://127.0.0.1:${PORT}'
+        }), 'utf8')
+        return ok('coding ok')
+      },
+      async () => ok('testing prep ok'),
+      async () => ok('install ok'),
+      async () => ok('build ok'),
+      async () => ok('test ok'),
+      async () => ok('deployment prep ok')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      allocatePort: async () => 4102,
+      healthCheck: async () => true
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个强制启动应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const clarifying = await fixture.store.readWorkOrder(state.id)
+    assert.equal(clarifying.status, WORK_ORDER_STATUS.CLARIFYING)
+    assert.ok(clarifying.outputSpec?.sentence)
+
+    const started = await service.startDevelopmentRun(state.id)
+    assert.equal(started.status, WORK_ORDER_STATUS.RUNNING)
+    assert.equal(started.stages[0].status, STAGE_STATUS.COMPLETED)
+    assert.equal(started.stages[0].items[0].label, '需求澄清结果')
+    assert.ok(started.handoffPath, 'force-start should write the handoff document')
+
+    let deployed
+    for (let i = 0; i < 50; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      deployed = await fixture.store.readWorkOrder(state.id)
+      if (deployed.status === WORK_ORDER_STATUS.DEPLOYED || deployed.status === WORK_ORDER_STATUS.FAILED) break
+    }
+    assert.equal(deployed.status, WORK_ORDER_STATUS.DEPLOYED)
+
+    const designCommand = runner.runs[1].command
+    const designPrompt = designCommand[designCommand.length - 1]
+    assert.match(designPrompt, /基于【潮汐预报】数据，按照【高潮位\+2小时】规则，判断【可出港窗口】每【1小时】更新一次，以【折线图】形式输出/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('startDevelopmentRun from CLARIFYING without outputSpec is rejected with CONFLICT', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: false,
+        reply: '请补充目标用户和验收标准',
+        requirementsMarkdown: '',
+        title: '无规格应用'
+      })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个无规格应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+
+    const clarifying = await fixture.store.readWorkOrder(state.id)
+    assert.equal(clarifying.status, WORK_ORDER_STATUS.CLARIFYING)
+    assert.ok(!clarifying.outputSpec?.sentence)
 
     await assert.rejects(() => service.startDevelopmentRun(state.id), { code: 'CONFLICT' })
   } finally {

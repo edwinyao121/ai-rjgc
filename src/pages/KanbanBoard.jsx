@@ -2039,7 +2039,10 @@ export function AIChatPanel({
   }
 
   const isRuntime = isRuntimeOrder(activeOrder)
-  const canStartDevelopment = isRuntime && activeOrder.status === 'READY_FOR_DEVELOPMENT' && !startingDevelopment
+  const canStartDevelopment = isRuntime && !startingDevelopment && (
+    activeOrder.status === 'READY_FOR_DEVELOPMENT'
+      || (activeOrder.status === 'CLARIFYING' && activeOrder.outputSpec?.sentence)
+  )
   const canConfigureRequirementsModel = modelOptions.length > 0 && Boolean(onModelChange) && (!isRuntime || activeOrder.awaitingOriginalRequirement)
   const effectiveModelSelections = normalizeModelSelections(modelSelections)
 
@@ -2073,7 +2076,7 @@ export function AIChatPanel({
                   onClick={() => onStartDevelopment?.(activeOrder)}
                   disabled={startingDevelopment}
                   className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-md text-[20px] font-bold shadow-sm transition-all hover:scale-105 disabled:opacity-60 disabled:hover:scale-100 flex-shrink-0"
-                  title="需求澄清已完成，点击启动智能开发流水线"
+                  title="点击即确认输出规格并启动智能开发流水线"
                 >
                   <PlayCircle className="w-6 h-6" />
                   开始智能开发

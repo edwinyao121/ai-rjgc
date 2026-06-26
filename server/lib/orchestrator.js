@@ -334,6 +334,10 @@ export class WorkOrderService {
         state.title = clarification.title
       }
 
+      if (clarification.outputSpec) {
+        state.outputSpec = clarification.outputSpec
+      }
+
       if (!clarification.complete) {
         markStageRunning(getStageByKey(state.stages, 'requirements'), new Date(), {
           type: 'ai',
@@ -428,10 +432,36 @@ export class WorkOrderService {
       error.code = 'CONFLICT'
       throw error
     }
-    if (state.status !== WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT) {
+    if (![WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT, WORK_ORDER_STATUS.CLARIFYING].includes(state.status)) {
       const error = new Error(`当前工单状态为 ${state.status}，无法启动智能开发`)
       error.code = 'CONFLICT'
       throw error
+    }
+    if (state.status === WORK_ORDER_STATUS.CLARIFYING) {
+      if (!state.outputSpec?.sentence) {
+        const error = new Error('需求澄清尚未生成可确认的输出规格，无法强制启动；请先在对话中补充需求信息')
+        error.code = 'CONFLICT'
+        throw error
+      }
+      const requirementsStage = getStageByKey(state.stages, 'requirements')
+      if (requirementsStage && requirementsStage.status !== STAGE_STATUS.COMPLETED) {
+        markStageCompleted(requirementsStage, new Date(), {
+          type: 'ai',
+          label: '需求澄清结果',
+          value: '用户强制确认启动，需求阶段标记完成'
+        }, [])
+        requirementsStage.outputs = []
+      }
+      if (!state.requirementsItems) {
+        state.requirementsItems = fallbackRequirementsItems({ title: state.title, messages: state.messages })
+      }
+      if (!state.requirementsMarkdown) {
+        state.requirementsMarkdown = fallbackRequirementsMarkdown({ title: state.title, messages: state.messages })
+      }
+      if (!state.handoffPath) {
+        await this.writeHandoffDocument(state, '用户强制确认启动，后续阶段优先阅读本交接文档。')
+      }
+      state.currentStage = 2
     }
     state.status = WORK_ORDER_STATUS.RUNNING
     state.progress = getStageProgress(state.stages)
@@ -547,7 +577,7 @@ export class WorkOrderService {
     const prompt = createStagePrompt({
       stageKey,
       title: state.title,
-      userInput: extractUserInput(state.messages)
+      userInput: buildUserInput(state)
     })
     const command = buildOpencodeCommand(prompt, state.appDir, {
       thinking: true,
@@ -772,7 +802,7 @@ export class WorkOrderService {
 
     const prompt = createTestingRepairPrompt({
       title: state.title,
-      userInput: extractUserInput(state.messages),
+      userInput: buildUserInput(state),
       attempt,
       maxAttempts,
       failedLabel: label,
@@ -1638,6 +1668,12 @@ function extractUserInput(messages) {
     .map((message) => message.text.trim())
     .filter((text) => text.length > 0)
     .join('\n\n')
+}
+
+function buildUserInput(state) {
+  const conversationInput = extractUserInput(state?.messages)
+  const outputSpecSentence = state?.outputSpec?.sentence
+  return [conversationInput, outputSpecSentence].filter(Boolean).join('\n\n')
 }
 
 function redactSensitiveObject(value) {

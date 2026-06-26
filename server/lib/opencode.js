@@ -60,6 +60,15 @@ export function createClarificationPrompt(messages, context = {}) {
 业务需求必要性：说明该需求为什么重要；
 预期成效：优先使用可观测或可量化描述。
 
+输出规格（必填）：在细化需求之后，必须基于业务理解填充以下模板，形成一条可被用户审阅与确认的“输出规格”语句：
+基于【<数据>】数据，按照【<规则>】规则，判断【<判断对象>】每【<更新频率>】更新一次，以【<输出形式>】形式输出
+- <数据>：应用将要消费的输入数据来源或类型（如潮汐预报、AIS 船位、人工录入等）；
+- <规则>：用于将数据转化为判断结论的业务规则或算法口径（如“高潮位 +2 小时窗口”“越限即告警”等）；
+- <判断对象>：应用要给出的判断或决策结论对象（如可出港窗口、异常设备、命中目标等）；
+- <更新频率>：判断结果的更新节奏（如 1 分钟、15 分钟、1 小时、每日等）；
+- <输出形式>：必须从以下枚举中精确选择一个，不得自创：柱状图、条形图、折线图、历史轨迹、表格、网页。
+该合成句必须以“输出规格：基于【...】...以【...】形式输出”的格式追加在 reply 末尾，供用户审阅。用户审阅无误后直接点击前端“开始智能开发”按钮即视为确认该输出规格，无需在对话中再次回贴或确认；系统会把该合成句作为额外原始需求自动注入后续研发阶段的原始用户需求中。
+
 尽量不要向用户提问题。只有当关键业务目标、使用对象或核心流程完全无法判断时，才在细化需求之后补充 1-2 个关键问题；禁止只输出追问。
 条目化展示必须有清晰换行：每条细化需求内部使用 \\n 分隔“需求内容 / 业务需求必要性 / 预期成效”，每条细化需求之间必须用 \\n\\n 分隔，方便用户阅读理解。
 
@@ -84,10 +93,18 @@ export function createClarificationPrompt(messages, context = {}) {
     "mainPages": "已明确时输出主要页面或交互说明；否则为空字符串",
     "acceptanceCriteria": ["已明确时输出 2-6 条验收标准条目；否则为空数组"]
   },
+  "outputSpec": {
+    "data": "输出规格中的数据来源/类型，必填",
+    "rule": "输出规格中的规则或算法口径，必填",
+    "target": "输出规格中的判断对象，必填",
+    "updateFrequency": "输出规格中的更新频率，必填",
+    "outputForm": "必须精确取值：柱状图|条形图|折线图|历史轨迹|表格|网页",
+    "sentence": "基于【<data>】数据，按照【<rule>】规则，判断【<target>】每【<updateFrequency>】更新一次，以【<outputForm>】形式输出"
+  },
   "title": "不超过 24 个中文字符的应用名称"
 }
 
-进入流水线的最低条件：目标用户、核心功能、输入数据、主要页面或交互、验收标准基本清楚。若缺少关键信息，complete=false，但仍要先输出场景深化理解和多条细化需求；最多只补充 1-2 个关键问题。complete=true 时 requirementsItems 中的 detailedRequirements 至少包含 2 条，且每条 requirement、businessNecessity、expectedOutcome 都不能为空，否则视为需求分析未完成。
+进入流水线的最低条件：目标用户、核心功能、输入数据、主要页面或交互、验收标准基本清楚，且 outputSpec 中 data/rule/target/updateFrequency/outputForm 五个空位均非空、outputForm 属于枚举（柱状图、条形图、折线图、历史轨迹、表格、网页）之一。满足上述条件时首轮即输出 complete=true，无需等待用户在对话中再次确认；用户审阅 reply 末尾的输出规格合成句无误后，直接点击前端“开始智能开发”按钮即视为确认。任一不满足时 complete=false，但仍要先输出场景深化理解、多条细化需求和待确认的 outputSpec，让用户在对话中补充缺失信息后再次触发澄清；最多只补充 1-2 个关键问题。complete=true 时 requirementsItems 中的 detailedRequirements 至少包含 2 条，且每条 requirement、businessNecessity、expectedOutcome 都不能为空，outputSpec 五个空位也必须齐全，否则视为需求分析未完成。
 
 ${appContext}当前对话：
 ${conversation}`
@@ -249,13 +266,72 @@ export function parseClarificationResponse(output) {
   }
   const requirementsMarkdown = String(match.requirementsMarkdown || '').trim()
   const requirementsItems = normalizeRequirementsItems(match.requirementsItems, requirementsMarkdown, match)
+  const reply = String(match.reply || '').trim()
+  const outputSpec = normalizeOutputSpec(match.outputSpec, reply)
   return {
     complete: Boolean(match.complete),
-    reply: String(match.reply || '').trim(),
+    reply,
     requirementsMarkdown,
     requirementsItems,
+    outputSpec,
     title: String(match.title || '').trim()
   }
+}
+
+const OUTPUT_FORM_ENUM = ['柱状图', '条形图', '折线图', '历史轨迹', '表格', '网页']
+const OUTPUT_SPEC_BLANKS = ['data', 'rule', 'target', 'updateFrequency', 'outputForm']
+const OUTPUT_SPEC_SENTENCE_TEMPLATE = '基于【<data>】数据，按照【<rule>】规则，判断【<target>】每【<updateFrequency>】更新一次，以【<outputForm>】形式输出'
+
+function normalizeOutputSpec(rawSpec, reply) {
+  const parts = {
+    data: '',
+    rule: '',
+    target: '',
+    updateFrequency: '',
+    outputForm: ''
+  }
+  if (rawSpec && typeof rawSpec === 'object' && !Array.isArray(rawSpec)) {
+    for (const key of OUTPUT_SPEC_BLANKS) {
+      const value = String(rawSpec[key] ?? '').trim()
+      if (value) parts[key] = value
+    }
+  }
+  if (!parts.data || !parts.rule || !parts.target || !parts.updateFrequency || !parts.outputForm) {
+    const extracted = extractOutputSpecFromText(reply)
+    if (extracted) {
+      for (const key of OUTPUT_SPEC_BLANKS) {
+        if (!parts[key] && extracted[key]) parts[key] = extracted[key]
+      }
+    }
+  }
+  const sentence = composeOutputSpecSentence(parts)
+  return { ...parts, sentence }
+}
+
+function extractOutputSpecFromText(text) {
+  const raw = String(text || '')
+  if (!raw) return null
+  const pattern = /基于[【[](.+?)[】\]]\s*数据[，,]\s*按照[【[](.+?)[】\]]\s*规则[，,]\s*判断[【[](.+?)[】\]]\s*每[【[](.+?)[】\]]\s*更新一次[，,]\s*以[【[](.+?)[】\]]\s*形式输出/
+  const match = pattern.exec(raw)
+  if (!match) return null
+  return {
+    data: match[1].trim(),
+    rule: match[2].trim(),
+    target: match[3].trim(),
+    updateFrequency: match[4].trim(),
+    outputForm: match[5].trim()
+  }
+}
+
+function composeOutputSpecSentence(parts) {
+  const filled = OUTPUT_SPEC_SENTENCE_TEMPLATE
+    .replace('<data>', parts.data || '')
+    .replace('<rule>', parts.rule || '')
+    .replace('<target>', parts.target || '')
+    .replace('<updateFrequency>', parts.updateFrequency || '')
+    .replace('<outputForm>', parts.outputForm || '')
+  const hasAllParts = OUTPUT_SPEC_BLANKS.every((key) => parts[key])
+  return hasAllParts ? filled : ''
 }
 
 function normalizeRequirementsItems(rawItems, requirementsMarkdown, match) {
@@ -504,7 +580,7 @@ function extractLooseStringField(text, field) {
 }
 
 function findNextClarificationField(text, startIndex) {
-  const nextField = /,\s*["']?(complete|reply|requirementsMarkdown|title)["']?\s*:/gi
+  const nextField = /,\s*["']?(complete|reply|requirementsMarkdown|requirementsItems|outputSpec|title)["']?\s*:/gi
   nextField.lastIndex = startIndex
   const match = nextField.exec(text)
   if (match) return match.index

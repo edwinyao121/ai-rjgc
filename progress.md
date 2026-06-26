@@ -6,8 +6,8 @@
 
 - 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-018` 无文档生成实验：编码阶段直接使用原始用户需求，已完成。
-- 会话目标：不再落盘 requirements.md 与 docs/design.md，设计/编码/测试/返修/部署提示词改用原始用户需求，验证无文档情况下仅靠原始需求的生成效果；前端条目化需求展示不变。
+- 当前事项：`product-021` 点击开始智能开发即确认 outputSpec（消除两轮澄清闭环），已完成。
+- 会话目标：将需求澄清确认从「对话回贴→等模型次轮 complete=true→点开始」简化为「首轮 outputSpec 后审阅 reply 末尾合成句，无误直接点开始智能开发」；点击即确认，outputSpec 句静默注入后续阶段 userInput；并支持 CLARIFYING 有 outputSpec 时强制启动。
 
 ## 已完成
 
@@ -93,6 +93,25 @@
   - 新增 `extractUserInput(messages)` 工具函数，从 `state.messages` 拼接全部用户消息文本，由 `runOpencodePipelineStage` 与 `runTestingRepairAttempt` 传入提示词。
   - `buildHandoffDocument` 第一阅读项与当前工单段改为「结合本工单对话中的原始用户需求」「原始用户需求：见本工单对话记录」，并补充「本工单不落盘 requirements.md、docs/design.md」。
   - 移除已无人调用的 `getRequirementsMarkdown` 方法；前端 `RequirementsItemsCard` 仍基于 `state.requirementsItems` 渲染，显示逻辑不变。
+- [x] 修复需求澄清二次输入 `spawn E2BIG`：
+  - 定位 `WO-20260626-001` 第二次需求澄清失败根因：`createClarificationPrompt(state.messages)` 将上一轮 `opencode-stream` 执行日志拼回 prompt，且 `--print-logs` 的 DEBUG `args=[...]` 中包含完整 prompt，第二次作为命令行参数传入 `opencode run` 后超过系统 argv 上限。
+  - `createClarificationPrompt` 现在只保留 `phase=clarification` 的用户/AI 业务对话，跳过 `opencode-stream`、带 `stageId` 的执行消息和非澄清阶段消息。
+  - opencode DEBUG 输出中的 `args=[...]` 会把 `run` 的最后一个 prompt 参数替换为 `[prompt omitted]`，并统一用于阶段日志、助手流式消息和本地 debug 输出。
+  - 新增回归测试覆盖上一轮执行日志污染 prompt、DEBUG args 泄露 prompt 两个场景。
+- [x] 需求澄清输出规格语句（`product-020`）：
+  - `createClarificationPrompt` 新增「输出规格（必填）」段，要求模型填充 `基于【<数据>】数据，按照【<规则>】规则，判断【<判断对象>】每【<更新频率>】更新一次，以【<输出形式>】形式输出` 模板；`<输出形式>` 限定枚举：柱状图、条形图、折线图、历史轨迹、表格、网页。
+  - 合成句以「输出规格：...」追加在 `reply` 末尾供用户审阅；JSON 结构新增 `outputSpec` 字段（`data/rule/target/updateFrequency/outputForm/sentence`）。
+  - 「进入流水线最低条件」补充：`outputSpec` 五空位齐全且 `outputForm` ∈ 枚举；用户回贴/确认后下一轮 `complete=true`。
+  - `parseClarificationResponse` 返回 `outputSpec`；新增 `normalizeOutputSpec/extractOutputSpecFromText/composeOutputSpecSentence`，缺结构化字段时从 `reply` 正则兜底（兼容全角 `【】` 与半角 `[]`）；`findNextClarificationField` 正则补 `outputSpec|requirementsItems` 字段，避免 lenient 解析把 `outputSpec` 内容吞入 `reply`。
+  - 用户确认/修订通过既有 `appendUserMessage` 流闭环，确认句经 `extractUserInput(state.messages)` 自动成为后续阶段 `userInput` 的一部分；未改 orchestrator、`server/index.js`、前端或 `store.js`。
+  - 测试：`tests/backend.test.js` 既有 `parses clarification JSON...` deepEqual 补 `outputSpec` 空结构；`clarification prompt asks...` 新增 7 条 `outputSpec`/模板/枚举/最低条件断言；新增 3 个 `outputSpec` 解析测试（结构化、reply 正则兜底、空规格）。
+- [x] 点击开始智能开发即确认 outputSpec（`product-021`）：
+  - `server/lib/opencode.js` `createClarificationPrompt` 删除两轮闭环描述（「用户可在下一条消息中直接回贴」「当用户最近一条消息明显确认或复述」），改为「满足条件时首轮即 complete=true，无需等待用户在对话中再次确认」「直接点击前端『开始智能开发』按钮即视为确认」。
+  - `server/lib/orchestrator.js` `processClarification` 在 `if (!clarification.complete)` 分支前新增 `state.outputSpec = clarification.outputSpec`，两分支均持久化。
+  - `startDevelopmentRun` 放宽状态校验至 `[READY_FOR_DEVELOPMENT, CLARIFYING]`；CLARIFYING 强制启动时要求 `state.outputSpec?.sentence` 非空（否则 CONFLICT），并执行：`markStageCompleted(requirements, ...)`、`requirementsStage.outputs=[]`、兜底 `fallbackRequirementsItems`/`fallbackRequirementsMarkdown`、`writeHandoffDocument`、`state.currentStage=2`。
+  - 新增 `buildUserInput(state)` helper：`[extractUserInput(messages), state.outputSpec?.sentence].filter(Boolean).join('\n\n')`；`runOpencodePipelineStage`（line 550）与 `runTestingRepairAttempt`（line 775）的 `userInput` 改用 `buildUserInput(state)`，静默注入合成句，不新增可见聊天消息。
+  - `src/pages/KanbanBoard.jsx` `canStartDevelopment` 扩展为 `READY_FOR_DEVELOPMENT` 或 `(CLARIFYING 且 outputSpec?.sentence)`；按钮 tooltip 改为「点击即确认输出规格并启动智能开发流水线」。
+  - 测试：`tests/backend.test.js` 更新 `clarification prompt asks...` 断言（删两条旧文案、加两条新文案）；新增 4 个测试（outputSpec 持久化、userInput 注入、CLARIFYING 强制启动全链路、CLARIFYING 无 outputSpec 拒绝）；`tests/frontend-render.test.js` 在既有按钮可见性测试中新增 CLARIFYING+outputSpec 显示按钮断言。
 
 ## 进行中
 
@@ -100,8 +119,12 @@
 
 ## 下一步
 
-1. 新建工单跑一次完整流水线，观察无文档情况下编码阶段仅凭原始用户需求的生成质量与 Playwright 覆盖情况；如效果不佳，可考虑回退或引入轻量设计思路落盘。
-2. 评估是否需要把 `state.requirementsMarkdown` 也从 state.json 中移除（当前保留仅作内部兜底解析）。
+1. 重新在页面上用失败工单同类流程验证：首次需求分析后输入“按你推荐”，需求待入厂不应再出现 `spawn E2BIG`。
+2. 新建工单跑一次完整流水线，观察无文档情况下编码阶段仅凭原始用户需求的生成质量与 Playwright 覆盖情况；如效果不佳，可考虑回退或引入轻量设计思路落盘。
+3. 评估是否需要把 `state.requirementsMarkdown` 也从 state.json 中移除（当前保留仅作内部兜底解析）。
+4. 真实跑一次 `createClarificationPrompt`：观察模型是否按提示词填好「输出规格」合成句并放在 reply 末尾、`outputSpec` 五空位齐全；用户回贴/确认后下一轮 `complete=true`，且该句确实出现在后续阶段 `userInput` 中。
+5. 排查 `product-020` 之外遗留的 baseline 失败：`stage prompts require web applications to include Playwright end-to-end coverage` 期望 `codingPrompt` 匹配 `/Playwright.*端到端测试/s`，但 `createStagePrompt({stageKey:'coding'})` 当前文本不含 Playwright；与本事项无关，需单独工单处理。
+6. 真实跑一次新流程：首轮澄清应直接返回 `complete=true` + reply 末尾「输出规格：...」；用户点击「开始智能开发」后 design 阶段 prompt 的「原始用户需求如下」段应包含 outputSpec 合成句。CLARIFYING 状态下若已有 outputSpec 也能点击强制启动。
 
 ## 风险与注意事项
 
@@ -110,6 +133,9 @@
 - 历史工单若已写入 `requirements.md` 或 `docs/design.md`，文件不会被主动清理；新工单不再生成这些文档。
 - `store.writeRequirements` 方法保留（store 层未改动），仅 orchestrator 不再调用；直接测试该方法的单测仍通过。
 - 前端 `RequirementsItemsCard` 链路未改，但若 `state.requirementsItems` 缺失（如澄清异常且兜底失败），卡片仍会展示「条目化需求尚未生成」占位态。
+- `product-020` 仅改 `server/lib/opencode.js` 与测试；`outputSpec` 字段在 orchestrator 中暂未持久化或在前端单独渲染——用户审阅依赖 reply 末尾的合成句，确认/修订通过既有聊天消息流闭环。若后续要在前端做高亮空位/独立确认按钮，需另开工单改 orchestrator/前端/路由。
+- `product-021` 已将 `outputSpec` 持久化到 `state.outputSpec`，并在 `startDevelopmentRun`/`runOpencodePipelineStage`/`runTestingRepairAttempt` 中使用；前端 `canStartDevelopment` 已读 `activeOrder.outputSpec?.sentence`。`outputSpec` 仍只在 AI reply 末尾以文本形式展示，前端未做独立高亮卡片。
+- baseline `npm test` 当前 89/90：`stage prompts require web applications to include Playwright end-to-end coverage` 失败（`createStagePrompt` coding 段未含 Playwright）。已用 `git stash` 验证 baseline 同样失败，与 `product-020`/`product-021` 改动无关；本次未触碰 `createStagePrompt`。`./init.sh` 因该 baseline 失败暂不能全绿，定向回归以 `node --test --test-name-pattern` 与 `npm run build` 为准。
 
 ## 本会话修改文件
 
@@ -156,13 +182,42 @@
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-017` 状态与校验证据。
 - `server/lib/opencode.js`、`server/lib/orchestrator.js`、`tests/backend.test.js`：无文档生成实验，编码阶段直接使用原始用户需求，不再落盘 requirements.md/docs/design.md。
 - `feature_list.json`、`progress.md`：记录 `product-018` 状态与校验证据。
+- `server/lib/opencode.js`：需求澄清 prompt 过滤非澄清业务消息，避免上一轮 opencode-stream 执行日志进入下一轮 prompt。
+- `server/lib/orchestrator.js`：新增诊断文本脱敏，opencode DEBUG `args=[...]` 中的 prompt 统一替换为 `[prompt omitted]`，并用于阶段日志、助手流和 debug 输出。
+- `tests/backend.test.js`：新增 `spawn E2BIG` 根因回归测试，覆盖执行日志污染 prompt 和 DEBUG args 泄露 prompt。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-019` 状态与校验证据。
+- `server/lib/opencode.js`：`createClarificationPrompt` 新增「输出规格」段、JSON `outputSpec` 字段、最低条件；`parseClarificationResponse` 解析 `outputSpec`，新增 `normalizeOutputSpec/extractOutputSpecFromText/composeOutputSpecSentence`，`findNextClarificationField` 正则补 `outputSpec|requirementsItems`。
+- `tests/backend.test.js`：既有 `parses clarification JSON...` deepEqual 补 `outputSpec` 空结构；`clarification prompt asks...` 新增 7 条 `outputSpec` 断言；新增 3 个 `outputSpec` 解析测试。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-020` 状态与校验证据。
+- `server/lib/opencode.js`：`createClarificationPrompt` 删除两轮闭环描述，改为首轮满足条件即 `complete=true`，点击「开始智能开发」即视为确认。
+- `server/lib/orchestrator.js`：`processClarification` 两分支均持久化 `state.outputSpec`；`startDevelopmentRun` 支持 CLARIFYING 强制启动（要求 `outputSpec.sentence` 非空，兜底 requirements 阶段完成 + handoff + fallback items/markdown）；新增 `buildUserInput(state)` helper，`runOpencodePipelineStage` 与 `runTestingRepairAttempt` 的 `userInput` 改用 `buildUserInput`，静默注入 outputSpec 合成句。
+- `src/pages/KanbanBoard.jsx`：`canStartDevelopment` 扩展为 `READY_FOR_DEVELOPMENT` 或 `(CLARIFYING 且 outputSpec?.sentence)`；按钮 tooltip 改为「点击即确认输出规格并启动智能开发流水线」。
+- `tests/backend.test.js`：更新 `clarification prompt asks...` 断言；新增 4 个测试（outputSpec 持久化、userInput 注入、CLARIFYING 强制启动全链路、CLARIFYING 无 outputSpec 拒绝）。
+- `tests/frontend-render.test.js`：既有按钮可见性测试新增 CLARIFYING+outputSpec 显示按钮断言。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-021` 状态与校验证据。
 
 ## 校验证据
+
+- [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='clarification prompt ignores execution stream logs|opencode debug args omit prompt' tests/backend.test.js` 失败，确认旧实现会把上一轮 opencode-stream 执行日志拼入澄清 prompt，且 opencode DEBUG args 原样写入阶段日志。
+- [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='clarification prompt ignores execution stream logs|opencode debug args omit prompt' tests/backend.test.js` 通过（2/2）。
+- [x] 后端回归：2026-06-26 执行 `node --test tests/backend.test.js` 通过（65/65）。
+- [x] `npm test`：2026-06-26 执行通过，83 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 83/83，`npm run build` 成功。
 
 - [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='clarification complete leaves|stage prompt requires handoff|stage prompts use original user input|stage prompts require web applications|coding prompt requires' tests/backend.test.js` 通过（9/9）。
 - [x] `npm test`：2026-06-26 执行通过，81 个测试全部通过。
 - [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-26 执行通过；`npm test` 81/81，`npm run build` 成功。
+
+- [x] `product-020` 定向回归：2026-06-26 执行 `node --test --test-name-pattern='clarification|outputSpec|opencode error events|plain requirements markdown|multiline requirementsMarkdown' tests/backend.test.js` 通过（15/15）。
+- [x] `product-020` orchestrator/阶段 prompt 回归：2026-06-26 执行 `node --test --test-name-pattern='clarification|skipStage|runPipeline|startDevelopmentRun|opencode stdout|opencode failure|opencode debug|opencode stage|opencode JSON|model selections|agent selections|coding prompt|stage prompts use original|stage prompt requires handoff' tests/backend.test.js` 通过（35/35）。
+- [x] `product-020` `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [ ] `product-020` `npm test`：2026-06-26 执行 85/86；失败项 `stage prompts require web applications to include Playwright end-to-end coverage` 为 baseline 预存失败（`git stash` 验证 baseline 同样失败于 #58），与本次改动无关；`./init.sh` 因该 baseline 失败暂不能全绿，待单独工单修复 `createStagePrompt` coding 段 Playwright 提示词。
+- [x] `product-021` 定向回归：2026-06-26 执行 `node --test --test-name-pattern='clarification|outputSpec|startDevelopmentRun|runPipeline' tests/backend.test.js` 通过（19/19）。
+- [x] `product-021` 前端按钮测试：2026-06-26 执行 `node --test --test-name-pattern='AIChatPanel renders opencode-stream messages with pre-wrap and start button only when ready' tests/frontend-render.test.js` 通过（含新增 CLARIFYING+outputSpec 显示按钮断言）。
+- [x] `product-021` `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [ ] `product-021` `npm test`：2026-06-26 执行 89/90；失败项 `stage prompts require web applications to include Playwright end-to-end coverage` 为 baseline 预存失败，与本次改动无关。
 
 - [x] `npm test`：2026-06-25 03:26 通过，35 个测试全部通过。
 - [x] `npm run build`：2026-06-25 03:26 通过，Vite 生产构建成功。

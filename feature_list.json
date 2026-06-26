@@ -298,6 +298,37 @@
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-26：定位到 WO-20260626-001 第二次需求澄清失败，根因为 createClarificationPrompt(state.messages) 将上一轮 opencode-stream 执行日志拼入 prompt，且 --print-logs 输出 args 中包含完整 prompt，第二次作为命令行参数传给 opencode run 后触发 spawn E2BIG。已修改 server/lib/opencode.js 过滤非澄清业务消息；修改 server/lib/orchestrator.js 对 opencode DEBUG args 做 [prompt omitted] 脱敏，并同步用于阶段日志、助手流与 debug 文件。红灯定向测试失败后修复通过；node --test tests/backend.test.js 通过（65/65）；npm test 通过（83/83）；npm run build 成功；最终 ./init.sh 通过（npm test 83/83、npm run build 成功）。"
+    },
+    {
+      "id": "product-020",
+      "name": "需求澄清输出规格语句：模型填充并由用户确认",
+      "description": "在需求澄清阶段让模型基于业务理解填充「基于【】数据，按照【】规则，判断【】每【】更新一次，以【】形式输出」模板，输出形式限定枚举（柱状图、条形图、折线图、历史轨迹、表格、网页）；合成句追加在 reply 末尾供用户审阅，结构化 outputSpec 一并返回。用户在下一轮对话中确认或修订该句后，作为额外原始需求经 extractUserInput 自动汇入后续研发阶段。",
+      "dependencies": ["product-019"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "createClarificationPrompt 提示词新增「输出规格」段，要求模型填充五空位模板并限定 outputForm 枚举；合成句以「输出规格：...」追加在 reply 末尾供用户审阅。",
+        "JSON 输出结构新增 outputSpec 字段（data/rule/target/updateFrequency/outputForm/sentence）；parseClarificationResponse 解析并归一化，缺结构化字段时从 reply 正则兜底抽取（兼容全角与半角括号）。",
+        "进入流水线最低条件要求 outputSpec 五空位齐全且 outputForm ∈ 枚举；用户回贴或确认后下一轮 complete=true。",
+        "用户确认/修订语句经既有 appendUserMessage 流闭环，自动经 extractUserInput 成为后续阶段 userInput 的一部分；不改 orchestrator、server/index.js、前端或 store.js。",
+        "相关自动化测试、npm test、npm run build 均通过（baseline 预存的 stage prompts require web applications 失败与本次改动无关，已记录于 progress.md 风险项）。"
+      ],
+      "evidence": "2026-06-26：仅改 server/lib/opencode.js（createClarificationPrompt 新增输出规格段、JSON outputSpec 字段、最低条件；parseClarificationResponse 与新 normalizeOutputSpec/extractOutputSpecFromText/composeOutputSpecSentence 解析归一化；findNextClarificationField 正则补 outputSpec 字段）与 tests/backend.test.js（既有 deepEqual 补 outputSpec 空结构、prompt 断言新增 7 条、新增 3 个 outputSpec 解析测试）。定向 node --test --test-name-pattern='clarification|outputSpec|opencode error events|plain requirements markdown|multiline requirementsMarkdown' tests/backend.test.js 通过（15/15）；orchestrator/阶段 prompt 链路 35/35 通过；npm run build 成功；npm test 85/86（#61 stage prompts require web applications 为 baseline 预存失败，stash 验证 baseline 同样失败于 #58，与本次改动无关）。"
+    },
+    {
+      "id": "product-021",
+      "name": "点击开始智能开发即确认 outputSpec：消除两轮澄清闭环",
+      "description": "将需求澄清的确认环节从「用户在对话中回贴/确认 → 等待模型次轮 complete=true → 点击开始智能开发」简化为「首轮模型输出 outputSpec 后用户审阅 reply 末尾合成句，无误直接点击开始智能开发」。点击即视为确认，outputSpec 合成句静默注入后续阶段 userInput；并支持 CLARIFYING 状态下有 outputSpec 时强制启动。",
+      "dependencies": ["product-020"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "createClarificationPrompt 提示词删除两轮闭环描述；首轮 outputSpec 五空位齐全 + outputForm ∈ 枚举 + 其它最低条件满足即直接 complete=true，无需等待用户在对话中再次确认。",
+        "processClarification 在 complete=true 与 complete=false 两个分支均持久化 state.outputSpec，确保 CLARIFYING 状态下也可用于强制启动。",
+        "startDevelopmentRun 放宽状态校验：READY_FOR_DEVELOPMENT 直接启动；CLARIFYING 状态下若 state.outputSpec.sentence 非空则强制启动（标记 requirements 阶段完成、写 handoff、兜底 requirementsItems/Markdown），否则 CONFLICT。",
+        "runOpencodePipelineStage 与 runTestingRepairAttempt 的 userInput 改为 buildUserInput(state)：extractUserInput(messages) 与 state.outputSpec.sentence 用 \\n\\n 拼接，静默注入，不新增可见聊天消息。",
+        "前端 canStartDevelopment 扩展：READY_FOR_DEVELOPMENT 或 (CLARIFYING 且 outputSpec.sentence 非空) 时显示「开始智能开发」按钮，tooltip 改为「点击即确认输出规格并启动智能开发流水线」。",
+        "相关自动化测试、npm test、npm run build 均通过（baseline 预存的 stage prompts require web applications 失败与本次改动无关，已记录于 progress.md 风险项）。"
+      ],
+      "evidence": "2026-06-26：改 server/lib/opencode.js（createClarificationPrompt 删两轮闭环、改首轮 complete=true 逻辑）、server/lib/orchestrator.js（processClarification 两分支持久化 state.outputSpec；startDevelopmentRun 支持 CLARIFYING 强制启动并兜底 requirements 阶段；新增 buildUserInput helper，runOpencodePipelineStage 与 runTestingRepairAttempt 的 userInput 改用 buildUserInput）、src/pages/KanbanBoard.jsx（canStartDevelopment 扩展 CLARIFYING+outputSpec 路径，按钮 tooltip 改文案）、tests/backend.test.js（更新 clarification prompt asks 断言；新增 4 个测试：outputSpec 持久化、userInput 注入、CLARIFYING 强制启动、CLARIFYING 无 outputSpec 拒绝）、tests/frontend-render.test.js（在既有按钮可见性测试中新增 CLARIFYING+outputSpec 显示按钮断言）。定向 node --test --test-name-pattern='clarification|outputSpec|startDevelopmentRun|runPipeline' tests/backend.test.js 通过（19/19）；前端按钮测试通过；npm test 89/90（#65 stage prompts require web applications 为 baseline 预存失败，与本次无关）；npm run build 成功。"
     }
   ]
 }
