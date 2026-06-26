@@ -27,7 +27,8 @@ export function buildOpencodeCommand(prompt, appDir, { thinking = false, diagnos
 
 export function createClarificationPrompt(messages, context = {}) {
   const conversation = messages
-    .map((message) => `${message.sender === 'user' ? '用户' : 'AI'}: ${message.text}`)
+    .filter(isClarificationConversationMessage)
+    .map((message) => `${getMessageSenderLabel(message)}: ${getMessageText(message)}`)
     .join('\n')
   const title = String(context.title || '').trim()
   const description = String(context.description || '').trim()
@@ -92,11 +93,31 @@ ${appContext}当前对话：
 ${conversation}`
 }
 
+function isClarificationConversationMessage(message) {
+  if (!message || typeof message !== 'object') return false
+  if (message.kind === 'opencode-stream') return false
+  if (message.stageId) return false
+  if (message.phase && message.phase !== 'clarification') return false
+  const sender = String(message.sender || message.role || '').trim()
+  if (!['user', 'ai', 'assistant'].includes(sender)) return false
+  return getMessageText(message).length > 0
+}
+
+function getMessageSenderLabel(message) {
+  const sender = String(message.sender || message.role || '').trim()
+  return sender === 'user' ? '用户' : 'AI'
+}
+
+function getMessageText(message) {
+  return String(message.text || message.content || '').trim()
+}
+
 export function createStagePrompt({ stageKey, title, userInput, requirementsMarkdown }) {
   const shared = `你正在 .runtime/work-orders/<id>/app 目录中为「${title}」生成一个可本机运行的软件应用。
 阶段上下文读取规则：
+- 禁止读取 .runtime/work-orders/<id>/ 目录以外的文件
 - 第一阅读项必须是 app 根目录的 handoff.md。
-- 如果 handoff.md 不存在或信息不足，再结合下方原始用户需求与当前项目完整上下文。
+- 如果 handoff.md 不存在或信息不足，再结合下方原始用户需求与当前项目（路径是.runtime/work-orders/<id>）完整上下文。
 - 不要读取或依赖 requirements.md、docs/design.md 等需求/设计文档文件；本工单不落盘这些文档，仅以原始用户需求为准。
 - 进入开发阶段后不要向用户请求“是否继续”；以不中断流水线为主要目标，自行修复可恢复的问题。
 - 只有超过系统重试上限、缺少外部凭据、需要破坏性操作或无法在本机范围内处理时，才明确失败退出。
@@ -134,7 +155,6 @@ ${userInput || '(无额外原始需求)'}
 
 当前阶段：智能编码。
 请根据上方原始用户需求，生成可运行 MVP、真实交互和可访问 UI，避免只交付静态占位页面。
-若生成物是 Web/浏览器应用，必须配置并提交 Playwright 端到端测试，覆盖核心用户路径，并让 manifest.test 能执行这些测试；若不是浏览器应用，使用等价自动化测试并在 handoff.md 说明原因。
 请生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
 {
   "name": "app-name",

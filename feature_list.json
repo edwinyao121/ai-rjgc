@@ -284,6 +284,20 @@
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-26：修改 server/lib/opencode.js（createStagePrompt/createTestingRepairPrompt 改用 userInput、设计阶段不存 docs/design.md、编码阶段改用原始用户需求）、server/lib/orchestrator.js（processClarification 不再写 requirements.md、阶段与返修提示词传入 extractUserInput(state.messages)、buildHandoffDocument 去掉 requirements.md/docs/design.md 引用、移除未用的 getRequirementsMarkdown）；更新 tests/backend.test.js 中 clarification 完成与 handoff 首读项断言，新增 stage prompts use original user input 测试。node --test --test-name-pattern='clarification complete leaves|stage prompt requires handoff|stage prompts use original user input|stage prompts require web applications|coding prompt requires' tests/backend.test.js 通过（9/9）；npm test 通过（81/81）；npm run build 成功；最终 ./init.sh 通过（npm test 81/81、npm run build 成功）。"
+    },
+    {
+      "id": "product-019",
+      "name": "修复需求澄清二次输入 spawn E2BIG",
+      "description": "修复需求澄清首轮输出后用户继续确认时，上一轮 opencode 诊断流被拼回澄清 prompt，导致命令行参数过大并触发 spawn E2BIG 的问题。",
+      "dependencies": ["product-018"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "需求澄清 prompt 只包含澄清阶段的人机业务对话，不再包含 opencode-stream、执行阶段消息或阶段日志。",
+        "opencode DEBUG 输出中的 args=[...] 不再把完整 prompt 写入阶段日志、助手流式消息或调试输出，统一显示为 [prompt omitted]。",
+        "新增自动化回归测试复现上一轮执行日志污染 prompt 与 DEBUG args 泄露 prompt 的场景。",
+        "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-26：定位到 WO-20260626-001 第二次需求澄清失败，根因为 createClarificationPrompt(state.messages) 将上一轮 opencode-stream 执行日志拼入 prompt，且 --print-logs 输出 args 中包含完整 prompt，第二次作为命令行参数传给 opencode run 后触发 spawn E2BIG。已修改 server/lib/opencode.js 过滤非澄清业务消息；修改 server/lib/orchestrator.js 对 opencode DEBUG args 做 [prompt omitted] 脱敏，并同步用于阶段日志、助手流与 debug 文件。红灯定向测试失败后修复通过；node --test tests/backend.test.js 通过（65/65）；npm test 通过（83/83）；npm run build 成功；最终 ./init.sh 通过（npm test 83/83、npm run build 成功）。"
     }
   ]
 }

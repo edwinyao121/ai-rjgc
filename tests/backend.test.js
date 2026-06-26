@@ -116,6 +116,44 @@ test('clarification prompt asks the agent to deepen scenarios into detailed requ
   assert.match(prompt, /每条细化需求之间必须用 \\n\\n 分隔/)
 })
 
+test('clarification prompt ignores execution stream logs from previous opencode runs', () => {
+  const prompt = createClarificationPrompt([
+    {
+      sender: 'ai',
+      phase: 'clarification',
+      text: '应用已创建：航母信息。请继续输入原始需求。'
+    },
+    {
+      sender: 'user',
+      phase: 'clarification',
+      text: '做一个航母舰载机关联态势系统'
+    },
+    {
+      sender: 'ai',
+      phase: 'execution',
+      stageId: 'requirements',
+      kind: 'opencode-stream',
+      text: 'INFO args=["run","--format","json","SECRET_PROMPT_PAYLOAD_FROM_PREVIOUS_RUN"]\n上一轮完整执行日志'
+    },
+    {
+      sender: 'ai',
+      phase: 'clarification',
+      text: '我对需求场景的理解如下：请确认。'
+    },
+    {
+      sender: 'user',
+      phase: 'clarification',
+      text: '按你推荐'
+    }
+  ])
+
+  assert.match(prompt, /做一个航母舰载机关联态势系统/)
+  assert.match(prompt, /我对需求场景的理解如下/)
+  assert.match(prompt, /按你推荐/)
+  assert.doesNotMatch(prompt, /SECRET_PROMPT_PAYLOAD_FROM_PREVIOUS_RUN/)
+  assert.doesNotMatch(prompt, /上一轮完整执行日志/)
+})
+
 test('parses clarification JSON with multiline requirementsMarkdown from opencode text events', () => {
   const modelText = `{
   "complete": true,
@@ -2021,6 +2059,54 @@ test('opencode stderr diagnostics are logged with sensitive fields redacted', as
     assert.match(requirementsLog.content, /ERROR apiKey="\[REDACTED\]"/)
     assert.doesNotMatch(requirementsLog.content, /secret-token/)
     assert.doesNotMatch(requirementsLog.content, /secret-value/)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('opencode debug args omit prompt payload from stage logs and stream messages', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      async (_command, options) => {
+        const debugLine = `INFO service=default args=${JSON.stringify([
+          'run',
+          '--format',
+          'json',
+          '--dir',
+          options.cwd,
+          'SECRET_PROMPT_PAYLOAD_FROM_DEBUG_ARGS'
+        ])}`
+        await options.onStderrLine?.(debugLine)
+        return { exitCode: 0, stdout: '', stderr: debugLine }
+      }
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ message: '做一个日志脱敏应用' }, { startClarification: false })
+
+    await service.runCommandWithStageLogging(state.id, 'requirements', {
+      label: '需求澄清',
+      command: ['opencode', 'run', '--format', 'json', '--dir', state.appDir, 'SECRET_PROMPT_PAYLOAD_FROM_COMMAND'],
+      cwd: state.appDir,
+      timeoutMs: 15 * 60 * 1000,
+      source: 'opencode'
+    })
+
+    const requirementsLog = await service.getStageLog(state.id, 'requirements')
+    assert.match(requirementsLog.content, /\[prompt omitted\]/)
+    assert.doesNotMatch(requirementsLog.content, /SECRET_PROMPT_PAYLOAD_FROM_COMMAND/)
+    assert.doesNotMatch(requirementsLog.content, /SECRET_PROMPT_PAYLOAD_FROM_DEBUG_ARGS/)
+
+    const persisted = await fixture.store.readWorkOrder(state.id)
+    const streamMessage = persisted.messages.find((message) => message.kind === 'opencode-stream' && message.metadata?.stageKey === 'requirements')
+    assert.ok(streamMessage)
+    assert.match(streamMessage.content, /\[prompt omitted\]/)
+    assert.doesNotMatch(streamMessage.content, /SECRET_PROMPT_PAYLOAD_FROM_DEBUG_ARGS/)
   } finally {
     await fixture.cleanup()
   }

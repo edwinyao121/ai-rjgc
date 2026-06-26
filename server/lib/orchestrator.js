@@ -1004,7 +1004,7 @@ export class WorkOrderService {
 
   async writeDebugOutput(id, fileName, content) {
     try {
-      await fs.writeFile(path.join(this.store.getWorkOrderDir(id), fileName), redactSensitiveText(content), 'utf8')
+      await fs.writeFile(path.join(this.store.getWorkOrderDir(id), fileName), sanitizeDiagnosticText(content), 'utf8')
     } catch (error) {
       this.logger.warn?.(`Unable to write ${fileName}: ${error.message}`)
     }
@@ -1039,7 +1039,7 @@ export class WorkOrderService {
   async appendStageLogEntry(id, stageKey, entry) {
     const savedEntry = await this.store.appendStageLogEntry(id, stageKey, {
       ...entry,
-      text: redactSensitiveText(entry.text)
+      text: sanitizeDiagnosticText(entry.text)
     })
     await this.emit(id, 'stage.log.append', {
       stageId: stageKey,
@@ -1199,7 +1199,7 @@ export class WorkOrderService {
         return
       }
       if (parsed.kind === 'raw') {
-        await this.appendOpencodeStreamDelta(id, streamMessageId, `${redactSensitiveText(line)}\n`, 'STREAMING', { activity: 'thinking' })
+        await this.appendOpencodeStreamDelta(id, streamMessageId, `${sanitizeDiagnosticText(line)}\n`, 'STREAMING', { activity: 'thinking' })
       }
     }
 
@@ -1641,7 +1641,7 @@ function extractUserInput(messages) {
 }
 
 function redactSensitiveObject(value) {
-  if (typeof value === 'string') return redactSensitiveText(value)
+  if (typeof value === 'string') return sanitizeDiagnosticText(value)
   if (!value || typeof value !== 'object') return value
   if (Array.isArray(value)) return value.map((item) => redactSensitiveObject(item))
   const result = {}
@@ -1651,6 +1651,10 @@ function redactSensitiveObject(value) {
   return result
 }
 
+function sanitizeDiagnosticText(value) {
+  return redactSensitiveText(redactOpencodeRunArgs(value))
+}
+
 function redactSensitiveText(value) {
   let text = String(value ?? '')
   text = text.replace(/("(?:api[_-]?key|apikey|token|password|authorization)"\s*:\s*)"[^"]*"/gi, '$1"[REDACTED]"')
@@ -1658,6 +1662,83 @@ function redactSensitiveText(value) {
   text = text.replace(/((?:api[_-]?key|apikey|token|password|authorization)\s*[:=]\s*)'[^']*'/gi, "$1'[REDACTED]'")
   text = text.replace(/((?:api[_-]?key|apikey|token|password|authorization)\s*[:=]\s*)(?!["'])(?:Bearer\s+)?[^\s,;}\]]+/gi, '$1[REDACTED]')
   return text
+}
+
+function redactOpencodeRunArgs(value) {
+  const text = String(value ?? '')
+  const marker = 'args='
+  let output = ''
+  let cursor = 0
+
+  while (cursor < text.length) {
+    const markerIndex = text.indexOf(`${marker}[`, cursor)
+    if (markerIndex === -1) {
+      output += text.slice(cursor)
+      break
+    }
+
+    output += text.slice(cursor, markerIndex)
+    const arrayStart = markerIndex + marker.length
+    const arrayEnd = findJsonArrayEnd(text, arrayStart)
+    if (arrayEnd === -1) {
+      output += text.slice(markerIndex, arrayStart + 1)
+      cursor = arrayStart + 1
+      continue
+    }
+
+    const rawArray = text.slice(arrayStart, arrayEnd)
+    output += `${marker}${redactPromptFromOpencodeRunArgs(rawArray)}`
+    cursor = arrayEnd
+  }
+
+  return output
+}
+
+function redactPromptFromOpencodeRunArgs(rawArray) {
+  try {
+    const args = JSON.parse(rawArray)
+    if (Array.isArray(args) && args[0] === 'run' && args.length > 1) {
+      const printable = args.slice()
+      printable[printable.length - 1] = '[prompt omitted]'
+      return JSON.stringify(printable)
+    }
+  } catch {
+    if (/^\[\s*"run"/.test(rawArray)) {
+      return '["run","[prompt omitted]"]'
+    }
+  }
+  return rawArray
+}
+
+function findJsonArrayEnd(text, startIndex) {
+  let depth = 0
+  let inString = false
+  let escaped = false
+
+  for (let index = startIndex; index < text.length; index += 1) {
+    const char = text[index]
+    if (inString) {
+      if (escaped) {
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === '"') {
+        inString = false
+      }
+      continue
+    }
+
+    if (char === '"') {
+      inString = true
+    } else if (char === '[') {
+      depth += 1
+    } else if (char === ']') {
+      depth -= 1
+      if (depth === 0) return index + 1
+    }
+  }
+
+  return -1
 }
 
 function buildHandoffDocument(state, note = '') {
