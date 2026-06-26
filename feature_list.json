@@ -251,6 +251,23 @@
         "相关后端/前端自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='model selections|opencode stages use|testing failure triggers one automatic repair attempt|StageCard hides model details|work order API sends model selections|project default model' tests/backend.test.js tests/frontend-render.test.js 失败，确认旧实现拒绝 testing/deployment、测试/部署/返修仍沿用 coding，前端仍显示需求澄清模型且测试/部署无齿轮入口；实现后同一定向测试通过。npm test 通过（72/72）；npm run build 成功；最终 ./init.sh 通过（npm test 72/72、npm run build 成功）。"
+    },
+    {
+      "id": "product-017",
+      "name": "补齐阶段 Agent 配置并强化生成提示词",
+      "description": "从本机 opencode 全局 Agent 中选择真实执行 Agent，五个阶段均支持 Agent 配置，并强化设计、编码、测试、部署和自动返修提示词。",
+      "dependencies": ["product-016"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "GET /api/opencode-agents 只解析 opencode agent list 的顶层 Agent 标识，并返回 id、label、isPrimary。",
+        "agentSelections 支持 requirements、design、coding、testing、deployment 五个阶段键，空值和历史工单默认使用 build，且只允许保存 GET /api/opencode-agents 返回的 Agent。",
+        "POST /api/work-orders、PATCH /api/work-orders/:id/agent-selections、POST /api/work-orders/:id/development-runs 支持保存或提交 agentSelections。",
+        "需求澄清、系统设计、智能编码、测试质检准备、测试自动返修、部署交付准备均按阶段传入 --agent，缺失时传 build。",
+        "五个阶段卡片齿轮均支持 Agent 配置；主卡片继续只展示现有虚拟 Agent 名称，不暴露真实 opencode Agent id。",
+        "系统设计、编码、测试质检、部署交付和测试自动返修提示词已强化，Web 应用明确要求 Playwright 端到端测试。",
+        "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js 失败，确认旧实现缺少 Agent 目录、agentSelections、--agent、Playwright 提示词和前端 API/UI 支持；实现后同一定向测试通过。node --test tests/backend.test.js tests/frontend-render.test.js 通过（80/80）；npm test 通过（80/80）；npm run build 成功；最终 ./init.sh 通过（npm test 80/80、npm run build 成功）。"
     }
   ]
 }

@@ -8,7 +8,7 @@ import { WorkOrderStore } from '../server/lib/store.js'
 import { WorkOrderEventBus } from '../server/lib/events.js'
 import { WorkOrderService } from '../server/lib/orchestrator.js'
 import { createApiServer } from '../server/index.js'
-import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt, createStagePrompt } from '../server/lib/opencode.js'
+import { parseClarificationResponse, buildOpencodeCommand, createClarificationPrompt, createStagePrompt, createTestingRepairPrompt } from '../server/lib/opencode.js'
 import { inferAppUrlFromHealthUrl, substitutePortInCommand, substitutePortInUrl, validateManifest } from '../server/lib/manifest.js'
 import { summarizeCommandResult } from '../server/lib/runner.js'
 import { runCommand } from '../server/lib/runner.js'
@@ -324,6 +324,94 @@ test('model catalog is loaded from opencode models and invalid selections are re
       coding: 'opencode/deepseek-v4-flash-free'
     })
     assert.equal(updated.modelSelections.design, 'openai/gpt-5.2')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('opencode agent catalog is loaded from top-level agent list entries', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      opencodeAgentsHandler(`build (primary)
+  [
+    {
+      "permission": "*",
+      "pattern": "not-an-agent"
+    }
+  ]
+frontend (subagent)
+  [
+    {
+      "permission": "read",
+      "pattern": "*"
+    }
+  ]
+qa-agent (subagent)
+  []
+`)
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false,
+      modelCacheTtlMs: 60_000
+    })
+
+    const agents = await service.listOpencodeAgents()
+
+    assert.deepEqual(agents, [
+      { id: 'build', label: 'build', isPrimary: true },
+      { id: 'frontend', label: 'frontend', isPrimary: false },
+      { id: 'qa-agent', label: 'qa-agent', isPrimary: false }
+    ])
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
+test('agent selections are persisted with build defaults and invalid agents are rejected', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      opencodeAgentsHandler('build (primary)\ndesign-agent (subagent)\nqa-agent (subagent)\ndeploy-agent (subagent)\n')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({
+      title: 'Agent 配置应用',
+      deferClarification: true,
+      agentSelections: {
+        requirements: 'build',
+        design: 'design-agent',
+        coding: '',
+        testing: 'qa-agent',
+        deployment: 'deploy-agent'
+      }
+    }, { startClarification: false })
+
+    assert.deepEqual(state.agentSelections, {
+      requirements: 'build',
+      design: 'design-agent',
+      coding: 'build',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    })
+
+    await assert.rejects(
+      () => service.updateAgentSelections(state.id, { testing: 'missing-agent' }),
+      { code: 'VALIDATION_ERROR' }
+    )
+
+    const updated = await service.updateAgentSelections(state.id, { coding: 'design-agent', deployment: '' })
+    assert.equal(updated.agentSelections.coding, 'design-agent')
+    assert.equal(updated.agentSelections.deployment, 'build')
   } finally {
     await fixture.cleanup()
   }
@@ -674,6 +762,39 @@ test('GET /api/apps returns the built-in app registry', async () => {
   }
 })
 
+test('GET /api/opencode-agents returns the global opencode agent catalog', async () => {
+  const fixture = await createFixture()
+  let apiServer
+  try {
+    const runner = new FakeRunner([
+      opencodeAgentsHandler('build (primary)\nqa-agent (subagent)\n')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+    apiServer = createApiServer({ service, eventBus: fixture.eventBus })
+    await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve))
+    const { port } = apiServer.address()
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/opencode-agents`)
+    const payload = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.deepEqual(payload.agents, [
+      { id: 'build', label: 'build', isPrimary: true },
+      { id: 'qa-agent', label: 'qa-agent', isPrimary: false }
+    ])
+  } finally {
+    if (apiServer) {
+      await new Promise((resolve) => apiServer.close(resolve))
+    }
+    await fixture.cleanup()
+  }
+})
+
 test('PATCH /api/work-orders/:id/model-selections validates and persists model selections', async () => {
   const fixture = await createFixture()
   let apiServer
@@ -717,6 +838,59 @@ test('PATCH /api/work-orders/:id/model-selections validates and persists model s
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ modelSelections: { testing: 'missing/model' } })
+    })
+    assert.equal(invalidResponse.status, 400)
+  } finally {
+    if (apiServer) {
+      await new Promise((resolve) => apiServer.close(resolve))
+    }
+    await fixture.cleanup()
+  }
+})
+
+test('PATCH /api/work-orders/:id/agent-selections validates and persists agent selections', async () => {
+  const fixture = await createFixture()
+  let apiServer
+  try {
+    const runner = new FakeRunner([
+      opencodeAgentsHandler('build (primary)\ndesign-agent (subagent)\nqa-agent (subagent)\n')
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+    const state = await service.createWorkOrder({ title: 'Agent 接口应用', deferClarification: true }, { startClarification: false })
+    apiServer = createApiServer({ service, eventBus: fixture.eventBus })
+    await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve))
+    const { port } = apiServer.address()
+
+    const response = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/agent-selections`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agentSelections: {
+          requirements: 'build',
+          design: 'design-agent',
+          coding: 'design-agent',
+          testing: 'qa-agent',
+          deployment: ''
+        }
+      })
+    })
+    const payload = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(payload.workOrder.agentSelections.requirements, 'build')
+    assert.equal(payload.workOrder.agentSelections.design, 'design-agent')
+    assert.equal(payload.workOrder.agentSelections.testing, 'qa-agent')
+    assert.equal(payload.workOrder.agentSelections.deployment, 'build')
+
+    const invalidResponse = await fetch(`http://127.0.0.1:${port}/api/work-orders/${state.id}/agent-selections`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentSelections: { testing: 'missing-agent' } })
     })
     assert.equal(invalidResponse.status, 400)
   } finally {
@@ -1001,6 +1175,13 @@ test('testing failure triggers one automatic repair attempt before deployment', 
       testing: 'openai/gpt-5.2',
       deployment: null
     }
+    ready.agentSelections = {
+      requirements: 'build',
+      design: 'design-agent',
+      coding: 'coding-agent',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    }
     await fixture.store.saveWorkOrder(ready)
     const completed = await service.runPipeline(state.id)
 
@@ -1009,6 +1190,7 @@ test('testing failure triggers one automatic repair attempt before deployment', 
     assert.equal(repairPrompts.length, 1)
     const repairCommand = runner.runs[7].command
     assert.equal(repairCommand[repairCommand.indexOf('--model') + 1], 'openai/gpt-5.2')
+    assert.equal(repairCommand[repairCommand.indexOf('--agent') + 1], 'qa-agent')
     assert.match(repairPrompts[0], /智能编码\/修复/)
     assert.match(repairPrompts[0], /第 1\/3 次/)
     assert.match(repairPrompts[0], /vitest failed/)
@@ -1547,6 +1729,54 @@ test('opencode stages use their saved model selections', async () => {
   }
 })
 
+test('opencode stages use their saved agent selections and default to build', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 分阶段 Agent 需求',
+        title: '分阶段Agent应用'
+      }),
+      streamingHandler(['design ok'], { exitCode: 0 }),
+      streamingHandler(['coding ok'], { exitCode: 0 }),
+      streamingHandler(['testing prep ok'], { exitCode: 0 }),
+      streamingHandler(['deployment prep ok'], { exitCode: 0 })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个分阶段 Agent 应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    const ready = await fixture.store.readWorkOrder(state.id)
+    ready.agentSelections = {
+      requirements: 'build',
+      design: 'design-agent',
+      testing: 'qa-agent',
+      deployment: 'deploy-agent'
+    }
+    await fixture.store.saveWorkOrder(ready)
+
+    await service.runOpencodePipelineStage(state.id, 'design')
+    await service.runOpencodePipelineStage(state.id, 'coding')
+    await service.runOpencodePipelineStage(state.id, 'testing')
+    await service.runOpencodePipelineStage(state.id, 'deployment')
+
+    assert.equal(runner.runs[0].command[runner.runs[0].command.indexOf('--agent') + 1], 'build')
+    assert.equal(runner.runs[1].command[runner.runs[1].command.indexOf('--agent') + 1], 'design-agent')
+    assert.equal(runner.runs[2].command[runner.runs[2].command.indexOf('--agent') + 1], 'build')
+    assert.equal(runner.runs[3].command[runner.runs[3].command.indexOf('--agent') + 1], 'qa-agent')
+    assert.equal(runner.runs[4].command[runner.runs[4].command.indexOf('--agent') + 1], 'deploy-agent')
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('opencode stdout/stderr lines produce assistant.message.append + assistant.message.delta persisted to messages.json', async () => {
   const fixture = await createFixture()
   try {
@@ -1874,6 +2104,14 @@ test('buildOpencodeCommand adds --model when a model is selected', () => {
   assert.equal(command.at(-1), 'prompt')
 })
 
+test('buildOpencodeCommand adds --agent when an agent is selected', () => {
+  const command = buildOpencodeCommand('prompt', '/tmp/app', { agent: 'qa-agent' })
+
+  assert.ok(command.includes('--agent'), 'should pass the selected agent to opencode')
+  assert.equal(command[command.indexOf('--agent') + 1], 'qa-agent')
+  assert.equal(command.at(-1), 'prompt')
+})
+
 test('coding prompt requires Python dependencies to use a project virtual environment', () => {
   const prompt = createStagePrompt({
     stageKey: 'coding',
@@ -1896,6 +2134,52 @@ test('coding prompt requires manifest commands to target subproject directories 
   assert.match(prompt, /npm.*--prefix/)
   assert.match(prompt, /healthUrl.*appUrl/s)
   assert.match(prompt, /用户应访问的前端地址/)
+})
+
+test('stage prompts require web applications to include Playwright end-to-end coverage', () => {
+  const designPrompt = createStagePrompt({
+    stageKey: 'design',
+    title: 'Web 应用',
+    requirementsMarkdown: '# Web 应用需求'
+  })
+  const codingPrompt = createStagePrompt({
+    stageKey: 'coding',
+    title: 'Web 应用',
+    requirementsMarkdown: '# Web 应用需求'
+  })
+  const testingPrompt = createStagePrompt({
+    stageKey: 'testing',
+    title: 'Web 应用',
+    requirementsMarkdown: '# Web 应用需求'
+  })
+  const deploymentPrompt = createStagePrompt({
+    stageKey: 'deployment',
+    title: 'Web 应用',
+    requirementsMarkdown: '# Web 应用需求'
+  })
+  const repairPrompt = createTestingRepairPrompt({
+    title: 'Web 应用',
+    requirementsMarkdown: '# Web 应用需求',
+    attempt: 1,
+    maxAttempts: 3,
+    failedLabel: '运行测试',
+    failedCommand: ['npm', 'test'],
+    logSummary: 'Playwright failed',
+    repairContextPath: 'repair-context/testing-failure-attempt-1.md'
+  })
+
+  assert.match(designPrompt, /用户旅程/)
+  assert.match(designPrompt, /页面结构/)
+  assert.match(designPrompt, /Playwright.*端到端测试计划/s)
+  assert.match(codingPrompt, /可运行 MVP/)
+  assert.match(codingPrompt, /真实交互/)
+  assert.match(codingPrompt, /Playwright.*端到端测试/s)
+  assert.match(testingPrompt, /优先.*Playwright.*端到端测试/s)
+  assert.match(testingPrompt, /核心用户路径/)
+  assert.match(deploymentPrompt, /appUrl.*真实前端页面/s)
+  assert.match(deploymentPrompt, /不是.*健康检查接口/s)
+  assert.match(repairPrompt, /保留并修复.*Playwright/s)
+  assert.match(repairPrompt, /不允许绕过测试/)
 })
 
 test('stage prompt requires handoff.md as first reading item before full context fallback', () => {
@@ -2121,6 +2405,13 @@ function opencodeModelsHandler(models) {
   return async (command) => {
     assert.deepEqual(command, ['opencode', 'models'])
     return ok(models.join('\n'))
+  }
+}
+
+function opencodeAgentsHandler(output) {
+  return async (command) => {
+    assert.deepEqual(command, ['opencode', 'agent', 'list'])
+    return ok(output)
   }
 }
 

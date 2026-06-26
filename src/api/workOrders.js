@@ -7,6 +7,7 @@ const EVENT_TYPES = [
   'work-order.created',
   'work-order.status.changed',
   'work-order.model-selections.updated',
+  'work-order.agent-selections.updated',
   'development.run.started',
   'message.created',
   'clarification.started',
@@ -36,6 +37,11 @@ export async function listOpencodeModels() {
   return payload.models || []
 }
 
+export async function listOpencodeAgents() {
+  const payload = await apiFetch('/api/opencode-agents')
+  return payload.agents || []
+}
+
 export async function createWorkOrder(input) {
   const body = typeof input === 'string' ? { message: input } : input
   const payload = await apiFetch('/api/work-orders', {
@@ -61,10 +67,21 @@ export async function updateWorkOrderModelSelections(id, modelSelections) {
   return payload.workOrder
 }
 
-export async function startDevelopmentRun(id, modelSelections = null) {
+export async function updateWorkOrderAgentSelections(id, agentSelections) {
+  const payload = await apiFetch(`/api/work-orders/${id}/agent-selections`, {
+    method: 'PATCH',
+    body: JSON.stringify({ agentSelections })
+  })
+  return payload.workOrder
+}
+
+export async function startDevelopmentRun(id, modelSelections = null, agentSelections = null) {
   const options = { method: 'POST' }
-  if (modelSelections) {
-    options.body = JSON.stringify({ modelSelections })
+  if (modelSelections || agentSelections) {
+    options.body = JSON.stringify({
+      ...(modelSelections ? { modelSelections } : {}),
+      ...(agentSelections ? { agentSelections } : {})
+    })
   }
   const payload = await apiFetch(`/api/work-orders/${id}/development-runs`, {
     ...options

@@ -296,7 +296,23 @@ GET /api/opencode-models
 
 后端只从当前机器的 `opencode models` 输出中读取可选模型。返回模型必须使用 `provider/model` 格式；未出现在该列表中的模型不得保存或提交给阶段执行。
 
-### 7.8 保存阶段模型选择
+### 7.8 查询 opencode Agent
+
+```http
+GET /api/opencode-agents
+```
+
+后端只从当前机器的 `opencode agent list` 输出中读取可选 Agent。接口只解析顶层 Agent 标识，不解析 Agent 权限配置明细；返回格式为：
+
+```json
+{
+  "agents": [
+    { "id": "build", "label": "build", "isPrimary": true }
+  ]
+}
+```
+
+### 7.9 保存阶段模型选择
 
 ```http
 PATCH /api/work-orders/:id/model-selections
@@ -324,13 +340,40 @@ PATCH /api/work-orders/:id/model-selections
 - 新建项目时选择的模型是项目默认模型；前端应将其填入五个阶段，后续允许系统设计、智能编码、测试质检、部署交付在阶段卡片中单独调整。
 - 历史工单若缺少 `testing` 或 `deployment`，后端读取时保持兼容，不破坏旧数据。
 
-### 7.9 启动智能开发时提交模型选择
+### 7.10 保存阶段 Agent 选择
+
+```http
+PATCH /api/work-orders/:id/agent-selections
+```
+
+请求：
+
+```json
+{
+  "agentSelections": {
+    "requirements": "build",
+    "design": "build",
+    "coding": "build",
+    "testing": "build",
+    "deployment": "build"
+  }
+}
+```
+
+规则：
+
+- 仅支持 `requirements`、`design`、`coding`、`testing`、`deployment` 五个键。
+- 只允许保存 `GET /api/opencode-agents` 返回的 Agent。
+- 空值或历史工单缺失配置时默认使用 `build`。
+- 仅允许在需求澄清或待启动智能开发阶段修改；流水线启动后锁定。
+
+### 7.11 启动智能开发时提交模型和 Agent 选择
 
 ```http
 POST /api/work-orders/:id/development-runs
 ```
 
-请求体可包含最终模型选择：
+请求体可包含最终模型和 Agent 选择：
 
 ```json
 {
@@ -339,17 +382,26 @@ POST /api/work-orders/:id/development-runs
     "coding": "opencode/deepseek-v4-flash-free",
     "testing": "openai/gpt-5.2",
     "deployment": "opencode/deepseek-v4-flash-free"
+  },
+  "agentSelections": {
+    "requirements": "build",
+    "design": "build",
+    "coding": "build",
+    "testing": "build",
+    "deployment": "build"
   }
 }
 ```
 
-后端保存并校验模型选择后再启动流水线。
+后端保存并校验模型和 Agent 选择后再启动流水线。
 
 ## 8. opencode 执行策略
 
 每个阶段单独调用 opencode，避免一个长任务不可控。
 
 若工单保存了阶段模型选择，后端必须在对应 opencode 命令中增加 `--model provider/model`。需求澄清使用 `requirements`，系统设计使用 `design`，智能编码使用 `coding`，测试质检准备和测试自动返修使用 `testing`，部署交付准备使用 `deployment`。历史工单缺少 `testing` 或 `deployment` 时，允许兼容回落到旧的 `coding` 配置。
+
+若工单保存了阶段 Agent 选择，后端必须在对应 opencode 命令中增加 `--agent <id>`。需求澄清、系统设计、智能编码、测试质检准备、测试自动返修和部署交付准备分别使用对应阶段 Agent；未配置时默认使用 `build`。
 
 示例：
 
@@ -427,7 +479,9 @@ docs/
 - 收到事件后刷新阶段卡片、进度、日志和产物。
 - 首次从内设应用输入需求并创建真实工单后，前端必须立即展示需求待入厂阶段的思考过程；若订阅建立前已有事件落盘，应通过工单快照或 SSE 历史/增量兜底合并，无需用户刷新页面。
 - 新建项目弹窗和内设应用首次需求前的模型选择命名为“项目默认模型”，选择后应填入 `requirements`、`design`、`coding`、`testing`、`deployment` 五个阶段。
-- 系统设计、智能编码、测试质检、部署交付阶段的模型选择应收纳在阶段卡片的齿轮配置按钮中；点击后才展示模型选择器，主卡片不直接展示模型名称或下拉框。
+- 五个阶段卡片的 Agent 选择应收纳在阶段卡片齿轮配置按钮中；主卡片继续展示现有虚拟 Agent 名称，不直接展示真实 opencode Agent id。
+- 需求待入厂阶段齿轮只配置 Agent；需求模型仍通过“项目默认模型”入口选择。需求阶段仅在等待原始需求且尚未启动澄清时可改 Agent。
+- 系统设计、智能编码、测试质检、部署交付阶段的模型选择应收纳在阶段卡片的齿轮配置按钮中；点击后才展示模型选择器，主卡片不直接展示模型名称或下拉框。上述四个阶段仅在 `READY_FOR_DEVELOPMENT` 且阶段未启动时可改模型和 Agent。
 - 阶段卡片不展示“进行中”“等待中”“已完成”“开发失败”等冗余状态文案，状态由图标、进度条、颜色和日志内容表达。
 - 部署成功后启用“访问部署应用”按钮。
 
