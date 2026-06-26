@@ -268,6 +268,21 @@
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js 失败，确认旧实现缺少 Agent 目录、agentSelections、--agent、Playwright 提示词和前端 API/UI 支持；实现后同一定向测试通过。node --test tests/backend.test.js tests/frontend-render.test.js 通过（80/80）；npm test 通过（80/80）；npm run build 成功；最终 ./init.sh 通过（npm test 80/80、npm run build 成功）。"
+    },
+    {
+      "id": "product-018",
+      "name": "区分编码与测试阶段测试边界并延长编码超时",
+      "description": "智能编码阶段主要补齐单元/组件等快速测试，Playwright 端到端测试归入测试质检阶段，并将智能编码阶段 opencode 超时调整为 2 小时。",
+      "dependencies": ["product-017"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "智能编码阶段提示词明确开发阶段测试边界以单元测试、组件测试、纯函数/数据处理测试和轻量集成测试为主。",
+        "智能编码阶段提示词不再强制新增 Playwright 端到端测试，并明确端到端测试归属测试质检阶段。",
+        "测试质检阶段提示词明确优先补齐并执行 Playwright 端到端测试。",
+        "智能编码阶段 opencode 命令超时时间设为 2 小时（2 * 60 * 60 * 1000）。",
+        "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='coding opencode stage uses a two hour timeout budget|stage prompts separate development unit test scope' tests/backend.test.js 失败，确认旧实现仍为 40 分钟超时且编码提示词强制 Playwright 端到端测试；实现后同一定向测试通过。node --test tests/backend.test.js 通过（63/63）；npm test 通过（81/81）；npm run build 成功；最终 ./init.sh 通过（npm test 81/81、npm run build 成功）。"
     }
   ]
 }

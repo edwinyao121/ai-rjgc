@@ -133,7 +133,8 @@ ${requirementsMarkdown}
 
 当前阶段：智能编码。
 请根据requirements.md和docs/front-end-design.md文档，生成可运行 MVP、真实交互和可访问 UI，避免只交付静态占位页面。
-若生成物是 Web/浏览器应用，必须配置并提交 Playwright 端到端测试，覆盖核心用户路径，并让 manifest.test 能执行这些测试；若不是浏览器应用，使用等价自动化测试并在 handoff.md 说明原因。
+开发阶段的测试边界：主要补齐与实现同步的单元测试、组件测试、纯函数/数据处理测试和轻量集成测试；manifest.test 应能运行这些快速测试，验证核心逻辑、关键组件和可构建性。
+Playwright 端到端测试归属测试质检阶段，不作为智能编码阶段的强制新增产物；若项目已有端到端测试可以保留，不要删除或弱化。
 请生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
 {
   "name": "app-name",
@@ -150,7 +151,7 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：测试质检。
-请优先补齐并执行 Playwright 端到端测试，覆盖核心用户路径、主要表单/按钮交互、错误或空状态，以及页面可访问性基础行为。
+端到端测试属于测试质检阶段：请优先补齐并执行 Playwright 端到端测试，覆盖核心用户路径、主要表单/按钮交互、错误或空状态，以及页面可访问性基础行为。
 保证 manifest 中的 build/test 命令能通过。不要删除有价值的测试，不要以跳过或弱化断言代替修复。不要启动长期运行进程。
 若生成物不是 Web/浏览器应用，请补齐等价自动化测试，并在 handoff.md 说明未使用 Playwright 的原因。`
   }

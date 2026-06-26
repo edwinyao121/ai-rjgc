@@ -24,6 +24,8 @@ const SKIPPABLE_STAGE_KEYS = new Set(['design', 'coding', 'testing', 'deployment
 const MODEL_STAGE_KEYS = new Set(['requirements', 'design', 'coding', 'testing', 'deployment'])
 const AGENT_STAGE_KEYS = new Set(['requirements', 'design', 'coding', 'testing', 'deployment'])
 const DEFAULT_OPENCODE_AGENT = 'build'
+const DEFAULT_OPENCODE_STAGE_TIMEOUT_MS = 40 * 60 * 1000
+const CODING_STAGE_TIMEOUT_MS = 2 * 60 * 60 * 1000
 
 function parseOpencodeModels(output) {
   return String(output || '')
@@ -68,6 +70,10 @@ function getSelectedAgentForStage(state, stageKey) {
   const selections = state?.agentSelections || {}
   if (!AGENT_STAGE_KEYS.has(stageKey)) return DEFAULT_OPENCODE_AGENT
   return String(selections[stageKey] || '').trim() || DEFAULT_OPENCODE_AGENT
+}
+
+function getOpencodeStageTimeoutMs(stageKey) {
+  return stageKey === 'coding' ? CODING_STAGE_TIMEOUT_MS : DEFAULT_OPENCODE_STAGE_TIMEOUT_MS
 }
 
 export class WorkOrderService {
@@ -561,7 +567,7 @@ export class WorkOrderService {
       label: stage.name,
       command,
       cwd: state.appDir,
-      timeoutMs: 40 * 60 * 1000,
+      timeoutMs: getOpencodeStageTimeoutMs(stageKey),
       source: 'opencode'
     })
     const logPath = await this.getStageLogPath(id, stageKey)

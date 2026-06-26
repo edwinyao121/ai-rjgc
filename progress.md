@@ -6,8 +6,8 @@
 
 - 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-017` 补齐阶段 Agent 配置并强化生成提示词，已完成。
-- 会话目标：从本机 opencode 全局 Agent 中选择真实执行 Agent，五个阶段均支持 Agent 配置，并强化设计、编码、测试、部署和自动返修提示词。
+- 当前事项：`product-018` 区分编码与测试阶段测试边界并延长编码超时，已完成。
+- 会话目标：智能编码阶段主要补齐单元/组件等快速测试，Playwright 端到端测试归入测试质检阶段，并将智能编码阶段 opencode 超时调整为 2 小时。
 
 ## 已完成
 
@@ -85,6 +85,11 @@
   - 需求澄清、系统设计、智能编码、测试质检准备、测试自动返修、部署交付准备均按阶段向 opencode 传入 `--agent`，缺失时传 `build`。
   - 五个阶段卡片齿轮均支持 Agent 配置；主卡片继续展示产品化虚拟 Agent 名称，不暴露真实 opencode Agent id。
   - 系统设计、编码、测试质检、部署交付和测试自动返修提示词已强化；Web/浏览器应用明确要求优先补齐并执行 Playwright 端到端测试。
+- [x] 区分编码与测试阶段测试边界并延长编码超时：
+  - 智能编码阶段提示词改为主要补齐单元测试、组件测试、纯函数/数据处理测试和轻量集成测试。
+  - Playwright 端到端测试不再作为智能编码阶段强制新增产物，明确归入测试质检阶段。
+  - 测试质检阶段提示词继续优先补齐并执行 Playwright 端到端测试。
+  - 智能编码阶段 opencode 命令超时时间由 40 分钟调整为 2 小时。
 
 ## 进行中
 
@@ -92,8 +97,7 @@
 
 ## 下一步
 
-1. 重启或等待 Vite 热更新后，在浏览器中确认五个阶段齿轮均可配置 Agent，且阶段主卡片仍只显示产品化虚拟 Agent 名称。
-2. 如需进一步验收真实执行链路，可新建工单选择非默认 Agent，启动流水线后查看阶段命令日志确认对应 `--agent` 生效。
+1. 如需验收真实执行链路，可新建 Web 工单启动流水线，查看智能编码阶段日志确认 timeoutMs 为 7200000，并观察 Playwright 相关工作主要发生在测试质检阶段。
 
 ## 风险与注意事项
 
@@ -110,7 +114,8 @@
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
 - 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
 - 跳过部署交付后工单状态为 `COMPLETED` 而非 `DEPLOYED`，访问部署应用按钮仍因没有 `deploymentUrl` 保持不可用。
-- 本次不修改 15 分钟超时策略；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
+- 本次不修改需求澄清 15 分钟超时策略；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
+- 测试自动返修仍发生在测试质检阶段，返修提示词会保留并修复 Playwright 端到端测试，不把首次智能编码阶段恢复为 E2E 强制产物。
 
 ## 本会话修改文件
 
@@ -156,6 +161,11 @@
 - `docs/AI研发助手单机版需求文档.md`：补充 Agent 目录接口、阶段 Agent 配置接口、开发启动请求体和 opencode `--agent` 执行策略。
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-017` 状态与校验证据。
 - `server/lib/opencode.js`、`server/lib/orchestrator.js`：解决拉取冲突，保留 `docs/front-end-design.md` 设计产物路径，并合并远端 Agent/Playwright 提示词强化。
+- `server/lib/opencode.js`：调整智能编码与测试质检提示词边界，编码阶段主打单元/组件等快速测试，Playwright 端到端测试归入测试质检阶段。
+- `server/lib/orchestrator.js`：新增 opencode 阶段超时选择，智能编码阶段 timeoutMs 设置为 2 小时，其它研发 opencode 阶段保持默认超时。
+- `tests/backend.test.js`：新增智能编码 2 小时超时测试，并更新阶段提示词边界断言。
+- `docs/AI研发助手单机版需求文档.md`：补充测试边界和智能编码 2 小时超时策略。
+- `feature_list.json`、`progress.md`：记录 `product-018` 状态与校验证据。
 
 ## 校验证据
 
@@ -233,6 +243,12 @@
 - [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-26 执行通过；`npm test` 80/80，`npm run build` 成功。
 - [x] 拉取冲突处理：2026-06-26 执行 `git pull --no-rebase` 时 `server/lib/opencode.js` 冲突；已保留 `docs/front-end-design.md` 路径并合并 Agent/Playwright 提示词增强。定向执行 `node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js` 通过 9/9；随后 `./init.sh` 通过（`npm test` 80/80，`npm run build` 成功）。
+- [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='coding opencode stage uses a two hour timeout budget|stage prompts separate development unit test scope' tests/backend.test.js` 失败，确认旧实现仍为 40 分钟超时且编码提示词强制 Playwright 端到端测试。
+- [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='coding opencode stage uses a two hour timeout budget|stage prompts separate development unit test scope' tests/backend.test.js` 通过。
+- [x] 后端回归：2026-06-26 执行 `node --test tests/backend.test.js` 通过，63 个测试全部通过。
+- [x] `npm test`：2026-06-26 执行通过，81 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 81/81，`npm run build` 成功。
 
 ## 构建提示
 

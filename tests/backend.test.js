@@ -1729,6 +1729,35 @@ test('opencode stages use their saved model selections', async () => {
   }
 })
 
+test('coding opencode stage uses a two hour timeout budget', async () => {
+  const fixture = await createFixture()
+  try {
+    const runner = new FakeRunner([
+      clarificationHandler({
+        complete: true,
+        reply: '需求已确认。',
+        requirementsMarkdown: '# 开发超时需求',
+        title: '开发超时应用'
+      }),
+      streamingHandler(['coding ok'], { exitCode: 0 })
+    ])
+    const service = new WorkOrderService({
+      store: fixture.store,
+      eventBus: fixture.eventBus,
+      runner,
+      autoStart: false
+    })
+
+    const state = await service.createWorkOrder({ message: '做一个开发超时应用' }, { startClarification: false })
+    await service.processClarification(state.id)
+    await service.runOpencodePipelineStage(state.id, 'coding')
+
+    assert.equal(runner.runs[1].options.timeoutMs, 2 * 60 * 60 * 1000)
+  } finally {
+    await fixture.cleanup()
+  }
+})
+
 test('opencode stages use their saved agent selections and default to build', async () => {
   const fixture = await createFixture()
   try {
@@ -2136,7 +2165,7 @@ test('coding prompt requires manifest commands to target subproject directories 
   assert.match(prompt, /用户应访问的前端地址/)
 })
 
-test('stage prompts require web applications to include Playwright end-to-end coverage', () => {
+test('stage prompts separate development unit test scope from testing end-to-end scope', () => {
   const designPrompt = createStagePrompt({
     stageKey: 'design',
     title: 'Web 应用',
@@ -2173,9 +2202,13 @@ test('stage prompts require web applications to include Playwright end-to-end co
   assert.match(designPrompt, /Playwright.*端到端测试计划/s)
   assert.match(codingPrompt, /可运行 MVP/)
   assert.match(codingPrompt, /真实交互/)
-  assert.match(codingPrompt, /Playwright.*端到端测试/s)
+  assert.match(codingPrompt, /单元测试/)
+  assert.match(codingPrompt, /组件测试/)
+  assert.match(codingPrompt, /端到端测试.*测试质检阶段/s)
+  assert.doesNotMatch(codingPrompt, /必须配置并提交 Playwright 端到端测试/)
   assert.match(testingPrompt, /优先.*Playwright.*端到端测试/s)
   assert.match(testingPrompt, /核心用户路径/)
+  assert.match(testingPrompt, /端到端测试.*测试质检阶段/s)
   assert.match(deploymentPrompt, /appUrl.*真实前端页面/s)
   assert.match(deploymentPrompt, /不是.*健康检查接口/s)
   assert.match(repairPrompt, /保留并修复.*Playwright/s)
