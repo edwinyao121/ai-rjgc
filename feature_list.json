@@ -268,6 +268,22 @@
         "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='opencode agent|agent selections|--agent|Playwright|StageCard.*agent|work order API sends.*agent' tests/backend.test.js tests/frontend-render.test.js 失败，确认旧实现缺少 Agent 目录、agentSelections、--agent、Playwright 提示词和前端 API/UI 支持；实现后同一定向测试通过。node --test tests/backend.test.js tests/frontend-render.test.js 通过（80/80）；npm test 通过（80/80）；npm run build 成功；最终 ./init.sh 通过（npm test 80/80、npm run build 成功）。"
+    },
+    {
+      "id": "product-018",
+      "name": "无文档生成实验：编码阶段直接使用原始用户需求",
+      "description": "实验性改动：不再落盘 requirements.md 与 docs/design.md，设计/编码/测试/返修/部署提示词改用原始用户需求，验证无文档情况下仅靠原始需求的生成效果；前端条目化需求展示不变。",
+      "dependencies": ["product-017"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "需求澄清完成后不再向 app 目录或需求目录写入 requirements.md，state.requirementsPath 不再设置。",
+        "设计阶段提示词不再指示创建 docs/design.md，改为仅做阶段思考；编码阶段提示词改用原始用户需求而非 docs/design.md。",
+        "createStagePrompt 与 createTestingRepairPrompt 接收 userInput 参数，不再嵌入 requirementsMarkdown；orchestrator 通过 extractUserInput 从对话中提取并传入。",
+        "handoff 文档不再引用 requirements.md/docs/design.md，改为指向原始用户需求对话记录。",
+        "前端 RequirementsItemsCard 仍基于 state.requirementsItems 渲染，显示逻辑不变。",
+        "相关自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-26：修改 server/lib/opencode.js（createStagePrompt/createTestingRepairPrompt 改用 userInput、设计阶段不存 docs/design.md、编码阶段改用原始用户需求）、server/lib/orchestrator.js（processClarification 不再写 requirements.md、阶段与返修提示词传入 extractUserInput(state.messages)、buildHandoffDocument 去掉 requirements.md/docs/design.md 引用、移除未用的 getRequirementsMarkdown）；更新 tests/backend.test.js 中 clarification 完成与 handoff 首读项断言，新增 stage prompts use original user input 测试。node --test --test-name-pattern='clarification complete leaves|stage prompt requires handoff|stage prompts use original user input|stage prompts require web applications|coding prompt requires' tests/backend.test.js 通过（9/9）；npm test 通过（81/81）；npm run build 成功；最终 ./init.sh 通过（npm test 81/81、npm run build 成功）。"
     }
   ]
 }

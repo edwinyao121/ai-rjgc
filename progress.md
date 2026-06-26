@@ -6,8 +6,8 @@
 
 - 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-017` 补齐阶段 Agent 配置并强化生成提示词，已完成。
-- 会话目标：从本机 opencode 全局 Agent 中选择真实执行 Agent，五个阶段均支持 Agent 配置，并强化设计、编码、测试、部署和自动返修提示词。
+- 当前事项：`product-018` 无文档生成实验：编码阶段直接使用原始用户需求，已完成。
+- 会话目标：不再落盘 requirements.md 与 docs/design.md，设计/编码/测试/返修/部署提示词改用原始用户需求，验证无文档情况下仅靠原始需求的生成效果；前端条目化需求展示不变。
 
 ## 已完成
 
@@ -85,6 +85,14 @@
   - 需求澄清、系统设计、智能编码、测试质检准备、测试自动返修、部署交付准备均按阶段向 opencode 传入 `--agent`，缺失时传 `build`。
   - 五个阶段卡片齿轮均支持 Agent 配置；主卡片继续展示产品化虚拟 Agent 名称，不暴露真实 opencode Agent id。
   - 系统设计、编码、测试质检、部署交付和测试自动返修提示词已强化；Web/浏览器应用明确要求优先补齐并执行 Playwright 端到端测试。
+- [x] 无文档生成实验：编码阶段直接使用原始用户需求：
+  - `createStagePrompt` 与 `createTestingRepairPrompt` 新增 `userInput` 参数，共享段嵌入原始用户需求，移除 `requirementsMarkdown` 嵌入。
+  - 设计阶段提示词不再指示创建 `docs/design.md`，改为「仅用于本次阶段思考，不要写入 docs/design.md」；编码阶段由「根据docs/design.md文档」改为「根据上方原始用户需求」。
+  - 提示词明确告知 Agent「不要读取或依赖 requirements.md、docs/design.md 等需求/设计文档文件」。
+  - `processClarification` 不再调用 `store.writeRequirements` 或 `store.writeAppFile` 写入 `requirements.md`，不再设置 `state.requirementsPath`；`state.requirementsMarkdown` 与 `state.requirementsItems` 仍保留于 state.json 供内部解析与前端展示。
+  - 新增 `extractUserInput(messages)` 工具函数，从 `state.messages` 拼接全部用户消息文本，由 `runOpencodePipelineStage` 与 `runTestingRepairAttempt` 传入提示词。
+  - `buildHandoffDocument` 第一阅读项与当前工单段改为「结合本工单对话中的原始用户需求」「原始用户需求：见本工单对话记录」，并补充「本工单不落盘 requirements.md、docs/design.md」。
+  - 移除已无人调用的 `getRequirementsMarkdown` 方法；前端 `RequirementsItemsCard` 仍基于 `state.requirementsItems` 渲染，显示逻辑不变。
 
 ## 进行中
 
@@ -92,25 +100,16 @@
 
 ## 下一步
 
-1. 重启或等待 Vite 热更新后，在浏览器中确认五个阶段齿轮均可配置 Agent，且阶段主卡片仍只显示产品化虚拟 Agent 名称。
-2. 如需进一步验收真实执行链路，可新建工单选择非默认 Agent，启动流水线后查看阶段命令日志确认对应 `--agent` 生效。
+1. 新建工单跑一次完整流水线，观察无文档情况下编码阶段仅凭原始用户需求的生成质量与 Playwright 覆盖情况；如效果不佳，可考虑回退或引入轻量设计思路落盘。
+2. 评估是否需要把 `state.requirementsMarkdown` 也从 state.json 中移除（当前保留仅作内部兜底解析）。
 
 ## 风险与注意事项
 
-- 本次没有修改运行态历史工单 state，因此已失败的历史工单不会自动恢复；历史工单若没有 `agentSelections` 会按默认 `build` Agent 执行。
-- Agent 列表完全来自本机 `opencode agent list`，未配置或不存在的 Agent 不会展示，也不能保存到工单配置中。
-- 前端 Agent 配置已通过 SSR/渲染测试覆盖；本次未额外执行真实浏览器 DevTools 手工验收，若需要可按“下一步”进行交互确认。
-- `./init.sh` / `npm run build` 会刷新 `dist/index.html` 资源哈希；当前工作区也保留了既有 `node_modules/.vite/deps/_metadata.json` 缓存变更，提交时应单独确认是否纳入。
-- `.runtime/app-workspaces/` 是运行态工作空间，不纳入 git；后续可直接向对应应用的 `agents/` 或 `skills/` 放置专属能力文件。
-- 模型列表完全来自本机 `opencode models`，未配置的 GLM5.2 不会展示，也不能保存到工单配置中。
-- 阶段卡片已隐藏直接模型展示；如需确认当前锁定模型，应以后续配置确认面板或日志/工单状态详情承载，不再放回主卡片。
-- 历史工单若只保存了 `coding` 模型，测试质检和部署交付仍会兼容使用旧的 `coding` 配置；新建或重新提交模型选择后会保存五阶段配置。
-- 首次需求流修复依赖前端快照补取和 SSE delta 占位合并；若后端长时间完全无输出，仍需要等待 opencode 输出或超时诊断日志。
-- 左侧应用列表不再提供运行/访问入口；访问部署应用统一保留在主内容区顶部按钮。
-- 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
-- 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
-- 跳过部署交付后工单状态为 `COMPLETED` 而非 `DEPLOYED`，访问部署应用按钮仍因没有 `deploymentUrl` 保持不可用。
-- 本次不修改 15 分钟超时策略；opencode 自身日志只记录目录位置，阶段日志和本地诊断 JSONL 仅写入脱敏摘要。
+- 本次为实验性改动：设计阶段不再产出 `docs/design.md`，编码阶段完全依赖原始用户需求与 handoff.md，生成质量可能下降——这正是要观察的效果。
+- `state.requirementsMarkdown` 仍保留在 state.json（非文档文件），用于 `parseClarificationResponse` 兜底解析 `requirementsItems`；未写入 app 目录的 `requirements.md`。
+- 历史工单若已写入 `requirements.md` 或 `docs/design.md`，文件不会被主动清理；新工单不再生成这些文档。
+- `store.writeRequirements` 方法保留（store 层未改动），仅 orchestrator 不再调用；直接测试该方法的单测仍通过。
+- 前端 `RequirementsItemsCard` 链路未改，但若 `state.requirementsItems` 缺失（如澄清异常且兜底失败），卡片仍会展示「条目化需求尚未生成」占位态。
 
 ## 本会话修改文件
 
@@ -155,8 +154,15 @@
 - `tests/backend.test.js`、`tests/frontend-render.test.js`：新增/更新 Agent 目录解析、Agent 选择保存校验、阶段命令传参、测试返修 Agent、Playwright 提示词和前端 Agent 配置回归测试。
 - `docs/AI研发助手单机版需求文档.md`：补充 Agent 目录接口、阶段 Agent 配置接口、开发启动请求体和 opencode `--agent` 执行策略。
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-017` 状态与校验证据。
+- `server/lib/opencode.js`、`server/lib/orchestrator.js`、`tests/backend.test.js`：无文档生成实验，编码阶段直接使用原始用户需求，不再落盘 requirements.md/docs/design.md。
+- `feature_list.json`、`progress.md`：记录 `product-018` 状态与校验证据。
 
 ## 校验证据
+
+- [x] 定向回归：2026-06-26 执行 `node --test --test-name-pattern='clarification complete leaves|stage prompt requires handoff|stage prompts use original user input|stage prompts require web applications|coding prompt requires' tests/backend.test.js` 通过（9/9）。
+- [x] `npm test`：2026-06-26 执行通过，81 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 81/81，`npm run build` 成功。
 
 - [x] `npm test`：2026-06-25 03:26 通过，35 个测试全部通过。
 - [x] `npm run build`：2026-06-25 03:26 通过，Vite 生产构建成功。

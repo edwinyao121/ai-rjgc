@@ -92,17 +92,18 @@ ${appContext}当前对话：
 ${conversation}`
 }
 
-export function createStagePrompt({ stageKey, title, requirementsMarkdown }) {
+export function createStagePrompt({ stageKey, title, userInput, requirementsMarkdown }) {
   const shared = `你正在 .runtime/work-orders/<id>/app 目录中为「${title}」生成一个可本机运行的软件应用。
 阶段上下文读取规则：
 - 第一阅读项必须是 app 根目录的 handoff.md。
-- 如果 handoff.md 不存在或信息不足，再读取 requirements.md、docs/design.md 和当前项目完整上下文。
+- 如果 handoff.md 不存在或信息不足，再结合下方原始用户需求与当前项目完整上下文。
+- 不要读取或依赖 requirements.md、docs/design.md 等需求/设计文档文件；本工单不落盘这些文档，仅以原始用户需求为准。
 - 进入开发阶段后不要向用户请求“是否继续”；以不中断流水线为主要目标，自行修复可恢复的问题。
 - 只有超过系统重试上限、缺少外部凭据、需要破坏性操作或无法在本机范围内处理时，才明确失败退出。
 
-需求文档备用内容如下：
+原始用户需求如下：
 
-${requirementsMarkdown}
+${userInput || '(无额外原始需求)'}
 
 硬性要求：
 - 只在当前工作目录内创建或修改文件。
@@ -118,8 +119,8 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：系统设计。
-请输出可指导后续编码和质检的设计文档，可创建 docs/design.md。若已有代码请保持兼容。
-设计文档必须包含：
+请输出可指导后续编码和质检的设计思路（仅用于本次阶段思考，不要写入 docs/design.md 或任何需求/设计文档文件）。若已有代码请保持兼容。
+设计思路必须包含：
 - 用户旅程：核心角色如何从进入页面到完成关键任务。
 - 页面结构：主要页面、布局区域、导航关系和关键交互状态。
 - 技术方案：框架、目录结构、核心模块、构建和本机启动策略。
@@ -132,7 +133,7 @@ ${requirementsMarkdown}
     return `${shared}
 
 当前阶段：智能编码。
-请根据docs/design.md文档，生成可运行 MVP、真实交互和可访问 UI，避免只交付静态占位页面。
+请根据上方原始用户需求，生成可运行 MVP、真实交互和可访问 UI，避免只交付静态占位页面。
 若生成物是 Web/浏览器应用，必须配置并提交 Playwright 端到端测试，覆盖核心用户路径，并让 manifest.test 能执行这些测试；若不是浏览器应用，使用等价自动化测试并在 handoff.md 说明原因。
 请生成完整应用代码、必要测试、package.json，并确保 factory.manifest.json 至少包含：
 {
@@ -168,7 +169,7 @@ ${requirementsMarkdown}
 
 export function createTestingRepairPrompt({
   title,
-  requirementsMarkdown,
+  userInput,
   attempt,
   maxAttempts,
   failedLabel,
@@ -179,7 +180,7 @@ export function createTestingRepairPrompt({
   const shared = createStagePrompt({
     stageKey: 'coding',
     title,
-    requirementsMarkdown
+    userInput
   })
   return `${shared}
 

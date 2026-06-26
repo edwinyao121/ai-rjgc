@@ -1395,17 +1395,23 @@ test('clarification complete leaves work order in READY_FOR_DEVELOPMENT and does
 
     const persisted = await fixture.store.readWorkOrder(state.id)
     assert.equal(persisted.status, WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT)
-    assert.ok(persisted.requirementsPath)
+    assert.ok(!persisted.requirementsPath, 'clarification should not persist a requirements.md path')
+    assert.ok(persisted.requirementsMarkdown, 'internal requirements markdown is still kept in state for parsing')
+    assert.ok(persisted.requirementsItems, 'structured requirements items are kept for frontend display')
     assert.ok(persisted.handoffPath)
     assert.equal(persisted.stages[0].items[0].label, '需求澄清结果')
     assert.equal(persisted.stages[0].outputs.length, 0)
     assert.ok(!persisted.messages.some((message) => /需求规格说明书/.test(message.content)))
     assert.ok(persisted.messages.some((message) => /准备就绪/.test(message.content)))
 
+    await assert.rejects(() => stat(path.join(persisted.appDir, 'requirements.md')), 'requirements.md must not be written to the app directory')
+
     const handoff = await readFile(persisted.handoffPath, 'utf8')
     assert.match(handoff, /# 阶段交接文档/)
     assert.match(handoff, /准备就绪应用/)
     assert.match(handoff, /## 第一阅读项/)
+    assert.match(handoff, /原始用户需求/)
+    assert.doesNotMatch(handoff, /需求文件：requirements\.md/)
   } finally {
     await fixture.cleanup()
   }
@@ -2186,12 +2192,59 @@ test('stage prompt requires handoff.md as first reading item before full context
   const prompt = createStagePrompt({
     stageKey: 'design',
     title: '交接应用',
-    requirementsMarkdown: '# 交接应用需求'
+    userInput: '做一个交接应用，要能查看任务流转'
   })
 
   assert.match(prompt, /第一阅读项.*handoff\.md/s)
-  assert.match(prompt, /handoff\.md.*不存在.*requirements\.md/s)
+  assert.match(prompt, /handoff\.md.*不存在.*原始用户需求/s)
+  assert.match(prompt, /不要读取或依赖 requirements\.md.*docs\/design\.md/s)
   assert.match(prompt, /不要向用户请求.*是否继续/s)
+  assert.match(prompt, /做一个交接应用/)
+})
+
+test('stage prompts use original user input instead of requirements markdown and avoid saving design docs', () => {
+  const userInput = '做一个港口潮汐窗口计算器，要能展示可出港时间段'
+  const designPrompt = createStagePrompt({
+    stageKey: 'design',
+    title: '潮汐应用',
+    userInput
+  })
+  const codingPrompt = createStagePrompt({
+    stageKey: 'coding',
+    title: '潮汐应用',
+    userInput
+  })
+  const testingPrompt = createStagePrompt({
+    stageKey: 'testing',
+    title: '潮汐应用',
+    userInput
+  })
+  const deploymentPrompt = createStagePrompt({
+    stageKey: 'deployment',
+    title: '潮汐应用',
+    userInput
+  })
+  const repairPrompt = createTestingRepairPrompt({
+    title: '潮汐应用',
+    userInput,
+    attempt: 1,
+    maxAttempts: 3,
+    failedLabel: '运行测试',
+    failedCommand: ['npm', 'test'],
+    logSummary: 'Playwright failed',
+    repairContextPath: 'repair-context/testing-failure-attempt-1.md'
+  })
+
+  for (const prompt of [designPrompt, codingPrompt, testingPrompt, deploymentPrompt, repairPrompt]) {
+    assert.match(prompt, /原始用户需求如下/)
+    assert.match(prompt, /港口潮汐窗口计算器/)
+    assert.doesNotMatch(prompt, /需求文档备用内容/)
+  }
+
+  assert.match(designPrompt, /不要写入 docs\/design\.md/)
+  assert.doesNotMatch(designPrompt, /可创建 docs\/design\.md/)
+  assert.match(codingPrompt, /根据上方原始用户需求/)
+  assert.doesNotMatch(codingPrompt, /根据docs\/design\.md文档/)
 })
 
 test('opencode JSON events are parsed: only text/thinking content and tool summaries appear in stream message', async () => {

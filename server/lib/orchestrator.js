@@ -355,8 +355,6 @@ export class WorkOrderService {
       const requirementsItems = clarification.requirementsItems && (clarification.requirementsItems.detailedRequirements?.length || clarification.requirementsItems.businessNecessity?.length || clarification.requirementsItems.expectedOutcome?.length)
         ? clarification.requirementsItems
         : fallbackRequirementsItems({ title: state.title, messages: state.messages })
-      const requirementsPath = await this.store.writeRequirements(id, requirementsMarkdown)
-      await this.store.writeAppFile(id, 'requirements.md', requirementsMarkdown)
 
       const stage = getStageByKey(state.stages, 'requirements')
       markStageCompleted(stage, new Date(), {
@@ -366,7 +364,6 @@ export class WorkOrderService {
       }, [])
       stage.outputs = []
       stage.requirementsItems = requirementsItems
-      state.requirementsPath = requirementsPath
       state.requirementsMarkdown = requirementsMarkdown
       state.requirementsItems = requirementsItems
       state.status = WORK_ORDER_STATUS.READY_FOR_DEVELOPMENT
@@ -550,7 +547,7 @@ export class WorkOrderService {
     const prompt = createStagePrompt({
       stageKey,
       title: state.title,
-      requirementsMarkdown: await this.getRequirementsMarkdown(state)
+      userInput: extractUserInput(state.messages)
     })
     const command = buildOpencodeCommand(prompt, state.appDir, {
       thinking: true,
@@ -775,7 +772,7 @@ export class WorkOrderService {
 
     const prompt = createTestingRepairPrompt({
       title: state.title,
-      requirementsMarkdown: await this.getRequirementsMarkdown(state),
+      userInput: extractUserInput(state.messages),
       attempt,
       maxAttempts,
       failedLabel: label,
@@ -1336,15 +1333,6 @@ export class WorkOrderService {
     return state
   }
 
-  async getRequirementsMarkdown(state) {
-    if (state.requirementsMarkdown) return state.requirementsMarkdown
-    if (state.requirementsPath) {
-      return fs.readFile(state.requirementsPath, 'utf8')
-    }
-    const appRequirements = path.join(state.appDir, 'requirements.md')
-    return fs.readFile(appRequirements, 'utf8')
-  }
-
   async resolveAppContext(appId) {
     const normalized = String(appId || '').trim()
     if (!normalized) return null
@@ -1643,6 +1631,15 @@ function getOpencodeLogDir() {
   return path.join(dataHome, 'opencode', 'log')
 }
 
+function extractUserInput(messages) {
+  if (!Array.isArray(messages)) return ''
+  return messages
+    .filter((message) => message && message.sender === 'user' && typeof message.text === 'string')
+    .map((message) => message.text.trim())
+    .filter((text) => text.length > 0)
+    .join('\n\n')
+}
+
 function redactSensitiveObject(value) {
   if (typeof value === 'string') return redactSensitiveText(value)
   if (!value || typeof value !== 'object') return value
@@ -1682,14 +1679,15 @@ function buildHandoffDocument(state, note = '') {
     '## 第一阅读项',
     '',
     '- 后续所有阶段必须先阅读本文件。',
-    '- 如果本文件不存在或信息不足，再读取 requirements.md、docs/design.md 和当前项目完整上下文。',
+    '- 如果本文件不存在或信息不足，再结合本工单对话中的原始用户需求与当前项目完整上下文。',
+    '- 本工单不落盘 requirements.md、docs/design.md 等需求/设计文档，请直接以原始用户需求为准。',
     '',
     '## 当前工单',
     '',
     `- 工单：${state.id}`,
     `- 应用：${state.title}`,
     `- 状态：${state.status}`,
-    `- 需求文件：${state.requirementsPath || 'requirements.md'}`,
+    `- 原始用户需求：见本工单对话记录`,
     `- 当前阶段：${runningStage?.name || failedStage?.name || '-'}`,
     `- 返修状态：${repairAttempts}`,
     '',
