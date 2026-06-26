@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2, Ban } from 'lucide-react'
-import { createWorkOrder, fetchStageLog, listApps, listOpencodeModels, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents, updateWorkOrderModelSelections } from '../api/workOrders'
+import { Lock, Clock, User, Bot, CheckCircle, FileCode, FlaskConical, Rocket, GitBranch, Package, FileText, Eye, Globe, Shield, Edit, Link, ClipboardCheck, Server, Download, Wind, Compass, AlertTriangle, Map, MapPin, ChevronLeft, RefreshCw, Sliders, Radio, Activity, Target, MessageSquare, X, AlertCircle, Loader2, Send, PlayCircle, Maximize2, Minimize2, Ban, Settings } from 'lucide-react'
+import { createWorkOrder, fetchStageLog, fetchWorkOrder, listApps, listOpencodeModels, listWorkOrders, sendWorkOrderMessage, skipWorkOrderStage, startDevelopmentRun, subscribeWorkOrderEvents, updateWorkOrderModelSelections } from '../api/workOrders'
 
 const workOrders = [
   {
@@ -557,12 +557,6 @@ function fillMissingModelSelections(selections, modelOptions) {
   }
 }
 
-function getModelLabel(modelOptions, modelId) {
-  const id = String(modelId || '').trim()
-  if (!id) return '未选择模型'
-  return modelOptions.find((model) => model.id === id)?.label || id
-}
-
 function formatDurationForUi(ms) {
   const safeMs = Math.max(0, Number(ms) || 0)
   const totalSeconds = Math.ceil(safeMs / 1000)
@@ -608,7 +602,7 @@ function getStageTimingDisplay(stage, visualStatus, progress, nowMs = Date.now()
   }
 
   if (visualStatus === 'skipped') {
-    return { label: '阶段状态', value: '已跳过' }
+    return { label: '计划耗时', value: stage?.estimatedDuration || (getStageEstimateMs(stage) ? formatDurationForUi(getStageEstimateMs(stage)) : '-') }
   }
 
   if (visualStatus === 'failed') {
@@ -725,9 +719,34 @@ export function applyGranularEventToOrder(order, event) {
   }
 
   if (event.type === 'assistant.message.delta' && event.messageId) {
+    const existingMessages = order.messages || []
+    const hasTargetMessage = existingMessages.some(message => message.id === event.messageId)
+    if (!hasTargetMessage) {
+      const metadata = event.metadata && typeof event.metadata === 'object' ? event.metadata : null
+      const content = event.delta || ''
+      return {
+        ...order,
+        messages: [
+          ...existingMessages,
+          {
+            id: event.messageId,
+            role: 'assistant',
+            content,
+            text: content,
+            phase: 'execution',
+            stageId: event.stageId || metadata?.stageKey || null,
+            kind: 'opencode-stream',
+            metadata,
+            status: event.status || 'STREAMING',
+            createdAt: event.timestamp || new Date().toISOString()
+          }
+        ],
+        lastUpdate: '刚刚'
+      }
+    }
     return {
       ...order,
-      messages: (order.messages || []).map(message => {
+      messages: existingMessages.map(message => {
         if (message.id !== event.messageId) return message
         const content = `${message.content ?? message.text ?? ''}${event.delta || ''}`
         const incomingMetadata = event.metadata && typeof event.metadata === 'object'
@@ -873,10 +892,10 @@ export function StageCard({
   const Icon = stage.icon
   const visualStatus = normalizeStageStatus(stage.status)
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const [modelConfigOpen, setModelConfigOpen] = useState(false)
   const stageModelKey = stage.key === 'design' || stage.key === 'coding' ? stage.key : null
   const selectedModel = stageModelKey ? normalizeModelSelections(modelSelections)[stageModelKey] : null
   const canEditModel = Boolean(stageModelKey && onModelChange && modelOptions.length > 0 && !modelLocked && visualStatus === 'pending')
-  const showModel = Boolean(stageModelKey && (canEditModel || selectedModel))
 
   const stageAgents = {
     1: '需求设计 Agent',
@@ -938,6 +957,12 @@ export function StageCard({
     return () => clearInterval(timer)
   }, [visualStatus, stage.startedAt, stage.estimatedDurationMs])
 
+  useEffect(() => {
+    if (!canEditModel) {
+      setModelConfigOpen(false)
+    }
+  }, [canEditModel])
+
   const timing = getStageTimingDisplay(stage, visualStatus, progress, nowMs)
   const repairStatusText = (() => {
     const repairItem = (stage.items || []).find((item) =>
@@ -971,10 +996,15 @@ export function StageCard({
     onModelChange?.(stageModelKey, event.target.value || null)
   }
 
+  const handleModelConfigClick = (event) => {
+    event.stopPropagation()
+    setModelConfigOpen((open) => !open)
+  }
+
   return (
     <div
       onClick={handleCardClick}
-      className={`w-full min-w-0 h-[220px] rounded-lg ${colors.bg} border border-gray-200 flex flex-col transition-all ${
+      className={`relative w-full min-w-0 h-[220px] rounded-lg ${colors.bg} border border-gray-200 flex flex-col transition-all ${
         onSelect ? 'cursor-pointer hover:shadow-lg' : ''
       } ${
         isSelected ? 'ring-2 ring-blue-500 shadow-md shadow-blue-200' :
@@ -1010,17 +1040,6 @@ export function StageCard({
 
       {/* Body: Center status and duration */}
       <div className="flex-1 p-2.5 flex flex-col justify-center items-center text-center gap-2 min-h-0">
-        {(visualStatus === 'active' || visualStatus === 'pending' || visualStatus === 'failed') && (
-          <span className={`text-[19px] font-bold tracking-wider ${
-            visualStatus === 'active' ? 'text-blue-600 animate-pulse' :
-            visualStatus === 'failed' ? 'text-red-500' : 'text-gray-400'
-          }`}>
-            {visualStatus === 'active' && '进行中'}
-            {visualStatus === 'pending' && '等待中'}
-            {visualStatus === 'failed' && '开发失败'}
-          </span>
-        )}
-
         {visualStatus === 'active' && repairStatusText && (
           <div className="max-w-full rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[18px] font-bold text-amber-700 truncate">
             {repairStatusText}
@@ -1032,33 +1051,6 @@ export function StageCard({
           <Bot className="w-4 h-4 text-indigo-500 flex-shrink-0" />
           <span className="truncate">{stageAgents[stage.id] || 'AI Agent'}</span>
         </div>
-
-        {showModel && (
-          <div
-            className="w-full rounded-md border border-white/70 bg-white/80 px-2 py-1 shadow-sm"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-2 text-[17px] font-semibold text-gray-500">
-              <span className="flex-shrink-0">执行模型</span>
-              {canEditModel ? (
-                <select
-                  value={selectedModel || ''}
-                  onChange={handleModelChange}
-                  className="min-w-0 flex-1 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[16px] font-bold text-gray-700"
-                  title="选择该阶段调用 opencode 的模型"
-                >
-                  {modelOptions.map((model) => (
-                    <option key={model.id} value={model.id}>{model.label}</option>
-                  ))}
-                </select>
-              ) : (
-                <span className="min-w-0 truncate text-[16px] font-bold text-indigo-600" title={selectedModel || ''}>
-                  {getModelLabel(modelOptions, selectedModel)}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Progress Bar (Only show if stage.id >= 2 && stage.id <= 5, i.e., in intelligent development template cards) */}
         {stage.id >= 2 && stage.id <= 5 && (
@@ -1094,12 +1086,49 @@ export function StageCard({
         </div>
       </div>
 
+      {modelConfigOpen && canEditModel && (
+        <div
+          className="absolute left-3 right-3 bottom-12 z-20 rounded-lg border border-blue-200 bg-white p-3 shadow-xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <label className="mb-2 block text-[17px] font-bold text-gray-600" htmlFor={`stage-model-${stage.key}`}>
+            阶段模型
+          </label>
+          <select
+            id={`stage-model-${stage.key}`}
+            value={selectedModel || modelOptions[0]?.id || ''}
+            onChange={handleModelChange}
+            className="w-full min-w-0 rounded-md border border-blue-200 bg-white px-2 py-1.5 text-[17px] font-semibold text-gray-700"
+            title="选择该阶段调用 opencode 的模型"
+          >
+            {modelOptions.map((model) => (
+              <option key={model.id} value={model.id}>{model.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="px-3 py-1.5 border-t border-gray-150/60 bg-white/40 rounded-b-lg flex items-center justify-between text-[18px] gap-2">
         <span className="text-gray-450 truncate max-w-[72px] font-medium text-[18px]">
           {stage.gate.exit ? `准出: ${stage.gate.exit}` : '-'}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
+          {canEditModel && (
+            <button
+              type="button"
+              onClick={handleModelConfigClick}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded border text-gray-600 transition-colors shadow-sm ${
+                modelConfigOpen
+                  ? 'border-blue-300 bg-blue-50 text-blue-600'
+                  : 'border-gray-200 bg-white/90 hover:bg-white hover:text-blue-600'
+              }`}
+              title="配置阶段模型"
+              aria-label="配置阶段模型"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
           {canSkipStage && (
             <button
               type="button"
@@ -2607,6 +2636,12 @@ function KanbanBoard({ sidebarOpen, setSidebarOpen, newWorkOrderRequest = 0 }) {
       setSelectedOrderId(updated.id)
       setApiError('')
       setDevelopmentError('')
+      try {
+        const snapshot = await fetchWorkOrder(updated.id)
+        setRuntimeOrders(prev => [snapshot, ...prev.filter(item => item.id !== snapshot.id)])
+      } catch (snapshotError) {
+        setApiError(snapshotError.message || '工单快照刷新失败，实时事件会继续同步。')
+      }
     } catch (error) {
       setChatError(error.message || '发送失败')
     } finally {

@@ -221,6 +221,21 @@
         "相关后端/前端自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
       ],
       "evidence": "2026-06-25 22:57：红灯验证新增后端/前端模型与应用工作空间测试均失败；实现后定向后端/前端回归通过。执行 npm test 通过（72/72），npm run build 成功；最终 ./init.sh 通过（npm test 72/72、npm run build 成功）。"
+    },
+    {
+      "id": "product-015",
+      "name": "阶段卡片模型配置收纳与需求流实时刷新",
+      "description": "将阶段卡片模型选择收纳到齿轮配置按钮中，移除卡片冗余状态文案，并修复首次输入需求后需求待入厂思考过程需要刷新才可见的问题。",
+      "dependencies": ["product-014"],
+      "status": "completed",
+      "acceptanceCriteria": [
+        "系统设计和智能编码阶段卡片不直接展示模型名称或模型下拉框，仅在可配置阶段显示齿轮配置按钮。",
+        "点击齿轮配置按钮后可为对应阶段选择 opencode 模型，启动智能开发后配置入口锁定隐藏。",
+        "阶段卡片不再展示“进行中”“等待中”“已完成”“开发失败”“已跳过”等冗余状态文案，状态由图标、进度条和日志表达。",
+        "首次从内设应用输入需求并创建真实工单后，需求待入厂阶段思考过程可通过实时事件或工单快照立即显示，无需刷新页面。",
+        "相关前端自动化测试、npm test、npm run build 与 ./init.sh 均通过。"
+      ],
+      "evidence": "2026-06-26：红灯执行 node --test --test-name-pattern='work order API sends model selections|StageCard shows estimated|StageCard hides model details|applyGranularEventToOrder merges SSE deltas' tests/frontend-render.test.js 失败，确认旧实现缺少 API 快照读取、齿轮配置、状态文案移除和缺失 append 的 delta 合并；实现后同一定向测试通过。node --test tests/frontend-render.test.js 通过（17/17）；npm test 通过（72/72）；npm run build 成功；最终 ./init.sh 通过（npm test 72/72、npm run build 成功）。"
     }
   ]
 }

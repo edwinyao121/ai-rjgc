@@ -21,6 +21,11 @@ export async function listWorkOrders() {
   return payload.workOrders || []
 }
 
+export async function fetchWorkOrder(id) {
+  const payload = await apiFetch(`/api/work-orders/${id}`)
+  return payload.workOrder
+}
+
 export async function listApps() {
   const payload = await apiFetch('/api/apps')
   return payload.apps || []

@@ -294,6 +294,7 @@ test('work order API sends model selections to persistence and start-development
     assert.equal(typeof api.listApps, 'function')
     assert.equal(typeof api.listOpencodeModels, 'function')
     assert.equal(typeof api.updateWorkOrderModelSelections, 'function')
+    assert.equal(typeof api.fetchWorkOrder, 'function')
 
     await api.listApps()
     await api.listOpencodeModels()
@@ -305,6 +306,7 @@ test('work order API sends model selections to persistence and start-development
       design: 'openai/gpt-5.2',
       coding: 'opencode/deepseek-v4-flash-free'
     })
+    const fetched = await api.fetchWorkOrder('WO-20260625-201')
 
     assert.equal(calls[0].path, '/api/apps')
     assert.equal(calls[1].path, '/api/opencode-models')
@@ -323,6 +325,8 @@ test('work order API sends model selections to persistence and start-development
         coding: 'opencode/deepseek-v4-flash-free'
       }
     })
+    assert.equal(calls[4].path, '/api/work-orders/WO-20260625-201')
+    assert.equal(fetched.id, 'WO-20260625-201')
   } finally {
     globalThis.fetch = originalFetch
   }
@@ -498,6 +502,7 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
     assert.match(runningHtml, /12分钟/)
     assert.match(runningHtml, /日志/)
     assert.doesNotMatch(runningHtml, /详情/)
+    assert.doesNotMatch(runningHtml, /进行中/)
 
     const completedHtml = renderToString(React.createElement(StageCard, {
       stage: {
@@ -539,6 +544,7 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
 
     assert.match(repairingHtml, /第 1\/3 次返修中/)
     assert.doesNotMatch(repairingHtml, /开发失败/)
+    assert.doesNotMatch(repairingHtml, />进行中</)
 
     const pendingDesignHtml = renderToString(React.createElement(StageCard, {
       stage: {
@@ -584,16 +590,17 @@ test('StageCard shows estimated remaining while running and actual elapsed when 
       onShowLogs: () => {},
       onSkipStage: () => {}
     }))
-    assert.match(skippedHtml, /已跳过/)
     assert.match(skippedHtml, /100%/)
     assert.doesNotMatch(skippedHtml, /等待中/)
+    assert.doesNotMatch(skippedHtml, /已跳过/)
+    assert.doesNotMatch(skippedHtml, /阶段状态/)
     assert.doesNotMatch(skippedHtml, /开发失败/)
   } finally {
     await server.close()
   }
 })
 
-test('StageCard renders editable model selector for pending design and coding stages only', async () => {
+test('StageCard hides model details behind a compact configuration button', async () => {
   const server = await createServer({
     server: { middlewareMode: true },
     appType: 'custom',
@@ -626,9 +633,11 @@ test('StageCard renders editable model selector for pending design and coding st
       onShowLogs: () => {}
     }))
 
-    assert.match(pendingHtml, /执行模型/)
-    assert.match(pendingHtml, /openai\/gpt-5\.2/)
-    assert.match(pendingHtml, /opencode\/deepseek-v4-flash-free/)
+    assert.match(pendingHtml, /配置阶段模型/)
+    assert.doesNotMatch(pendingHtml, /执行模型/)
+    assert.doesNotMatch(pendingHtml, /openai\/gpt-5\.2/)
+    assert.doesNotMatch(pendingHtml, /opencode\/deepseek-v4-flash-free/)
+    assert.doesNotMatch(pendingHtml, /<select/)
 
     const runningHtml = renderToString(React.createElement(StageCard, {
       stage: {
@@ -651,7 +660,8 @@ test('StageCard renders editable model selector for pending design and coding st
     }))
 
     assert.doesNotMatch(runningHtml, /<select/)
-    assert.match(runningHtml, /opencode\/deepseek-v4-flash-free/)
+    assert.doesNotMatch(runningHtml, /配置阶段模型/)
+    assert.doesNotMatch(runningHtml, /opencode\/deepseek-v4-flash-free/)
   } finally {
     await server.close()
   }
@@ -907,6 +917,24 @@ test('applyGranularEventToOrder merges SSE deltas into the same message without 
     assert.equal(delta1.messages[0].status, 'STREAMING')
     assert.equal(delta1.messages[0].kind, 'opencode-stream')
     assert.equal(delta1.messages[0].metadata.activity, 'thinking')
+
+    const missingAppendDelta = applyGranularEventToOrder({
+      ...baseOrder,
+      messages: []
+    }, {
+      type: 'assistant.message.delta',
+      workOrderId: baseOrder.id,
+      messageId: 'requirements-stream-1',
+      delta: 'AI 正在分析需求完整性\n',
+      status: 'STREAMING',
+      metadata: { stageKey: 'requirements', source: 'opencode', activity: 'thinking' },
+      sequence: 4
+    })
+    assert.equal(missingAppendDelta.messages.length, 1)
+    assert.equal(missingAppendDelta.messages[0].id, 'requirements-stream-1')
+    assert.equal(missingAppendDelta.messages[0].kind, 'opencode-stream')
+    assert.equal(missingAppendDelta.messages[0].content, 'AI 正在分析需求完整性\n')
+    assert.equal(missingAppendDelta.messages[0].stageId, 'requirements')
 
     const delta2 = applyGranularEventToOrder(delta1, {
       type: 'assistant.message.delta',

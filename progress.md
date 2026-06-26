@@ -4,10 +4,10 @@
 
 ## 当前状态
 
-- 最后更新：2026-06-25 22:57（Asia/Shanghai）
+- 最后更新：2026-06-26（Asia/Shanghai）
 - 当前分支：`0630`
-- 当前事项：`product-014` 内设应用工作空间与 opencode 模型选择，已完成。
-- 会话目标：为 4 个内设应用创建稳定工作空间，并在需求澄清、系统设计、智能编码阶段支持本机 opencode 模型选择。
+- 当前事项：`product-015` 阶段卡片模型配置收纳与需求流实时刷新，已完成。
+- 会话目标：将阶段卡片模型选择收纳到齿轮配置按钮，移除卡片内冗余状态文案，并修复首次输入需求后需求待入厂思考过程需要刷新才可见的问题。
 
 ## 已完成
 
@@ -66,6 +66,12 @@
   - `POST /api/work-orders` 与 `POST /api/work-orders/:id/development-runs` 支持提交 `modelSelections`；需求澄清、系统设计、智能编码调用 opencode 时传入 `--model`。
   - 测试准备、部署准备和测试返修沿用 `coding` 模型。
   - 前端加载后端应用注册表和本机模型列表；新建应用和首次需求前可选需求澄清模型，READY_FOR_DEVELOPMENT 状态下系统设计/智能编码阶段卡片可选模型，启动后锁定。
+- [x] 阶段卡片模型配置收纳与需求流实时刷新：
+  - 系统设计和智能编码阶段卡片不再直接展示模型名称或下拉框，仅在 READY_FOR_DEVELOPMENT 且阶段尚未开始时显示齿轮配置按钮。
+  - 点击齿轮按钮后在卡片内打开轻量配置层选择该阶段模型；启动智能开发后配置入口锁定隐藏。
+  - 阶段卡片主体移除了“进行中”“等待中”“开发失败”“已跳过”等状态文案，保留图标、进度条、颜色、耗时和日志入口。
+  - 前端新增 `fetchWorkOrder` 快照读取；用户首次输入需求创建真实工单后立即补取工单快照。
+  - `assistant.message.delta` 到达但对应 stream append 已错过时，前端会创建 opencode-stream 占位消息并继续追加增量，避免需求待入厂思考过程必须刷新才可见。
 
 ## 进行中
 
@@ -73,8 +79,8 @@
 
 ## 下一步
 
-1. 重启后端服务以加载新增的 `/api/apps`、`/api/opencode-models` 与模型选择接口。
-2. 在浏览器中新建或打开应用，确认模型下拉只展示本机 `opencode models` 当前可用项。
+1. 重启或等待 Vite 热更新后，在浏览器中确认系统设计/智能编码卡片只显示齿轮配置按钮，不直接显示模型名称。
+2. 从内设应用首次输入需求，确认需求待入厂阶段的思考过程无需刷新即可出现。
 
 ## 风险与注意事项
 
@@ -82,6 +88,8 @@
 - `./init.sh` / `npm run build` 会刷新 `dist/index.html` 资源哈希；当前工作区也保留了既有 `node_modules/.vite/deps/_metadata.json` 缓存变更，提交时应单独确认是否纳入。
 - `.runtime/app-workspaces/` 是运行态工作空间，不纳入 git；后续可直接向对应应用的 `agents/` 或 `skills/` 放置专属能力文件。
 - 模型列表完全来自本机 `opencode models`，未配置的 GLM5.2 不会展示，也不能保存到工单配置中。
+- 阶段卡片已隐藏直接模型展示；如需确认当前锁定模型，应以后续配置确认面板或日志/工单状态详情承载，不再放回主卡片。
+- 首次需求流修复依赖前端快照补取和 SSE delta 占位合并；若后端长时间完全无输出，仍需要等待 opencode 输出或超时诊断日志。
 - 左侧应用列表不再提供运行/访问入口；访问部署应用统一保留在主内容区顶部按钮。
 - 全局左侧菜单已删除，其他页面入口不再从当前壳层暴露；如后续需要工作台大盘或系统设置，应单独设计新的入口。
 - 阶段跳过不会伪造产物或部署地址；若后续真实阶段缺少必要产物，会在实际使用该产物的阶段失败。
@@ -116,6 +124,11 @@
 - `docs/AI研发助手单机版需求文档.md`：补充应用工作空间、模型选择接口和 opencode 执行策略。
 - `dist/index.html`：`npm run build` 刷新的构建产物入口。
 - `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-014` 状态与校验证据。
+- `src/api/workOrders.js`：新增 `fetchWorkOrder`，用于首次发送需求后补取当前工单快照。
+- `src/pages/KanbanBoard.jsx`：阶段卡片模型选择改为齿轮配置弹层，隐藏卡片内状态文案，并增强 SSE delta 缺失 append 时的流式消息合并。
+- `tests/frontend-render.test.js`：新增/更新卡片齿轮配置、状态文案移除、API 快照读取和缺失 append 的需求流回归测试。
+- `docs/AI研发助手单机版需求文档.md`：补充阶段卡片配置收纳、状态文案精简和首次需求实时刷新要求。
+- `feature_list.json`、`progress.md`、`session-handoff.md`：记录 `product-015` 状态与校验证据。
 
 ## 校验证据
 
@@ -175,6 +188,12 @@
 - [x] `npm test`：2026-06-25 22:57 执行通过，72 个测试全部通过。
 - [x] `npm run build`：2026-06-25 22:57 执行通过，Vite 生产构建成功。
 - [x] `./init.sh`：2026-06-25 22:57 执行通过；`npm test` 72/72，`npm run build` 成功。
+- [x] 红灯验证：2026-06-26 执行 `node --test --test-name-pattern='work order API sends model selections|StageCard shows estimated|StageCard hides model details|applyGranularEventToOrder merges SSE deltas' tests/frontend-render.test.js` 失败，确认旧实现缺少 `fetchWorkOrder`、仍直接展示模型 select/模型名、仍展示卡片状态文案，且缺失 append 的 delta 会被丢弃。
+- [x] 定向前端回归：2026-06-26 执行 `node --test --test-name-pattern='work order API sends model selections|StageCard shows estimated|StageCard hides model details|applyGranularEventToOrder merges SSE deltas' tests/frontend-render.test.js` 通过。
+- [x] 前端渲染回归：2026-06-26 执行 `node --test tests/frontend-render.test.js` 通过，17 个测试全部通过。
+- [x] `npm test`：2026-06-26 执行通过，72 个测试全部通过。
+- [x] `npm run build`：2026-06-26 执行通过，Vite 生产构建成功。
+- [x] `./init.sh`：2026-06-26 执行通过；`npm test` 72/72，`npm run build` 成功。
 
 ## 构建提示
 
