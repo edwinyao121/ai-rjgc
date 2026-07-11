@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Harness 智能研发云边协同平台整合方案，涵盖快速生成与云就绪交付、团队规范化智能开发、工程文档一致性、智能化测试与修复。">
-  <title>Harness 智能研发云边协同平台｜整合审阅版</title>
+  <meta name="description" content="Harness 智能体软件工厂客户端与服务端整合方案，面向快速生成及云原生交付、团队规范化智能开发、工程文档一致性、智能化测试与修复四个场景。">
+  <title>Harness 智能体软件工厂客户端与服务端｜整合审阅版</title>
   <style>
     :root {
       --paper: #f6f7f8;
@@ -336,7 +336,7 @@
     .pilot-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; align-content: center; }
     .pilot-flow span { position: relative; min-height: 74px; display: grid; place-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: rgba(255,255,255,.08); text-align: center; font-size: 12px; font-weight: 800; }
     .pilot-flow span:not(:last-child)::after { content: "→"; position: absolute; right: -13px; z-index: 1; color: #f2a1b0; font-size: 18px; }
-    .acceptance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+    .acceptance { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
     .acceptance div { padding: 17px; border-radius: 13px; border: 1px solid var(--line); background: var(--surface); }
     .acceptance b { display: block; color: var(--accent); font-size: 14px; }
     .acceptance span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
@@ -366,6 +366,7 @@
       .layer-grid > .module-review { grid-column: span 12; }
       .pilot-flow { grid-template-columns: repeat(2, 1fr); }
       .pilot-flow span:nth-child(2)::after { display: none; }
+      .acceptance { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 680px) {
       .topbar-inner { width: min(var(--max), calc(100% - 22px)); min-height: 58px; }
@@ -415,13 +416,13 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a class="brand" href="#top" aria-label="返回页面顶部"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>Harness 智能研发云边协同平台</a>
+      <a class="brand" href="#top" aria-label="返回页面顶部"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>Harness 智能体软件工厂</a>
       <nav class="nav" aria-label="页面目录">
         <a href="#summary">摘要</a>
         <a href="#positioning">定位</a>
-        <a href="#architecture">协同机制</a>
+        <a href="#architecture">工厂架构</a>
         <a href="#flow">总流程</a>
-        <a href="#scenarios">治理与三场景</a>
+        <a href="#scenarios">四个场景</a>
         <a href="#modules">功能地图</a>
         <a href="#pilot">首期试点</a>
       </nav>
@@ -431,49 +432,49 @@
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="kicker">平台级整合审阅方案</p>
-        <h1 id="hero-title">让智能研发<br>受控发生，可信沉淀。</h1>
-        <p class="hero-lead">云端治理与本地真实执行协同，让每一次 Agent 研发都有上下文、验证、人工责任和可复用的证据。</p>
-        <div class="hero-tags" aria-label="平台关键词"><span>云端治理</span><span>本地执行</span><span>证据审查</span><span>共同基线</span><span>知识演进</span></div>
+        <p class="kicker">客户端与服务端整合审阅方案</p>
+        <h1 id="hero-title">让智能体软件工厂<br>受控交付，可信演进。</h1>
+        <p class="hero-lead">建设工厂客户端与服务端：服务端统一治理、协同和沉淀，客户端在真实工程环境执行，让四类智能研发场景都具备上下文、验证、人工责任和可复用证据。</p>
+        <div class="hero-tags" aria-label="平台关键词"><span>服务端治理</span><span>客户端执行</span><span>Agent 编排</span><span>质量审查</span><span>知识基线</span></div>
       </div>
       <div class="hero-map" aria-label="审阅路径">
         <a href="#summary"><span class="map-index">01</span><span><b>先读摘要</b><small>明确要解决的问题、建设目标与决策事项</small></span></a>
-        <a href="#positioning"><span class="map-index">02</span><span><b>理解平台</b><small>从单点智能编码走向团队级研发治理</small></span></a>
-        <a href="#architecture"><span class="map-index">03</span><span><b>查看公共底座</b><small>云端、本地与事实证据如何协同</small></span></a>
-        <a href="#scenarios"><span class="map-index">04</span><span><b>查看治理与三场景</b><small>一个横向底座，支撑三条业务闭环</small></span></a>
-        <a href="#pilot"><span class="map-index">05</span><span><b>确认首期闭环</b><small>先证明一条存量项目变更的完整路径</small></span></a>
+        <a href="#positioning"><span class="map-index">02</span><span><b>理解建设边界</b><small>本期只建设客户端、服务端与两端协同能力</small></span></a>
+        <a href="#architecture"><span class="map-index">03</span><span><b>查看工厂架构</b><small>服务端、客户端与既有底座如何协同</small></span></a>
+        <a href="#scenarios"><span class="map-index">04</span><span><b>查看四个场景</b><small>一套工厂能力支撑四类研发价值闭环</small></span></a>
+        <a href="#pilot"><span class="map-index">05</span><span><b>确认首期闭环</b><small>用真实变更验证四个场景的共同能力</small></span></a>
       </div>
     </section>
 
     <div class="meta" aria-label="方案概览">
-      <div><span>平台定位</span><b>云端治理与本地 Agent 协同</b></div>
-      <div><span>核心事实链</span><b>Trace - Fact - Evidence</b></div>
-      <div><span>人工原则</span><b>Agent 辅助，人员决策</b></div>
-      <div><span>首期试点</span><b>存量项目需求变更</b></div>
+      <div><span>建设范围</span><b>智能体软件工厂客户端与服务端</b></div>
+      <div><span>核心协同链</span><b>项目 - Task - 工作空间 - Agent - Evidence</b></div>
+      <div><span>责任原则</span><b>Agent 执行辅助，人员决策放行</b></div>
+      <div><span>首期试点</span><b>3 个存量项目需求变更</b></div>
     </div>
 
     <section id="summary" class="summary" aria-labelledby="summary-title">
       <div class="section-head">
         <p class="eyebrow">摘要</p>
-        <h2 id="summary-title">让 AI 研发提速，但每一次交付都可控、可验证、可追责。</h2>
-        <p>Harness 不替代现有研发系统，也不只是增加一个 AI 编码入口；它补齐 AI 参与研发后“上下文、过程、结论和责任无法统一”的治理断层。</p>
+        <h2 id="summary-title">建设客户端与服务端，让四类智能研发场景形成可控闭环。</h2>
+        <p>Harness 不替代现有认证、代码仓、模型、流水线或部署平台；它在这些既有底座之上，补齐 AI 参与研发后“项目、任务、工作空间、执行、结论和责任无法统一”的协同断层。</p>
       </div>
       <div class="summary-grid">
         <article class="summary-item">
-          <h3>要解决的问题</h3>
-          <p>AI 可以快速生成内容，但如果脱离真实代码库、测试环境和团队规则，容易出现<strong>需求理解偏差、验证不足、文档脱节、结果难追溯和风险难界定</strong>。</p>
+          <h3>面向四个业务场景</h3>
+          <p><strong>快速生成及云原生交付、团队规范化智能开发、工程文档一致性、智能化测试与修复</strong>共享同一套项目、任务、Agent、质量和知识闭环，而不是分别建设四套系统。</p>
         </article>
         <article class="summary-item">
-          <h3>我们要建设什么</h3>
-          <p>建设云端治理与本地真实执行协同的平台：云端统一任务、规则和审查，本地在真实工程环境执行，代码、测试和过程沉淀为证据，由责任人作出放行与风险决策。</p>
+          <h3>本期建设什么</h3>
+          <p><strong>服务端</strong>统一管理身份、项目、任务、资产、知识、Agent 编排与成果审查；<strong>客户端</strong>承载项目同步、工作空间、任务协作、本地 Agent 执行、验证和受控回传。</p>
+        </article>
+        <article class="summary-item">
+          <h3>复用什么，不建设什么</h3>
+          <p>复用统一认证、模型服务、向量数据库、代码与制品仓、流水线、快速部署和算力底座；Harness 只保存协同状态、引用、Evidence 与审查结论，不替代这些权威系统。</p>
         </article>
         <article class="summary-item">
           <h3>首期如何验证价值</h3>
-          <p>在<strong>一个存量代码仓库中选择 3 个同类、中等复杂度的需求变更</strong>，验证从需求确认、本地研发与验证，到人工审查、文档更新和知识沉淀的一条完整闭环。</p>
-        </article>
-        <article class="summary-item">
-          <h3>本次需要确认的事项</h3>
-          <p>确认试点项目与业务、技术 Owner；确认数据上报和安全边界；确认参与团队与阶段资源；以链路完整、结论有据、例外可闭环作为首期验收标准。</p>
+          <p>选择<strong>3 个存量项目的中等复杂度需求变更</strong>，在团队规范底座下验证生成交付、文档同步和测试修复；确认试点 Owner、安全边界和阶段资源，以链路完整、结论有据、例外可闭环验收。</p>
         </article>
       </div>
     </section>
@@ -481,41 +482,41 @@
     <section id="positioning">
       <div class="section-head">
         <p class="eyebrow">平台定位</p>
-        <h2>不是增加一个聊天入口，而是建立可治理的智能研发运行机制。</h2>
-        <p>平台将需求、任务、规则、上下文、执行、审查和知识连接起来，避免智能体以脱离项目现实的方式高速产出。</p>
+        <h2>本期建设智能体软件工厂客户端与服务端，不重复建设基础研发平台。</h2>
+        <p>服务端连接身份、项目、任务、知识、资产和审查；客户端连接真实代码仓、工作空间、工具与本地 Agent 执行。两端共同把需求、规则、上下文、执行、验证和知识连接起来。</p>
       </div>
       <div class="statement panel">
         <div class="statement-label">核心变化</div>
-        <div class="statement-copy">从“Agent 说已经完成”，转向“需求、代码、验证、证据和人工结论共同证明完成”。</div>
+        <div class="statement-copy">从“给开发者增加一个 AI 工具”，转向“用客户端与服务端把项目、任务、工作空间、Agent 和人工决策组织成一座软件工厂”。</div>
       </div>
     </section>
 
     <section id="architecture">
       <div class="section-head">
-        <p class="eyebrow">公共底座</p>
-        <h2>三层分工，各自掌握正确的事实与责任。</h2>
-        <p>云端掌握权威状态与治理规则，本地掌握真实工程环境，事实与证据层让审查结论可回溯、可失效、可复用。</p>
+        <p class="eyebrow">工厂架构与边界</p>
+        <h2>服务端负责治理与协同，客户端负责真实工程执行，共同接入既有底座。</h2>
+        <p>服务端不直接替代本地研发，客户端不绕开团队治理；两端以项目、Task、Context Package、Trace、Artifact 与 Evidence 形成可追溯协同。</p>
       </div>
       <div class="architecture" aria-label="三层协同机制">
         <article class="plane panel cloud">
-          <h3>云端治理层</h3>
-          <p>规划、约束、审查、沉淀。</p>
-          <div class="unit-list"><div>需求与任务总控</div><div>研发基线、门禁与权限</div><div>预审、人工卡点与整改</div><div>共同基线与知识发布</div></div>
+          <h3>智能体软件工厂服务端</h3>
+          <p>身份与项目协同、治理与编排、审查与沉淀。</p>
+          <div class="unit-list"><div>身份、项目团队、需求与任务管理</div><div>Agent 编排、平台资产、规则与上下文供给</div><div>质量门禁、成果预审、人工审查与例外闭环</div><div>工程文档、知识、共同基线与发布记录</div></div>
         </article>
-        <div class="middle-flow" aria-label="云边协同路径">
-          <div>Context Package<small>权威信息与执行约束下发</small></div>
-          <div>Harness Run<small>本地 Agent 在真实工程环境执行</small></div>
-          <div>Trace 与 Artifact<small>过程和产物按策略回传</small></div>
+        <div class="middle-flow" aria-label="客户端与服务端协同路径">
+          <div>Project 与 Task<small>服务端管理项目、团队、任务与验收边界</small></div>
+          <div>Task 与 Context Package<small>规则、Agent、工具权限和验证要求下发客户端</small></div>
+          <div>Trace、Artifact 与 Evidence<small>客户端回传过程和产物，服务端形成审查依据</small></div>
         </div>
-        <article class="plane panel evidence">
-          <h3>事实与证据层</h3>
-          <p>还原过程，支撑结论。</p>
-          <div class="unit-list"><div>Engineering Fact 提取</div><div>Evidence 索引与有效性</div><div>版本、来源与失效条件</div><div>软件文档交付共同基线</div></div>
+        <article class="plane panel local">
+          <h3>智能体软件工厂客户端</h3>
+          <p>任务协作、工作空间、本地运行时与真实验证。</p>
+          <div class="unit-list"><div>项目与代码工程同步、项目/个人任务和评审反馈</div><div>工作空间初始化、任务状态、成果提交与本地配置</div><div>本地 Agent 运行时：编码、文档、测试与修复</div><div>工具调用、本地验证、脱敏回传、异常升级与离线补传</div></div>
         </article>
       </div>
       <div class="boundary">
-        <article class="panel"><h3>云端不替代本地研发</h3><p>云端不直接修改工作区，不替代本地内网验证，也不代替研发人员作出具体实现判断。</p><span class="rule cloud">云端负责目标、边界、规则与阶段决策</span></article>
-        <article class="panel"><h3>本地不绕开团队治理</h3><p>本地不得自行修改确认需求、跳过硬门禁、接受高风险例外或发布未经审核的知识。</p><span class="rule local">本地负责执行、验证、工程判断与升级</span></article>
+        <article class="panel"><h3>服务端不替代既有底座或本地研发</h3><p>服务端不取代统一认证、模型、代码仓、流水线和部署平台；也不直接修改客户端工作空间或替代本地内网验证。</p><span class="rule cloud">服务端负责项目协同、目标边界、规则、编排与阶段决策</span></article>
+        <article class="panel"><h3>客户端不绕开服务端治理</h3><p>客户端不得自行变更已确认需求、跳过硬门禁、接受高风险例外或发布未经审核的知识；越界和异常必须回传并升级。</p><span class="rule local">客户端负责真实执行、验证、工程判断、Trace 采集与升级</span></article>
       </div>
       <div class="trace-flow" aria-label="事实与证据转换链">
         <div class="trace-node trace"><b>Trace</b><span>记录发生过的交互、工具、命令与文件变化。</span></div>
@@ -526,7 +527,7 @@
       <div class="control-stack" aria-label="公共控制规则">
         <article class="control-panel">
           <h3>决定权与升级矩阵</h3>
-          <p>Agent 和云端可以整理事实、生成候选与执行已授权工作，但不拥有需求裁决、风险接受或正式放行权。</p>
+          <p>Agent 和服务端可以整理事实、生成候选与执行已授权工作，但不拥有需求裁决、风险接受或正式放行权。</p>
           <table class="control-table"><thead><tr><th>事项</th><th>Agent 或平台可做</th><th>必须确认的责任人</th><th>确认后的结果</th></tr></thead><tbody><tr><td>需求、验收与风险接受</td><td>结构化需求、识别冲突、生成验收候选。</td><td>业务负责人；涉及风险接受时同步技术负责人。</td><td>Requirement 与验收基线生效，Task 可进入规划。</td></tr><tr><td>接口、数据、安全、权限与跨模块变更</td><td>定位影响、生成方案和验证建议。</td><td>技术负责人或代码 Owner。</td><td>按高风险处理；原执行包失效并重新规划。</td></tr><tr><td>测试归因与候选补丁</td><td>执行测试、提出归因与最小补丁。</td><td>研发人员；质量负责人审查质量风险。</td><td>进入回归、退回或终止，不以 Agent 自述作为结论。</td></tr><tr><td>交付、回滚与例外放行</td><td>汇总 Evidence、剩余风险和回滚条件。</td><td>交付批准人；业务负责人确认风险接受。</td><td>形成 Baseline、退回整改、暂停或终止记录。</td></tr></tbody></table>
           <p class="control-note">受控自动修复仅适用于低风险、预授权目录、正确性明确、可回滚并可执行回归的变更。删除测试、降低断言、绕过权限、修改公共契约、数据模型或任务外文件始终禁止自动执行。</p>
         </article>
@@ -537,9 +538,9 @@
           <p class="control-note">密钥、令牌、个人敏感信息、受监管数据和不允许出域的内容不得因“审查需要”自动突破策略；原始数据与完整制品优先保留在本地或既有制品库，只上报引用与哈希。</p>
         </article>
         <article class="control-panel">
-          <h3>外部系统与权威来源</h3>
-          <p>Harness 管理协同状态、Trace、Evidence 和 Review Task，不取代已存在工程系统的权威记录。</p>
-          <table class="control-table"><thead><tr><th>系统类别</th><th>权威来源</th><th>Harness 保存的内容</th><th>首期边界</th></tr></thead><tbody><tr><td>需求与工单</td><td>既有需求或项目管理系统中的业务记录。</td><td>结构化引用、Task、验收、风险和审查状态。</td><td>不复制或重写业务权威记录。</td></tr><tr><td>代码、构建与制品</td><td>Git、CI/CD 与制品库中的 commit、构建结果和制品摘要。</td><td>不可变引用、Diff 摘要、门禁结果和 Evidence 索引。</td><td>不以平台数据库替代源码、制品或构建系统。</td></tr><tr><td>身份、密钥与部署环境</td><td>既有 IAM、密钥管理和部署平台。</td><td>策略引用、授权结果、交付决定和环境验证 Evidence。</td><td>首期不托管密钥，不直接执行生产发布。</td></tr></tbody></table>
+          <h3>既有底座与权威来源</h3>
+          <p>Harness 的客户端与服务端管理协同状态、Trace、Evidence 和 Review Task，通过连接器接入既有底座，不取代其权威记录或运行职责。</p>
+          <table class="control-table"><thead><tr><th>系统类别</th><th>权威来源</th><th>Harness 保存的内容</th><th>首期边界</th></tr></thead><tbody><tr><td>身份、组织与项目</td><td>既有 IAM、组织管理和项目管理系统中的人员、权限与业务记录。</td><td>同步引用、项目团队、Task、验收、风险和审查状态。</td><td>不复制或重写身份、组织和项目权威记录。</td></tr><tr><td>代码、构建、制品与交付</td><td>Git、CI/CD、制品仓、快速部署与运行环境中的 commit、构建和发布记录。</td><td>不可变引用、Diff 摘要、门禁结果、交付决定和 Evidence 索引。</td><td>不以平台数据库替代源码、制品、流水线或部署平台；首期不直接执行生产发布。</td></tr><tr><td>模型、知识与算力</td><td>既有模型服务、向量数据库、客密云和 GPU/NPU 等基础服务。</td><td>模型与知识引用、调用策略、脱敏结果、会话元数据和资源使用状态。</td><td>不自建基础模型、向量数据库或算力平台；敏感原文按策略保留在权威系统。</td></tr><tr><td>密钥与安全策略</td><td>既有密钥管理、安全平台和数据分级策略。</td><td>策略引用、授权结果、访问审计和例外决定。</td><td>不托管密钥，不因审查需要突破数据或出域策略。</td></tr></tbody></table>
         </article>
       </div>
     </section>
@@ -547,52 +548,52 @@
     <section id="flow" aria-labelledby="flow-title">
       <div class="section-head">
         <p class="eyebrow">统一研发闭环</p>
-        <h2 id="flow-title">从需求确认到知识回供，一条受控路径贯穿所有场景。</h2>
-        <p>平台将业务目标、真实工程执行、Evidence 审查和团队知识沉淀连接为同一生命周期。一个横向治理底座与三个业务场景在这条路径的不同阶段组合能力，而不重复建设治理机制。</p>
+        <h2 id="flow-title">从项目同步到知识回供，客户端与服务端以一条受控路径贯穿四个场景。</h2>
+        <p>服务端管理项目、任务、规则、审查和沉淀；客户端承接工作空间、本地 Agent 和真实验证。团队规范化智能开发贯穿快速生成交付、文档一致性和测试修复三个纵向场景。</p>
       </div>
-      <div class="flow-diagram" aria-label="云边协同的端到端研发闭环">
-        <div class="flow-legend" aria-label="流程责任标识"><span class="cloud">云端治理</span><span class="local">本地执行</span><span class="evidence">事实与 Evidence</span><span class="decision">人工决策</span></div>
+      <div class="flow-diagram" aria-label="客户端与服务端协同的端到端研发闭环">
+        <div class="flow-legend" aria-label="流程责任标识"><span class="cloud">服务端治理</span><span class="local">客户端执行</span><span class="evidence">事实与 Evidence</span><span class="decision">人工决策</span></div>
         <ol class="platform-flow">
           <li class="flow-stage decision" data-owner="decision">
             <div class="stage-top"><span class="stage-no">01</span><span class="flow-owner">业务负责人</span></div>
-            <h3>需求与验收确认</h3>
-            <p>云端整理目标、范围、规则、非目标范围与歧义；业务负责人确认验收，技术负责人确认风险接受边界。</p>
-            <p class="flow-output"><strong>产物：</strong>已确认 Requirement 与验收基线</p>
+            <h3>项目同步、需求与验收确认</h3>
+            <p>客户端同步项目与代码工程信息，服务端关联项目团队、目标、范围、规则和歧义；业务负责人确认验收，技术负责人确认风险接受边界。</p>
+            <p class="flow-output"><strong>产物：</strong>已关联 Project、Requirement 与验收基线</p>
           </li>
           <li class="flow-stage cloud" data-owner="cloud">
-            <div class="stage-top"><span class="stage-no">02</span><span class="flow-owner">云端治理</span></div>
+            <div class="stage-top"><span class="stage-no">02</span><span class="flow-owner">服务端治理</span></div>
             <h3>Task 规划与风险分级</h3>
-            <p>云端结合研发基线拆分 Task、识别依赖和授权范围；标准风险以上方案由责任人确认后才可下发。</p>
+            <p>服务端结合项目团队、研发基线与既有工程信息拆分 Task、识别依赖和授权范围；标准风险以上方案由责任人确认后才可下发。</p>
             <p class="flow-output"><strong>产物：</strong>已确认 Task、风险策略与 Review 要求</p>
           </li>
           <li class="flow-stage cloud" data-owner="cloud">
-            <div class="stage-top"><span class="stage-no">03</span><span class="flow-owner">云端治理</span></div>
+            <div class="stage-top"><span class="stage-no">03</span><span class="flow-owner">服务端治理</span></div>
             <h3>执行包下发</h3>
-            <p>将目标、约束、上下文、工具权限和验证命令以可校验版本交给本地执行现场。</p>
+            <p>服务端将目标、约束、上下文、Agent/工具权限和验证命令以可校验版本交给客户端工作空间。</p>
             <p class="flow-output"><strong>产物：</strong>Task Package 与 Context Package</p>
           </li>
           <li class="flow-stage local" data-owner="local">
-            <div class="stage-top"><span class="stage-no">04</span><span class="flow-owner">本地执行</span></div>
-            <h3>Harness Run 本地执行</h3>
-            <p>在真实仓库、依赖与环境中运行授权工作流。上下文失效、权限变化、环境不可用、越界或高风险时必须暂停并升级。</p>
+            <div class="stage-top"><span class="stage-no">04</span><span class="flow-owner">客户端执行</span></div>
+            <h3>客户端工作空间与本地 Agent 执行</h3>
+            <p>客户端在真实仓库、依赖、网络和权限条件下运行授权工作流。上下文失效、权限变化、环境不可用、越界或高风险时必须暂停并升级。</p>
             <p class="flow-output"><strong>产物：</strong>Harness Run、过程 Trace、异常与暂停原因</p>
           </li>
           <li class="flow-stage local" data-owner="local">
-            <div class="stage-top"><span class="stage-no">05</span><span class="flow-owner">本地执行</span></div>
+            <div class="stage-top"><span class="stage-no">05</span><span class="flow-owner">客户端执行</span></div>
             <h3>Artifact 与本地验证</h3>
             <p>形成代码、测试、文档、构建或制品等 Artifact，并在真实条件下执行必要验证。</p>
             <p class="flow-output"><strong>产物：</strong>Artifact、Diff 与验证结果</p>
           </li>
           <li class="flow-stage evidence" data-owner="evidence">
-            <div class="stage-top"><span class="stage-no">06</span><span class="flow-owner">事实与 Evidence</span></div>
+            <div class="stage-top"><span class="stage-no">06</span><span class="flow-owner">客户端采集 / 服务端治理</span></div>
             <h3>Trace 到 Evidence 转换</h3>
             <p>从过程与产物提取可核对的 Engineering Fact，将事实绑定到结论、版本和有效性条件。</p>
             <p class="flow-output"><strong>产物：</strong>Engineering Fact 与 Evidence</p>
           </li>
           <li class="flow-stage cloud" data-owner="cloud">
-            <div class="stage-top"><span class="stage-no">07</span><span class="flow-owner">云端治理</span></div>
-            <h3>云端预审与 Review Task</h3>
-            <p>汇总实际差异、验收覆盖、风险和 Evidence，路由需要人工判断的问题与复审材料。</p>
+            <div class="stage-top"><span class="stage-no">07</span><span class="flow-owner">服务端治理</span></div>
+            <h3>服务端预审与 Review Task</h3>
+            <p>服务端汇总实际差异、验收覆盖、风险和 Evidence，路由需要人工判断的问题与复审材料。</p>
             <p class="flow-output"><strong>产物：</strong>Review Task 与问题清单</p>
           </li>
           <li class="flow-stage decision" data-owner="decision">
@@ -602,9 +603,9 @@
             <p class="flow-output"><strong>产物：</strong>审查结论、整改要求或终止记录</p>
           </li>
           <li class="flow-stage cloud" data-owner="cloud">
-            <div class="stage-top"><span class="stage-no">09</span><span class="flow-owner">云端治理</span></div>
-            <h3>Baseline 发布与知识候选审核</h3>
-            <p>将已确认的软件、文档、制品与 Evidence 固化为共同 Baseline；知识仅生成候选，须单独审核通用性、范围和失效条件后发布。</p>
+            <div class="stage-top"><span class="stage-no">09</span><span class="flow-owner">服务端治理</span></div>
+            <h3>服务端 Baseline 发布与知识候选审核</h3>
+            <p>服务端将已确认的软件、文档、制品与 Evidence 固化为共同 Baseline；知识仅生成候选，须单独审核通用性、范围和失效条件后发布。</p>
             <p class="flow-output"><strong>产物：</strong>Baseline 与待审核 Knowledge Candidate</p>
           </li>
         </ol>
@@ -619,52 +620,52 @@
     <section id="scenarios">
       <div class="section-head">
         <p class="eyebrow">业务场景</p>
-        <h2>一个横向治理底座，支撑三个可独立审阅的研发价值链。</h2>
-        <p>团队规范化智能开发提供贯穿式约束。快速生成交付、工程文档一致性、智能测试修复在同一对象、证据和审批模型上形成各自闭环。</p>
+        <h2>四个领导场景，共用一套客户端与服务端能力。</h2>
+        <p>团队规范化智能开发是横向场景与共同约束；快速生成及云原生交付、工程文档一致性、智能化测试与修复是三条纵向闭环。它们复用同一项目、任务、工作空间、Agent、质量和知识能力。</p>
       </div>
       <a class="scenario-governance" href="#scenario-standard" data-scenario-target="#scenario-standard">
         <div>
-          <p class="governance-kicker">横向治理底座</p>
+          <p class="governance-kicker">场景一｜横向共同约束</p>
           <h3>团队规范化智能开发</h3>
           <p>将需求、任务、上下文、执行、产物、审查和知识转为团队与 Agent 共同遵守的研发机制。</p>
-          <p class="governance-relationship">横向治理支撑下方三个纵向闭环。</p>
+          <p class="governance-relationship">团队规范贯穿并支撑下方三个纵向业务闭环。</p>
           <span class="governance-action">查看横向治理详情 <b>→</b></span>
         </div>
-        <div class="governance-structure" aria-label="横向治理覆盖能力"><span>研发基线与权限</span><span>Task 与 Context Package</span><span>本地受控执行与 Trace</span><span>人工审查与知识演进</span></div>
+        <div class="governance-structure" aria-label="横向治理覆盖能力"><span>身份、项目团队与研发基线</span><span>Task 与 Context Package</span><span>客户端工作空间与 Trace</span><span>服务端审查与知识演进</span></div>
       </a>
       <div class="vertical-scenarios" aria-label="三个纵向业务场景入口">
-        <a class="scenario-card" href="#scenario-delivery" data-scenario-target="#scenario-delivery"><small>纵向场景一</small><h3>快速生成与云就绪交付</h3><p>让应用更快形成，并以可验证、可回滚的单元交付。</p><span class="scenario-arrow">→</span></a>
-        <a class="scenario-card" href="#scenario-docs" data-scenario-target="#scenario-docs"><small>纵向场景二</small><h3>工程文档一致性</h3><p>让文档约束编码、随编码演化并进入正式基线。</p><span class="scenario-arrow">→</span></a>
-        <a class="scenario-card" href="#scenario-test" data-scenario-target="#scenario-test"><small>纵向场景三</small><h3>智能化测试与修复</h3><p>从正确性依据到受控补丁与影响回归的闭环。</p><span class="scenario-arrow">→</span></a>
+        <a class="scenario-card" href="#scenario-delivery" data-scenario-target="#scenario-delivery"><small>场景二｜纵向交付闭环</small><h3>快速生成及云原生交付软件</h3><p>让应用更快形成，并以可验证、可回滚的云原生交付单元交付。</p><span class="scenario-arrow">→</span></a>
+        <a class="scenario-card" href="#scenario-docs" data-scenario-target="#scenario-docs"><small>场景三｜纵向文档闭环</small><h3>生成与智能编码一致的软件工程文档</h3><p>让文档约束编码、随编码演化并进入正式基线。</p><span class="scenario-arrow">→</span></a>
+        <a class="scenario-card" href="#scenario-test" data-scenario-target="#scenario-test"><small>场景四｜纵向质量闭环</small><h3>智能化软件功能测试与修复</h3><p>从正确性依据到受控补丁与影响回归的闭环。</p><span class="scenario-arrow">→</span></a>
       </div>
 
       <div class="scenario-details">
         <details id="scenario-delivery">
-          <summary><span class="scenario-no">一</span><span class="summary-copy"><h3>快速生成与云就绪交付</h3><p>从业务需求到可运行、可验证、可回滚的交付单元。</p></span><span class="chevron">›</span></summary>
+          <summary><span class="scenario-no">二</span><span class="summary-copy"><h3>快速生成及云原生交付软件</h3><p>从业务需求到可运行、可验证、可回滚的云原生交付单元。</p></span><span class="chevron">›</span></summary>
           <div class="scenario-body">
             <div><h4>理解与分级</h4><p>该场景把需求、生成、验证、修复和交付组织为连续闭环。工程等级决定成果深度，风险等级决定门禁强度，交付方式决定最终产物。</p><ul class="function-points"><li>验证原型可使用 Mock，但必须列出非生产项</li><li>轻量可用必须可启动并提供基础恢复说明</li><li>生产级必须绑定需求、测试、配置和交付 Evidence</li></ul></div>
-            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>澄清需求并判定工作类型、成熟度、工程与风险等级</li><li>装配项目规范、组件、基础镜像和交付约束</li><li>确认计划后生成代码、测试、配置和部署资源</li><li>构建、启动、测试，失败后有限修复或人工接管</li><li>形成镜像 digest、资源清单、运行说明和交付 Baseline</li></ol></div>
-            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>执行策略、计划与风险强制升级</li><li>Dockerfile、镜像、配置模板和健康检查</li><li>环境预检、部署验证、回滚与离线依赖分析</li><li>代码、镜像、资源和文档的版本绑定</li></ul></div>
+            <div class="process"><h4>客户端与服务端协同</h4><ol class="flow-list"><li>服务端澄清需求并判定工作类型、成熟度、工程与风险等级</li><li>服务端装配项目规范、组件、交付模板和质量门禁</li><li>客户端在工作空间生成代码、测试、配置和部署资源</li><li>客户端构建、启动、测试，失败后有限修复或人工接管</li><li>服务端关联镜像 digest、资源清单、运行说明和交付 Baseline</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>服务端执行策略、计划、Agent 资产与风险强制升级</li><li>客户端工作空间、代码/测试生成、Dockerfile 和配置模板</li><li>代码仓、流水线、制品仓与快速部署工具的集成</li><li>代码、镜像、资源、文档和交付 Evidence 的版本绑定</li></ul></div>
             <div class="governance"><h4>人工卡点与红线</h4><p>生产级、标准风险以上、存量变更、数据库或公共接口变更、对外交付与离线交付必须确认计划。</p><p class="constraint">硬门禁失败不得标记可交付。首期只验证容器化与云就绪交付基线、Evidence 和回滚条件，不执行复杂生产发布或客户现场离线部署。</p></div>
           </div>
         </details>
 
         <details id="scenario-standard" open>
-          <summary><span class="scenario-no">二</span><span class="summary-copy"><h3>团队规范化智能开发</h3><p>将团队隐性经验转化为可执行、可审查、可演进的研发基线。</p></span><span class="chevron">›</span></summary>
+          <summary><span class="scenario-no">一</span><span class="summary-copy"><h3>团队规范化智能开发</h3><p>将团队隐性经验转化为可执行、可审查、可演进的研发基线。</p></span><span class="chevron">›</span></summary>
           <div class="scenario-body">
             <div><h4>理解与目标</h4><p>核心不是给每个人配一个 AI，而是让团队在同一套项目基线、任务边界和人工责任下可靠使用智能体。</p><ul class="function-points"><li>规范可执行</li><li>任务可控制</li><li>过程可审查</li><li>经验可演进</li></ul></div>
-            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>建立包含规则、Agent、门禁和 Owner 的研发基线</li><li>结构化需求，拆分 Task 并确认依赖和风险</li><li>下发 Task Package、Context Package 与验证清单</li><li>本地在隔离工作区受控研发并持续采集 Trace</li><li>云端预审、人工决策、整改复审和知识回流</li></ol></div>
-            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>研发基线、Agent、工具和权限配置</li><li>需求、验收、依赖、冲突范围与责任管理</li><li>本地 Run、分支、过程采集和越界检测</li><li>审查单、整改闭环和知识发布</li></ul></div>
+            <div class="process"><h4>客户端与服务端协同</h4><ol class="flow-list"><li>服务端同步身份、项目团队和工程信息，建立规则、Agent、门禁和 Owner 基线</li><li>服务端结构化需求，拆分 Task 并确认依赖、风险和责任</li><li>下发 Task Package、Context Package 与验证清单到客户端</li><li>客户端在隔离工作区受控研发并持续采集 Trace</li><li>服务端预审、人工决策、整改复审和知识回流</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>服务端身份、项目团队、研发基线、Agent、工具和权限配置</li><li>服务端需求、验收、依赖、冲突范围与责任管理</li><li>客户端项目/个人任务、工作空间、Run、分支与过程采集</li><li>服务端审查单、整改闭环、例外记录和知识发布</li></ul></div>
             <div class="governance"><h4>人工卡点与红线</h4><p>需求确认、任务规划、高风险方案、阶段成果、合并交付和知识发布都保留清晰责任人。</p><p class="constraint">低风险任务应保持轻量。公共契约、共享资产、数据、安全和架构变化必须先确认，重大范围变化使原执行包失效。</p></div>
           </div>
         </details>
 
         <details id="scenario-docs">
-          <summary><span class="scenario-no">三</span><span class="summary-copy"><h3>与智能编码一致的软件工程文档</h3><p>让文档成为编码约束、审查载体和软件共同基线的一部分。</p></span><span class="chevron">›</span></summary>
+          <summary><span class="scenario-no">三</span><span class="summary-copy"><h3>生成与智能编码一致的软件工程文档</h3><p>让文档成为编码约束、审查载体和软件共同基线的一部分。</p></span><span class="chevron">›</span></summary>
           <div class="scenario-body">
             <div><h4>理解与一致性</h4><p>文档既约束编码，也随编码演化，并成为审查和共同 Baseline 的组成部分。关键结论必须优先由工程事实和 Evidence 支撑。</p><ul class="function-points"><li>需求、设计、接口与数据一致性</li><li>测试、状态、过程与版本一致性</li></ul></div>
-            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>确定 Document Package、模板和章节责任</li><li>将已确认文档裁剪进 Context Package</li><li>采集本地代码、测试、构建和人工事实</li><li>定位受影响章节并生成增量建议</li><li>双向校核、人工审核并形成共同 Baseline</li></ol></div>
-            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>文档包、章节状态、审核和归档管理</li><li>章节级影响分析、来源标注和差异合并</li><li>追溯矩阵、Evidence 索引和一致性报告</li><li>基线偏离检测和知识候选提取</li></ul></div>
+            <div class="process"><h4>客户端与服务端协同</h4><ol class="flow-list"><li>服务端确定 Document Package、模板、章节责任和锁定规则</li><li>将已确认文档裁剪进客户端 Context Package</li><li>客户端采集代码、测试、构建和人工事实，定位受影响章节</li><li>客户端生成增量建议，服务端关联来源、差异和追溯矩阵</li><li>双向校核、人工审核并形成共同 Baseline</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>服务端文档包、章节状态、审核、归档与共同基线管理</li><li>客户端基于真实工程变化的章节级影响分析与增量候选</li><li>来源标注、追溯矩阵、Evidence 索引和一致性报告</li><li>基线偏离检测、锁定保护和知识候选提取</li></ul></div>
             <div class="governance"><h4>人工卡点与红线</h4><p>需求方案、文档审核、基线批准和知识发布需要人工决策。系统只生成候选更新，不直接发布正式结论。</p><p class="constraint">代码现状不能自动反向修改已批准的需求或设计。人工已审核、已锁定内容不得静默覆盖。</p></div>
           </div>
         </details>
@@ -673,8 +674,8 @@
           <summary><span class="scenario-no">四</span><span class="summary-copy"><h3>智能化软件功能测试与修复</h3><p>以正确性依据、失败归因、受控修复和影响回归形成可信质量闭环。</p></span><span class="chevron">›</span></summary>
           <div class="scenario-body">
             <div><h4>理解与正确性依据</h4><p>场景要解决的是“测得准、定位准、修得对”。需求、验收、业务规则、契约、页面行为、Diff、测试资产和环境版本共同构成正确性依据。</p><p>没有明确依据时，测试假设必须被标注，不能被当作正式通过标准。</p></div>
-            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>确认目标、必测项、范围和代码基线</li><li>检查本地环境、依赖与测试数据</li><li>生成并执行接口、UI、端到端等真实测试</li><li>区分需求、数据、环境、契约和代码失败</li><li>授权修复、原问题验证、影响回归和云端审查</li></ol></div>
-            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>需求到测试场景和断言来源的覆盖管理</li><li>多方式执行、日志截图和环境健康检查</li><li>候选根因、可信度、补丁与影响分析</li><li>回归集推荐、未覆盖风险和证据包</li></ul></div>
+            <div class="process"><h4>客户端与服务端协同</h4><ol class="flow-list"><li>服务端确认目标、必测项、范围、测试资产和代码基线</li><li>客户端检查本地环境、依赖与测试数据</li><li>客户端生成并执行接口、UI、端到端等真实测试</li><li>客户端区分需求、数据、环境、契约和代码失败，回传事实与候选根因</li><li>服务端授权修复、路由审查；客户端完成原问题验证和影响回归</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>服务端需求到测试场景、断言来源、测试资产和质量门禁管理</li><li>客户端多方式执行、日志截图、环境健康检查和失败复现</li><li>候选根因、可信度、补丁授权与影响分析</li><li>回归集推荐、未覆盖风险、Evidence 和结果审查</li></ul></div>
             <div class="governance"><h4>人工卡点与红线</h4><p>研发人员确认归因和补丁，质量负责人审查质量风险。受控自动修复仅限低风险、预授权目录、正确性明确、可回滚并可执行回归的最小变更。</p><p class="constraint">需求冲突、范围扩大、跳过必测项、公共契约、数据权限、跨模块影响和风险接受必须升级。不得删除测试、降低断言、绕过权限校验；环境、数据和非确定性失败不得直接判为代码缺陷。</p></div>
           </div>
         </details>
@@ -684,40 +685,40 @@
     <section id="modules">
       <div class="section-head">
         <p class="eyebrow">统一功能地图</p>
-        <h2>共性能力只建设一次，场景能力按需组合。</h2>
-        <p>每一个功能模块都有清晰的接口和责任范围，避免横向治理底座与三个业务场景分别建设任务、Trace、审查与知识能力。</p>
+        <h2>客户端、服务端共性能力建设一次，四个场景按需组合。</h2>
+        <p>每一个功能模块都有清晰的端侧归属、接口和责任范围，避免四个场景分别建设项目、任务、工作空间、Agent、Trace、审查与知识能力。</p>
       </div>
       <div class="capability-map" aria-label="平台三层十模块能力地图">
         <section class="capability-layer governance" data-layer="governance" aria-labelledby="governance-layer-title">
           <div class="layer-intro">
-            <p class="layer-kicker">治理与供给</p>
-            <h3 id="governance-layer-title">把正确的约束、上下文和责任交到执行现场。</h3>
-            <p>这一层维护项目的权威规则，并把已确认的目标、边界与可执行上下文有版本地供给给本地研发。</p>
+            <p class="layer-kicker">服务端治理与协同</p>
+            <h3 id="governance-layer-title">把身份、项目、任务、资产、上下文和责任有版本地交给客户端执行现场。</h3>
+            <p>这一层管理服务端协同状态与项目规则，并将已确认的目标、边界和可执行上下文供给客户端；不替代既有身份、代码或模型底座。</p>
           </div>
           <div class="layer-grid">
             <article class="module module-governance">
-              <h4>项目治理与研发基线</h4>
-              <p class="module-scope"><strong>职责：</strong>将项目规则、角色、工具权限和门禁管理为可发布、可回退的研发基线，不替代本地工程判断。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>编码、测试、安全与交付规则版本化</li><li>角色权限、代码 Owner 与审批路由配置</li><li>Agent、Skill、工具白名单和门禁策略装配</li><li>基线发布、适用范围校验与回退</li></ul></div>
+              <h4>服务端：身份、项目团队与研发基线</h4>
+              <p class="module-scope"><strong>职责：</strong>同步既有身份、组织、项目和代码工程引用，将项目规则、角色、工具权限和门禁管理为可发布、可回退的研发基线。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>身份、组织、项目团队和代码工程信息同步</li><li>编码、测试、安全与交付规则版本化</li><li>角色权限、代码 Owner 与审批路由配置</li><li>基线发布、适用范围校验与回退</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>项目目标、技术标准、安全要求和团队责任。</dd></div><div><dt>输出</dt><dd>研发基线、门禁策略、权限矩阵和工作流版本。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Baseline、Context Package、Knowledge Entry。</p>
               <p class="module-scenarios"><strong>服务场景：</strong>全部场景的控制平面，为后续任务和本地执行提供统一约束。</p>
             </article>
             <article class="module module-task">
-              <h4>需求与任务总控</h4>
+              <h4>服务端：需求、任务与成果审查</h4>
               <p class="module-scope"><strong>职责：</strong>把业务目标变为可执行、可审查的任务单元，明确完成标准、依赖关系、风险和需要人工决策的时点。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求结构化、缺失项和冲突项识别</li><li>验收项、范围边界和非目标范围确认</li><li>Task 拆分、依赖图、共享资产冲突与责任分派</li><li>风险分级、门禁配置和阶段状态管理</li></ul></div>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求结构化、缺失项和冲突项识别</li><li>验收项、范围边界和非目标范围确认</li><li>Task 拆分、依赖图、共享资产冲突与责任分派</li><li>项目/个人任务看板、成果预审、风险分级和阶段状态管理</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>原始需求、已有代码、业务规则和项目基线。</dd></div><div><dt>输出</dt><dd>Requirement、Task、验收清单、风险结论与审查事项。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Requirement、Task、Task Package、Review Task。</p>
               <p class="module-scenarios"><strong>服务场景：</strong>全部场景的治理入口，决定每次执行的目标、范围和升级条件。</p>
             </article>
             <article class="module module-context">
-              <h4>上下文与执行供给</h4>
-              <p class="module-scope"><strong>职责：</strong>将任务所需的规则、事实、工具和验证要求裁剪成可校验的执行包，防止本地 Agent 依据过期或无关信息工作。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求、设计、知识和规则的来源选择与冲突提示</li><li>目标、授权目录、依赖、暂停条件和完成定义下发</li><li>Agent、Skill、工具权限与验证命令按任务装配</li><li>版本、适用范围、失效条件和本地使用记录校验</li></ul></div>
+              <h4>服务端：Agent 编排、平台资产与上下文供给</h4>
+              <p class="module-scope"><strong>职责：</strong>将任务所需的规则、事实、工具和验证要求裁剪成可校验的执行包，并配置、调度和监控 Agent 会话，防止客户端依据过期或无关信息工作。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求、设计、知识和规则的来源选择与冲突提示</li><li>目标、授权目录、依赖、暂停条件和完成定义下发</li><li>多角色 Agent、Skill、工具、Prompt、交付模板与质量门禁策略装配</li><li>会话接入、Agent 事件调度、版本适用范围和客户端使用记录校验</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>Task、研发基线、知识条目和工程约束。</dd></div><div><dt>输出</dt><dd>Task Package、Context Package 与验证清单。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Task Package、Context Package、Baseline。</p>
-              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的云边交接面，连接云端规划与本地真实执行。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的两端交接面，连接服务端规划与客户端真实执行。</p>
             </article>
             <article class="module module-knowledge">
               <h4>知识演进</h4>
@@ -732,29 +733,29 @@
 
         <section class="capability-layer execution" data-layer="execution" aria-labelledby="execution-layer-title">
           <div class="layer-intro">
-            <p class="layer-kicker">云边执行与可信闭环</p>
-            <h3 id="execution-layer-title">本地完成真实工作，云端只依据可追溯事实进行治理。</h3>
+            <p class="layer-kicker">客户端执行与服务端质量闭环</p>
+            <h3 id="execution-layer-title">客户端完成真实工作，服务端只依据可追溯事实进行治理与审查。</h3>
             <p>这一层确保执行不脱离工程环境，过程不脱离证据，审查结论不脱离责任人。</p>
           </div>
           <div class="layer-grid">
             <article class="module module-runtime">
-              <h4>本地智能研发运行时</h4>
-              <p class="module-scope"><strong>职责：</strong>在真实仓库、依赖、网络和权限条件下承载一次受控研发执行，并将工程异常及时升级。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>项目同步、分支或隔离工作区准备</li><li>按授权范围启动 Agent、工具与验证命令</li><li>越界、高风险、用户确认和失败重试的暂停升级</li><li>离线缓存、顺序补传、幂等接收与完整性提示</li></ul></div>
+              <h4>客户端：工作空间与本地 Agent 运行时</h4>
+              <p class="module-scope"><strong>职责：</strong>在真实仓库、依赖、网络和权限条件下承载一次受控研发执行，并将工程异常及时升级至服务端。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>项目与代码工程同步、项目/个人任务、分支或隔离工作区准备</li><li>按授权范围启动编码、文档、测试、修复等 Agent、工具与验证命令</li><li>越界、高风险、用户确认和失败重试的暂停升级</li><li>离线缓存、顺序补传、幂等接收与完整性提示</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>Context Package、Task Package、本地工程环境。</dd></div><div><dt>输出</dt><dd>Harness Run、Trace、Artifact、本地验证结果与异常。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Harness Run、Artifact、Trace。</p>
-              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的真实执行面，不由云端直接修改本地工作区。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的真实执行面，不由服务端直接修改客户端工作区。</p>
             </article>
             <article class="module module-evidence">
-              <h4>Trace、工程事实与 Evidence</h4>
-              <p class="module-scope"><strong>职责：</strong>将可采集过程转成可核对工程事实，再将事实绑定到结论、版本和有效性条件；该模块不自行作出批准结论。</p>
+              <h4>客户端采集 / 服务端 Trace、工程事实与 Evidence 治理</h4>
+              <p class="module-scope"><strong>职责：</strong>客户端采集可上报过程，服务端将其转成可核对工程事实并绑定到结论、版本和有效性条件；该模块不自行作出批准结论。</p>
               <div class="module-capabilities"><h5>关键能力</h5><ul><li>交互、工具、命令、文件变化和验证结果采集</li><li>本地脱敏、来源关联、完整性标记和上报策略控制</li><li>从代码、测试、构建和版本中提取 Engineering Fact</li><li>Evidence 索引、失效条件、来源追溯和复用查询</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>Trace、Artifact、Git Diff、测试构建和人工操作。</dd></div><div><dt>输出</dt><dd>Engineering Fact、Evidence 集合与可信度状态。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Trace、Engineering Fact、Evidence、Artifact。</p>
               <p class="module-scenarios"><strong>服务场景：</strong>全部场景的可信结论基础，支撑审查、基线和知识沉淀。</p>
             </article>
             <article class="module module-review">
-              <h4>云端预审与人工卡点</h4>
+              <h4>服务端：质量门禁、成果预审与人工卡点</h4>
               <p class="module-scope"><strong>职责：</strong>把任务目标、实际差异、风险和 Evidence 汇总为可决策审查单，并记录退回、豁免、放行与责任归属。</p>
               <div class="module-capabilities"><h5>关键能力</h5><ul><li>范围越界、验收缺口、质量风险和证据完整性预审</li><li>任务摘要、关键 Diff、影响范围和剩余风险的审阅视图</li><li>按角色路由人工审查、整改、复审和风险接受</li><li>豁免有效期、放行条件、审查意见和阶段状态回写</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>Task、Engineering Fact、Evidence、Artifact 与风险策略。</dd></div><div><dt>输出</dt><dd>Review Task、问题清单、审查结论和阶段推进记录。</dd></div></dl>
@@ -766,31 +767,31 @@
 
         <section class="capability-layer scenario" data-layer="scenario" aria-labelledby="scenario-layer-title">
           <div class="layer-intro">
-            <p class="layer-kicker">场景闭环能力</p>
-            <h3 id="scenario-layer-title">在同一治理与证据底座上，组合三类高价值研发工作流。</h3>
-            <p>三项能力不重复建设任务、运行时或审查机制，而是在公共对象和统一门禁上完成各自的业务闭环。</p>
+            <p class="layer-kicker">三个纵向场景的闭环能力</p>
+            <h3 id="scenario-layer-title">在团队规范化智能开发的共同约束下，组合三类高价值研发工作流。</h3>
+            <p>生成交付、工程文档和测试修复不重复建设任务、运行时或审查机制，而是在公共对象和统一门禁上完成各自的业务闭环。</p>
           </div>
           <div class="layer-grid">
             <article class="module module-document">
               <h4>工程文档与共同基线</h4>
-              <p class="module-scope"><strong>职责：</strong>让需求、设计、接口、测试与代码相互校核，形成可审查的软件工程文档和共同 Baseline。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>Document Package、章节状态与责任分配</li><li>章节级影响分析、增量候选和来源标注</li><li>追溯矩阵、双向校核与一致性报告</li><li>基线偏离检测、审批归档与锁定保护</li></ul></div>
+              <p class="module-scope"><strong>职责：</strong>服务端管理文档包、责任和基线，客户端基于真实代码与测试变化生成候选，让需求、设计、接口、测试与代码相互校核。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>服务端 Document Package、章节状态与责任分配</li><li>客户端章节级影响分析、增量候选和来源标注</li><li>服务端追溯矩阵、双向校核与一致性报告</li><li>基线偏离检测、审批归档与锁定保护</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>需求设计、代码测试、工程事实和 Evidence。</dd></div><div><dt>输出</dt><dd>文档增量、校核报告、Document Package 和共同基线。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Artifact、Evidence、Baseline、Context Package。</p>
               <p class="module-scenarios"><strong>服务场景：</strong>以文档一致性为主，并为生成交付和测试结论提供共同依据。</p>
             </article>
             <article class="module module-delivery">
-              <h4>生成与交付编排</h4>
-              <p class="module-scope"><strong>职责：</strong>将受控需求转为可运行、可验证、可回滚的交付单元，并使代码、配置、镜像和交付说明保持同一版本关系。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>工程等级、风险等级和交付方式判定</li><li>代码、测试、配置、部署资源和运行说明生成</li><li>构建、镜像、健康检查、环境验证和有限修复</li><li>回滚条件、离线依赖分析和交付基线装配</li></ul></div>
+              <h4>快速生成及云原生交付编排</h4>
+              <p class="module-scope"><strong>职责：</strong>服务端编排需求、规则、模板和门禁，客户端生成并验证代码、配置和测试，通过既有流水线、制品仓和部署工具形成可回滚交付单元。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>服务端工程等级、风险等级、交付方式和交付模板判定</li><li>客户端代码、测试、配置、部署资源和运行说明生成</li><li>既有流水线、制品仓、健康检查和环境验证集成</li><li>回滚条件、离线依赖分析和交付基线装配</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>Requirement、执行包、组件规范和目标环境约束。</dd></div><div><dt>输出</dt><dd>代码与配置 Artifact、镜像摘要、交付 Evidence 和 Baseline。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Artifact、Evidence、Baseline、Review Task。</p>
-              <p class="module-scenarios"><strong>服务场景：</strong>快速生成与云就绪交付为主，复用文档和测试能力完成可交付验证。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>快速生成及云原生交付软件为主，复用文档和测试能力完成可交付验证。</p>
             </article>
             <article class="module module-test">
               <h4>智能测试与修复</h4>
-              <p class="module-scope"><strong>职责：</strong>围绕明确正确性依据执行真实测试、归因失败、生成受控补丁并验证影响回归。</p>
-              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求到测试场景、断言来源和覆盖缺口管理</li><li>接口、UI、端到端执行与环境健康检查</li><li>失败归因、补丁授权、原问题验证和影响回归</li><li>质量结论、未覆盖风险与证据包生成</li></ul></div>
+              <p class="module-scope"><strong>职责：</strong>服务端管理正确性依据、测试资产和质量门禁，客户端执行真实测试、归因失败、生成受控补丁并验证影响回归。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>服务端需求到测试场景、断言来源、测试资产和覆盖缺口管理</li><li>客户端接口、UI、端到端执行与环境健康检查</li><li>失败归因、补丁授权、原问题验证和影响回归</li><li>质量结论、未覆盖风险与证据包生成</li></ul></div>
               <dl class="module-io"><div><dt>输入</dt><dd>正确性依据、代码 Diff、测试资产和目标环境。</dd></div><div><dt>输出</dt><dd>测试结果、候选补丁、回归结论和质量 Evidence。</dd></div></dl>
               <p class="module-objects"><strong>关联对象：</strong>Harness Run、Artifact、Evidence、Review Task。</p>
               <p class="module-scenarios"><strong>服务场景：</strong>智能测试与修复为主，并为交付放行和文档校核提供验证事实。</p>
@@ -803,21 +804,22 @@
     <section id="pilot">
       <div class="section-head">
         <p class="eyebrow">建设重点</p>
-        <h2>第一阶段只证明一件事：一条真实变更能够受控闭环。</h2>
-        <p>先以一个已有代码仓库的中等复杂度需求变更验证平台差异化能力，再逐步扩展至智能测试修复和容器化交付。</p>
+        <h2>第一阶段只证明一件事：客户端与服务端能够让四个场景的共同能力稳定闭环。</h2>
+        <p>先以已有代码仓库的中等复杂度需求变更验证客户端与服务端的差异化能力：团队规范贯穿全程，并在真实变更中验证生成交付、文档同步和测试修复。</p>
       </div>
       <div class="pilot">
-        <div><h3>存量项目需求变更</h3><p>第一阶段不追求复杂多 Agent 调度、完整 Kubernetes 管理或无人值守发布。至少选择 3 个同类中等复杂度需求变更，验证云端规划、本地研发、证据审查、文档更新与知识沉淀可以稳定衔接。</p></div>
-        <div class="pilot-flow" aria-label="首期试点路径"><span>云端需求确认</span><span>上下文下发</span><span>本地研发与验证</span><span>Trace 和 Artifact 回传</span><span>预审与人工退回</span><span>整改与复审</span><span>文档增量更新</span><span>共同基线与知识候选</span></div>
+        <div><h3>3 个存量项目需求变更</h3><p>第一阶段不追求复杂多 Agent 调度、完整 Kubernetes 管理或无人值守发布。选择 3 个中等复杂度需求变更，验证服务端项目/任务/审查与客户端工作空间/本地 Agent/验证稳定衔接，并对相关变更形成云原生交付物、文档增量和测试修复闭环。</p></div>
+        <div class="pilot-flow" aria-label="首期试点路径"><span>项目与需求同步</span><span>服务端 Task 规划</span><span>客户端工作空间执行</span><span>本地测试与交付验证</span><span>Trace 和 Artifact 回传</span><span>服务端预审与人工退回</span><span>文档增量与测试修复</span><span>共同基线与知识候选</span></div>
       </div>
       <div class="acceptance" aria-label="首期验收重点">
-        <div><b>链路完整</b><span>3 个样本中 100% 的 Harness Run 可定位唯一 Task、策略、本地环境与上下文版本。</span></div>
-        <div><b>结论有依据</b><span>100% 通过结论必须关联实现、验证、门禁和人工审查 Evidence；缺失任一项不得放行。</span></div>
-        <div><b>例外可闭环</b><span>全部 Review Task 必须由后续整改 Run 关闭，或明确记录风险接受、暂停或终止；不得存在无依据绕过。</span></div>
+        <div><b>两端协同完整</b><span>3 个样本中 100% 的 Run 可定位唯一 Project、Task、服务端策略、客户端环境与上下文版本。</span></div>
+        <div><b>生成交付可验证</b><span>生成的软件必须关联代码、配置、测试、构建或镜像及交付 Evidence；缺失任一项不得标记可交付。</span></div>
+        <div><b>文档与测试可闭环</b><span>相关工程文档必须形成可审查增量；测试失败必须关联正确性依据，候选补丁完成原问题验证和影响回归。</span></div>
+        <div><b>团队规范可执行</b><span>全部 Review Task 必须由后续整改 Run 关闭，或明确记录风险接受、暂停或终止；不得存在无依据绕过。</span></div>
       </div>
     </section>
 
-    <footer><div class="footer-inner"><span>Harness 智能研发云边协同平台整合方案</span><span>面向产品与技术联合评审</span></div></footer>
+    <footer><div class="footer-inner"><span>Harness 智能体软件工厂客户端与服务端整合方案</span><span>面向产品与技术联合评审</span></div></footer>
   </main>
 
   <script>
