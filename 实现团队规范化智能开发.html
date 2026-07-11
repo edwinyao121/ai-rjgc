@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="实现团队规范化智能开发领导审阅版，重点呈现场景理解、总体流程与核心功能。"/>
+<title>实现团队规范化智能开发｜领导审阅版</title>
+<style>
+  :root {
+    --red-900:#7f1020;
+    --red-800:#a31328;
+    --red-700:#c41632;
+    --red-600:#d92743;
+    --red-300:#ef9aaa;
+    --red-100:#fde9ed;
+    --red-050:#fff5f7;
+    --ink-950:#16181d;
+    --ink-900:#20232a;
+    --ink-800:#2b2f38;
+    --ink-700:#434955;
+    --ink-600:#5f6673;
+    --ink-500:#7c8492;
+    --ink-100:#eef0f3;
+    --ink-050:#f8f9fb;
+    --line:#e3e6eb;
+    --line-strong:#d2d6dd;
+    --paper:#fff;
+    --canvas:#f5f6f8;
+    --success:#147a54;
+    --success-bg:#eaf8f2;
+    --warning:#a15c00;
+    --warning-bg:#fff6df;
+    --info:#245f9e;
+    --info-bg:#edf5ff;
+    --shadow-sm:0 2px 10px rgba(25,28,35,.06);
+    --shadow-md:0 14px 40px rgba(25,28,35,.10);
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:24px;
+    --max-width:1260px;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    color:var(--ink-950);
+    background:
+      radial-gradient(circle at 10% 0%,rgba(196,22,50,.06),transparent 28%),
+      linear-gradient(180deg,#fff 0,var(--canvas) 680px);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+    line-height:1.65;
+  }
+  button,input{font:inherit}
+  a{color:inherit;text-decoration:none}
+  strong{font-weight:760}
+
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    border-bottom:1px solid rgba(210,214,221,.86);
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(14px);
+  }
+  .topbar-inner{
+    width:min(var(--max-width),calc(100% - 32px));min-height:68px;margin:0 auto;
+    display:flex;align-items:center;gap:22px;
+  }
+  .brand{display:flex;align-items:center;gap:11px;min-width:315px;font-weight:800;letter-spacing:.01em}
+  .brand-mark{width:34px;height:34px;position:relative;border-radius:9px;background:linear-gradient(145deg,var(--red-600),var(--red-900));box-shadow:0 8px 20px rgba(196,22,50,.22)}
+  .brand-mark:before,.brand-mark:after{content:"";position:absolute;background:#fff;border-radius:2px}
+  .brand-mark:before{width:18px;height:4px;left:8px;top:9px}
+  .brand-mark:after{width:12px;height:4px;left:8px;top:20px}
+  .topnav{display:flex;align-items:center;gap:4px;flex:1}
+  .topnav a{padding:9px 13px;border-radius:9px;color:var(--ink-700);font-size:14px;font-weight:650}
+  .topnav a:hover,.topnav a.active{background:var(--red-050);color:var(--red-700)}
+  .toolbar{display:flex;gap:8px}
+  .tool-btn{border:1px solid var(--line-strong);background:#fff;color:var(--ink-700);padding:8px 12px;border-radius:9px;cursor:pointer;font-weight:650;font-size:13px}
+  .tool-btn:hover{border-color:var(--red-600);color:var(--red-700)}
+
+  .page{width:min(var(--max-width),calc(100% - 32px));margin:0 auto;padding:32px 0 88px}
+  .hero{
+    position:relative;overflow:hidden;min-height:460px;
+    display:grid;grid-template-columns:1.22fr .78fr;gap:54px;align-items:center;
+    padding:64px 66px;border-radius:var(--radius-lg);color:#fff;
+    background:linear-gradient(120deg,rgba(127,16,32,.97),rgba(196,22,50,.92)),#9b1428;
+    box-shadow:var(--shadow-md);
+  }
+  .hero:before{content:"";position:absolute;width:420px;height:420px;border:1px solid rgba(255,255,255,.16);border-radius:50%;right:-150px;top:-165px;box-shadow:0 0 0 65px rgba(255,255,255,.035),0 0 0 130px rgba(255,255,255,.025)}
+  .hero-kicker{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:18px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(255,255,255,.09);font-size:13px;font-weight:700}
+  .hero h1{margin:0;max-width:800px;font-size:clamp(36px,5vw,62px);line-height:1.13;letter-spacing:-.035em}
+  .hero-lead{max-width:790px;margin:24px 0 0;color:rgba(255,255,255,.86);font-size:18px;line-height:1.8}
+  .hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+  .hero-tag{padding:8px 12px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:9px;color:rgba(255,255,255,.92);font-size:13px;font-weight:650}
+  .hero-map{position:relative;z-index:2;display:grid;gap:10px}
+  .hero-map-item{display:grid;grid-template-columns:44px 1fr;gap:13px;align-items:center;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  .hero-map-num{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:#fff;color:var(--red-800);font-weight:850;font-size:20px}
+  .hero-map-item b{display:block;font-size:16px}
+  .hero-map-item span span{display:block;color:rgba(255,255,255,.72);font-size:13px}
+
+  .meta-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:22px 0 54px;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--line);box-shadow:var(--shadow-sm)}
+  .meta-item{padding:17px 20px;background:#fff}
+  .meta-label{display:block;color:var(--ink-500);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+  .meta-value{display:block;margin-top:3px;color:var(--ink-800);font-size:14px;font-weight:700}
+
+  .section{scroll-margin-top:92px;margin-top:78px}
+  .section-head{display:grid;grid-template-columns:94px 1fr;gap:24px;align-items:start;margin-bottom:30px}
+  .section-index{display:grid;place-items:center;width:72px;height:72px;border-radius:20px;color:var(--red-700);background:var(--red-050);border:1px solid var(--red-100);font-size:26px;font-weight:850}
+  .section-eyebrow{margin:1px 0 5px;color:var(--red-700);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .section h2{margin:0;font-size:clamp(28px,3vw,42px);line-height:1.22;letter-spacing:-.02em}
+  .section-intro{max-width:930px;margin:12px 0 0;color:var(--ink-600);font-size:16px}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+  .subhead{margin:48px 0 20px}
+  .subhead h3{margin:0;font-size:24px}
+  .subhead p{margin:6px 0 0;color:var(--ink-600)}
+
+  .statement{display:grid;grid-template-columns:110px 1fr;gap:25px;align-items:center;padding:28px 32px;border-left:5px solid var(--red-700)}
+  .statement-label{color:var(--red-700);font-weight:850;text-align:center}
+  .statement-text{font-size:21px;line-height:1.65;font-weight:720}
+
+  .conflict-grid{display:grid;grid-template-columns:1fr 54px 1fr;align-items:stretch;gap:0;margin-top:20px}
+  .conflict-card{padding:25px}
+  .conflict-card h3{margin:0 0 8px;font-size:20px}
+  .conflict-card p{margin:0;color:var(--ink-600);font-size:14px}
+  .conflict-card ul{margin:14px 0 0;padding-left:19px;color:var(--ink-700);font-size:13px}
+  .conflict-card li{margin:6px 0}
+  .conflict-card.speed{border-color:#bce8d8;background:var(--success-bg)}
+  .conflict-card.risk{border-color:#f2d593;background:var(--warning-bg)}
+  .conflict-arrow{display:grid;place-items:center;color:var(--red-700);font-size:28px;font-weight:900}
+
+  .mechanism-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .mechanism-card{position:relative;overflow:hidden;min-height:225px;padding:23px}
+  .mechanism-card:after{content:attr(data-num);position:absolute;right:9px;bottom:-24px;color:rgba(196,22,50,.055);font-size:94px;font-weight:900;line-height:1}
+  .mechanism-icon{position:relative;z-index:1;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:var(--red-050);color:var(--red-700);font-weight:900}
+  .mechanism-card h3{position:relative;z-index:1;margin:15px 0 8px;font-size:18px}
+  .mechanism-card p{position:relative;z-index:1;margin:0;color:var(--ink-600);font-size:13px}
+
+  .dimension-formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px;padding:22px;margin-bottom:18px;background:linear-gradient(180deg,#fff,#fafbfc)}
+  .formula-chip{padding:10px 13px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;font-weight:740;font-size:14px}
+  .formula-op{color:var(--red-700);font-weight:900;font-size:20px}
+  .formula-result{border-color:var(--red-600);color:#fff;background:var(--red-700)}
+  .norm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:11px}
+  .norm-card{min-height:170px;padding:18px;position:relative;overflow:hidden}
+  .norm-card span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--red-050);color:var(--red-700);font-size:11px;font-weight:850}
+  .norm-card h4{margin:12px 0 7px;font-size:15px}
+  .norm-card p{margin:0;color:var(--ink-600);font-size:12px;line-height:1.55}
+
+  .boundary-shell{padding:26px}
+  .boundary-grid{display:grid;grid-template-columns:1fr 140px 1fr;gap:18px;align-items:stretch}
+  .side-card{padding:22px;border-radius:15px;border:1px solid var(--line);background:#fff}
+  .side-card.cloud{border-top:4px solid var(--red-700)}
+  .side-card.local{border-top:4px solid var(--info)}
+  .side-card small{font-size:11px;letter-spacing:.1em;font-weight:850;color:var(--red-700)}
+  .side-card.local small{color:var(--info)}
+  .side-card h3{margin:7px 0 10px;font-size:21px}
+  .side-card ul{margin:0;padding-left:19px;color:var(--ink-600);font-size:13px}
+  .side-card li{margin:7px 0}
+  .trace-bridge{display:grid;place-items:center;text-align:center;border-radius:15px;background:var(--ink-950);color:#fff;padding:18px 12px}
+  .trace-bridge b{font-size:18px}
+  .trace-bridge span{margin:8px 0;color:#ffd8df;font-size:12px;font-weight:750}
+  .trace-bridge small{color:rgba(255,255,255,.68);font-size:11px;line-height:1.5}
+  .boundary-rule{margin-top:18px;padding:15px 18px;border-radius:13px;background:var(--red-050);border:1px dashed var(--red-300);text-align:center;color:var(--red-900);font-size:14px;font-weight:760}
+
+  .review-note{display:grid;grid-template-columns:54px 1fr;gap:16px;align-items:start;margin-top:20px;padding:22px;background:var(--info-bg);border:1px solid #cde2fa;border-radius:14px}
+  .review-note-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--info);background:#fff;font-weight:900}
+  .review-note h4{margin:0 0 4px;color:var(--info)}
+  .review-note p{margin:0;color:#365a7d}
+
+  .flow-shell{padding:28px}
+  .flow-title-row{display:flex;align-items:start;justify-content:space-between;gap:18px;margin-bottom:24px}
+  .flow-title-row h3{margin:0;font-size:23px}
+  .flow-title-row p{margin:5px 0 0;color:var(--ink-600)}
+  .flow-track{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:22px;align-items:stretch;overflow-x:auto;padding:8px 4px 20px}
+  .flow-step{min-width:122px;position:relative;padding:18px 15px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 6px 20px rgba(27,31,38,.05)}
+  .flow-step:not(:last-child):after{content:"";position:absolute;width:23px;height:2px;right:-23px;top:50%;background:linear-gradient(90deg,var(--red-600),#e3a7b1)}
+  .flow-step:not(:last-child):before{content:"";position:absolute;z-index:2;right:-23px;top:calc(50% - 4px);border-left:7px solid var(--red-600);border-top:4px solid transparent;border-bottom:4px solid transparent}
+  .flow-step-num{color:var(--red-700);font-size:12px;font-weight:850;letter-spacing:.08em}
+  .flow-step b{display:block;margin:5px 0;font-size:15px}
+  .flow-step span{display:block;color:var(--ink-600);font-size:12px;line-height:1.5}
+  .flow-step.cloud{background:linear-gradient(180deg,#fff,var(--red-050));border-color:#efb6c1}
+  .flow-step.local{background:linear-gradient(180deg,#fff,var(--info-bg));border-color:#cde2fa}
+  .flow-step.trace{background:linear-gradient(180deg,#fff,#f0f1f4);border-color:#cbd0d8}
+  .loop-bar{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-top:16px;padding:17px;border:1px dashed var(--red-300);border-radius:14px;background:var(--red-050)}
+  .loop-item{text-align:center;color:var(--ink-700);font-size:13px;font-weight:750}
+  .loop-arrow{color:var(--red-700);font-size:20px;font-weight:900}
+
+  .object-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .object-card{padding:19px;min-height:170px}
+  .object-card small{color:var(--red-700);font-size:11px;font-weight:850;letter-spacing:.08em}
+  .object-card h4{margin:7px 0;font-size:16px}
+  .object-card p{margin:0;color:var(--ink-600);font-size:12px;line-height:1.55}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0 18px}
+  .tab-btn{padding:10px 15px;border:1px solid var(--line-strong);border-radius:10px;background:#fff;color:var(--ink-700);cursor:pointer;font-weight:750;font-size:14px}
+  .tab-btn:hover,.tab-btn.active{border-color:var(--red-700);color:#fff;background:var(--red-700)}
+  .flow-view{display:none}
+  .flow-view.active{display:block;animation:fadeIn .2s ease-out}
+  @keyframes fadeIn{from{opacity:.3;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .stage-layout{display:grid;grid-template-columns:.72fr 1.28fr;gap:16px}
+  .stage-summary,.stage-detail{padding:24px}
+  .stage-summary .label{display:block;color:var(--ink-500);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  .stage-summary .big{margin:5px 0 16px;font-size:24px;font-weight:850;color:var(--red-700)}
+  .stage-summary h4,.stage-detail h4{margin:0 0 13px;font-size:18px}
+  .stage-summary ul,.stage-detail ol{margin:0;padding-left:21px;color:var(--ink-600)}
+  .stage-summary li,.stage-detail li{margin:8px 0}
+  .stage-output{margin-top:16px;padding:14px 16px;border-radius:12px;background:var(--red-050);border:1px dashed var(--red-300);font-size:13px;color:var(--red-900);font-weight:720}
+
+  .control-points{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
+  .control-card{padding:19px;min-height:170px}
+  .control-card small{color:var(--red-700);font-weight:850}
+  .control-card h4{margin:5px 0 7px;font-size:15px}
+  .control-card p{margin:0;color:var(--ink-600);font-size:12px}
+
+  .function-map{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  .layer-card{padding:22px}
+  .layer-card h3{margin:0 0 6px;font-size:18px}
+  .layer-card p{margin:0;color:var(--ink-600);font-size:13px}
+  .layer-card .layer-count{display:inline-flex;margin-top:15px;padding:4px 8px;border-radius:999px;color:var(--red-700);background:var(--red-050);font-size:12px;font-weight:800}
+  .function-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;align-items:center;margin-bottom:18px}
+  .function-filters{display:flex;flex-wrap:wrap;gap:8px}
+  .filter-btn{border:1px solid var(--line-strong);background:#fff;color:var(--ink-700);padding:8px 13px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:750}
+  .filter-btn.active,.filter-btn:hover{color:var(--red-700);border-color:var(--red-600);background:var(--red-050)}
+  .function-list{display:grid;gap:12px}
+  .function-card{border:1px solid var(--line);border-radius:15px;background:#fff;overflow:hidden;box-shadow:var(--shadow-sm)}
+  .function-card[hidden]{display:none}
+  .function-card summary{list-style:none;display:grid;grid-template-columns:58px 1fr 24px;gap:16px;align-items:center;padding:20px 22px;cursor:pointer}
+  .function-card summary::-webkit-details-marker{display:none}
+  .function-num{width:48px;height:48px;display:grid;place-items:center;border-radius:13px;background:var(--red-050);color:var(--red-700);font-weight:900}
+  .function-title h3{margin:0;font-size:18px}
+  .function-title p{margin:3px 0 0;color:var(--ink-600);font-size:13px}
+  .chevron{color:var(--ink-500);font-weight:900;transition:transform .2s}
+  details[open] .chevron{transform:rotate(90deg);color:var(--red-700)}
+  .function-body{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;padding:0 22px 22px 96px}
+  .function-copy{color:var(--ink-700)}
+  .function-copy p{margin:0 0 14px}
+  .function-copy ul{margin:0;padding-left:20px;color:var(--ink-600)}
+  .function-copy li{margin:6px 0}
+  .acceptance{padding:17px 18px;border-radius:12px;background:#f8f9fb;border:1px solid var(--line)}
+  .acceptance h4{margin:0 0 10px;color:var(--red-700);font-size:14px}
+  .acceptance ul{margin:0;padding-left:19px;color:var(--ink-700);font-size:13px}
+  .acceptance li{margin:6px 0}
+
+  .support-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:22px}
+  .support-item{padding:14px 10px;text-align:center;border-radius:12px;background:#fff;border:1px solid var(--line);color:var(--ink-700);font-size:12px;font-weight:750}
+
+  .mvp-wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;margin-top:12px}
+  .mvp-core{padding:28px;background:linear-gradient(145deg,var(--red-900),var(--red-700));color:#fff}
+  .mvp-core h3{margin:0 0 14px;font-size:25px}
+  .mvp-core blockquote{margin:0;padding:0;color:rgba(255,255,255,.86);font-size:17px;line-height:1.8}
+  .mvp-core .stack{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .mvp-core .stack span{padding:6px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:12px;font-weight:700}
+  .mvp-scope{padding:28px}
+  .scope-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .scope-columns h4{margin:0 0 9px}
+  .scope-columns ul{margin:0;padding-left:19px;color:var(--ink-600);font-size:13px}
+  .scope-columns li{margin:6px 0}
+  .phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+  .phase-card{padding:23px;min-height:230px}
+  .phase-card small{color:var(--red-700);font-weight:850;letter-spacing:.08em}
+  .phase-card h3{margin:8px 0 9px;font-size:19px}
+  .phase-card p{margin:0 0 12px;color:var(--ink-600);font-size:13px}
+  .phase-card ul{margin:0;padding-left:19px;color:var(--ink-700);font-size:12px}
+  .phase-card li{margin:6px 0}
+  .metric-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
+  .metric-card{padding:18px;text-align:center}
+  .metric-value{display:block;color:var(--red-700);font-size:25px;font-weight:900}
+  .metric-label{display:block;margin-top:2px;color:var(--ink-600);font-size:12px}
+
+  .footer{margin-top:80px;padding:34px 0 10px;border-top:1px solid var(--line);color:var(--ink-500);font-size:13px}
+  .footer-inner{display:flex;justify-content:space-between;gap:20px}
+  .back-top{position:fixed;right:24px;bottom:24px;z-index:40;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:13px;color:#fff;background:var(--red-700);box-shadow:0 10px 28px rgba(196,22,50,.26);cursor:pointer;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}
+  .back-top.show{opacity:1;transform:none;pointer-events:auto}
+
+  @media(max-width:1120px){
+    .hero{grid-template-columns:1fr}.hero-map{grid-template-columns:repeat(3,1fr)}
+    .mechanism-grid{grid-template-columns:repeat(2,1fr)}
+    .norm-grid{grid-template-columns:repeat(4,1fr)}
+    .flow-track{grid-template-columns:repeat(8,150px)}
+    .object-grid{grid-template-columns:repeat(3,1fr)}
+    .control-points{grid-template-columns:repeat(3,1fr)}
+    .support-strip{grid-template-columns:repeat(3,1fr)}
+    .metric-grid{grid-template-columns:repeat(3,1fr)}
+    .topnav{display:none}.brand{flex:1}
+  }
+  @media(max-width:800px){
+    .page{width:min(100% - 22px,var(--max-width));padding-top:16px}
+    .topbar-inner{width:calc(100% - 22px);min-height:58px}.brand{min-width:auto;font-size:14px}.toolbar .tool-btn:first-child{display:none}
+    .hero{min-height:auto;padding:36px 24px;border-radius:18px}.hero h1{font-size:37px}.hero-lead{font-size:15px}.hero-map{grid-template-columns:1fr}
+    .meta-strip{grid-template-columns:1fr 1fr}.section{margin-top:60px}.section-head{grid-template-columns:58px 1fr;gap:14px}.section-index{width:54px;height:54px;border-radius:15px;font-size:20px}
+    .statement{grid-template-columns:1fr;gap:8px;padding:22px}.statement-label{text-align:left}.statement-text{font-size:18px}
+    .conflict-grid{grid-template-columns:1fr}.conflict-arrow{transform:rotate(90deg);height:45px}
+    .mechanism-grid,.norm-grid,.boundary-grid,.stage-layout,.function-map,.mvp-wrap,.scope-columns,.phase-grid{grid-template-columns:1fr}
+    .trace-bridge{min-height:150px}.object-grid{grid-template-columns:1fr 1fr}.control-points{grid-template-columns:1fr 1fr}
+    .loop-bar{grid-template-columns:1fr}.loop-arrow{transform:rotate(90deg)}
+    .function-body{grid-template-columns:1fr;padding:0 18px 18px}.function-card summary{grid-template-columns:46px 1fr 20px;padding:16px;gap:11px}.function-num{width:42px;height:42px}
+    .support-strip,.metric-grid{grid-template-columns:1fr 1fr}.footer-inner{flex-direction:column}
+  }
+  @media print{
+    body{background:#fff}.topbar,.back-top,.toolbar,.function-toolbar{display:none!important}.page{width:100%;padding:0}.hero{box-shadow:none;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .panel,.function-card{break-inside:avoid;box-shadow:none}.section{break-before:page}.section:first-of-type{break-before:auto}.flow-track{overflow:visible;grid-template-columns:repeat(4,1fr)}
+    .flow-step:after,.flow-step:before{display:none}.function-body{display:grid!important}details{display:block}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top" aria-label="返回顶部"><span class="brand-mark" aria-hidden="true"></span><span>AISF / Harness 专题审阅</span></a>
+    <nav class="topnav" aria-label="页面目录">
+      <a href="#understanding">01 理解</a>
+      <a href="#process">02 流程</a>
+      <a href="#functions">03 功能</a>
+      <a href="#mvp">建设重点</a>
+    </nav>
+    <div class="toolbar">
+      <button class="tool-btn" id="toggleAll">收起全部功能</button>
+      <button class="tool-btn" onclick="window.print()">打印 / 导出 PDF</button>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <span class="hero-kicker">领导专题 · 场景分析可视化版</span>
+      <h1 id="hero-title">实现团队规范化<br/>智能开发</h1>
+      <p class="hero-lead">将团队规范、项目上下文、任务边界、研发流程、质量要求和人工决策，转化为<strong>人和智能体共同遵守</strong>的研发运行机制。</p>
+      <div class="hero-tags">
+        <span class="hero-tag">云端总控规划</span>
+        <span class="hero-tag">本地受控研发</span>
+        <span class="hero-tag">全过程 Trace</span>
+        <span class="hero-tag">智能审查与人工卡点</span>
+        <span class="hero-tag">整改闭环</span>
+        <span class="hero-tag">知识审核回流</span>
+      </div>
+    </div>
+    <div class="hero-map" aria-label="审阅重点">
+      <a class="hero-map-item" href="#understanding"><span class="hero-map-num">1</span><span><b>理解</b><span>为什么不能只给开发人员配 AI 编码工具</span></span></a>
+      <a class="hero-map-item" href="#process"><span class="hero-map-num">2</span><span><b>流程</b><span>云端规划、本地研发、审查整改如何闭环</span></span></a>
+      <a class="hero-map-item" href="#functions"><span class="hero-map-num">3</span><span><b>功能</b><span>六个核心模块如何支撑规范化研发</span></span></a>
+    </div>
+  </section>
+
+  <section class="meta-strip" aria-label="专题信息">
+    <div class="meta-item"><span class="meta-label">专题题目</span><span class="meta-value">实现团队规范化智能开发</span></div>
+    <div class="meta-item"><span class="meta-label">核心主线</span><span class="meta-value">规划 → 执行 → 审查 → 演进</span></div>
+    <div class="meta-item"><span class="meta-label">协同边界</span><span class="meta-value">云端治理 + 本地研发</span></div>
+    <div class="meta-item"><span class="meta-label">关键支撑</span><span class="meta-value">Trace 研发证据链</span></div>
+  </section>
+
+  <section class="section" id="understanding">
+    <div class="section-head">
+      <div class="section-index">01</div>
+      <div><p class="section-eyebrow">Understanding</p><h2>先看理解：规范化智能开发到底解决什么</h2><p class="section-intro">它不是建设更强的代码生成工具，而是解决 AI 进入团队研发后，任务是否清晰、执行是否受控、结果是否可信、经验能否持续复用的问题。</p></div>
+    </div>
+
+    <div class="panel statement">
+      <div class="statement-label">一句话理解</div>
+      <div class="statement-text">个人智能编码解决“一个人如何更快完成局部开发”；团队规范化智能开发解决“一个团队如何在统一约束下，可靠地使用智能体完成软件研发”。</div>
+    </div>
+
+    <div class="subhead"><h3>核心矛盾：局部速度提升，不等于团队效率提升</h3><p>智能体显著提高产出速度，但如果任务、规范、边界和审查机制没有同步升级，团队协作成本可能不降反升。</p></div>
+    <div class="conflict-grid">
+      <article class="panel conflict-card speed"><h3>AI 带来的局部加速</h3><p>代码、文档、测试和方案能够在更短时间内形成。</p><ul><li>单个开发单元产出更快。</li><li>方案探索和重复劳动减少。</li><li>开发人员能够并行处理更多任务。</li></ul></article>
+      <div class="conflict-arrow">≠</div>
+      <article class="panel conflict-card risk"><h3>团队面临的治理风险</h3><p>变更数量增加后，隐性规范、重复建设和架构漂移更容易被放大。</p><ul><li>任务边界不清导致无效并行。</li><li>局部正确但不符合项目工程语境。</li><li>评审人员难以快速判断过程和结果是否可信。</li></ul></article>
+    </div>
+
+    <div class="subhead"><h3>通过四项机制实现规范化</h3><p>规范化不是增加更多审批，而是把正确的约束放到正确的阶段。</p></div>
+    <div class="mechanism-grid">
+      <article class="panel mechanism-card" data-num="01"><div class="mechanism-icon">规</div><h3>规范可执行</h3><p>将架构边界、代码约定、测试要求、安全规则和工作流形成版本化项目研发基线，由人和智能体共同使用。</p></article>
+      <article class="panel mechanism-card" data-num="02"><div class="mechanism-icon">控</div><h3>任务可控制</h3><p>由云端总控智能体辅助完成需求理解、任务拆分、依赖分析、风险分级和人工卡点设置。</p></article>
+      <article class="panel mechanism-card" data-num="03"><div class="mechanism-icon">证</div><h3>过程可追溯</h3><p>将交互、上下文、工具调用、代码变更、验证结果和人工决策组织为统一 Trace 证据链。</p></article>
+      <article class="panel mechanism-card" data-num="04"><div class="mechanism-icon">演</div><h3>经验可演进</h3><p>从 Trace 和评审结果提炼知识候选，经人工审核后反哺开发契约、任务模板和检查规则。</p></article>
+    </div>
+
+    <div class="subhead"><h3>“规范化”覆盖研发全过程，而不只是代码格式</h3><p>只有需求、任务、上下文、执行、产物、审查和知识同时被规范，团队智能研发才能形成稳定秩序。</p></div>
+    <div class="panel dimension-formula">
+      <span class="formula-chip">需求规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">任务规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">上下文规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">执行规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">产物规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">审查规范化</span><span class="formula-op">+</span>
+      <span class="formula-chip">知识规范化</span><span class="formula-op">=</span>
+      <span class="formula-chip formula-result">团队规范化智能开发</span>
+    </div>
+    <div class="norm-grid">
+      <article class="panel norm-card"><span>01</span><h4>需求</h4><p>为什么做、范围是什么、达到什么结果。</p></article>
+      <article class="panel norm-card"><span>02</span><h4>任务</h4><p>谁做什么、依赖什么、允许改什么、如何验收。</p></article>
+      <article class="panel norm-card"><span>03</span><h4>上下文</h4><p>可以读取什么、必须参考什么、禁止访问什么。</p></article>
+      <article class="panel norm-card"><span>04</span><h4>执行</h4><p>使用哪个智能体、工作流、工具、权限和验证步骤。</p></article>
+      <article class="panel norm-card"><span>05</span><h4>产物</h4><p>形成哪些代码、测试、文档、报告和证据。</p></article>
+      <article class="panel norm-card"><span>06</span><h4>审查</h4><p>哪个阶段由谁审查、依据什么、形成什么结论。</p></article>
+      <article class="panel norm-card"><span>07</span><h4>知识</h4><p>哪些经验可沉淀、由谁批准、如何发布与回退。</p></article>
+    </div>
+
+    <div class="subhead"><h3>云端与本地的职责边界</h3><p>云端不直接替代本地研发，本地也不脱离团队治理独立运行；两者由 Trace 和任务执行包连接。</p></div>
+    <div class="panel boundary-shell">
+      <div class="boundary-grid">
+        <article class="side-card cloud"><small>CLOUD CONTROL</small><h3>云端：规划、约束、审查、沉淀</h3><ul><li>维护项目研发基线与项目知识。</li><li>辅助需求分析、任务拆分和风险分级。</li><li>生成任务执行包并设置人工卡点。</li><li>基于 Trace 和产物开展智能审查。</li><li>形成整改意见和知识候选。</li></ul></article>
+        <div class="trace-bridge"><b>任务执行包</b><span>↓</span><small>版本化目标、边界、上下文、工作流与验证要求</small><span>↑</span><b>Trace 证据链</b></div>
+        <article class="side-card local"><small>LOCAL RUNTIME</small><h3>本地：理解、执行、验证、提交</h3><ul><li>获取项目、需求、任务和研发基线。</li><li>使用项目配置的 Agent、Skill 和工具。</li><li>访问真实代码、依赖、构建与测试环境。</li><li>完成分析、编码、测试、自审和修复。</li><li>上报交互、变更、验证和产物信息。</li></ul></article>
+      </div>
+      <div class="boundary-rule">云端负责“把研发组织正确”，本地负责“把任务执行正确”，Trace 负责“证明过程和结果确实正确”。</div>
+    </div>
+
+    <div class="review-note"><div class="review-note-icon">审</div><div><h4>领导审阅时重点看什么</h4><p>平台是否真正形成团队级研发秩序，而不是增加一个聊天入口；是否能将任务边界、人工责任和过程证据贯穿到每一次智能开发执行。</p></div></div>
+  </section>
+
+  <section class="section" id="process">
+    <div class="section-head">
+      <div class="section-index">02</div>
+      <div><p class="section-eyebrow">Process</p><h2>再看流程：云端总控与本地研发如何形成闭环</h2><p class="section-intro">总体流程以项目研发基线为起点，以任务执行包连接云端和本地，以 Trace 形成审查证据，以人工卡点控制关键决策，并将有效经验审核后反哺下一轮研发。</p></div>
+    </div>
+
+    <div class="panel flow-shell">
+      <div class="flow-title-row"><div><h3>总体业务闭环</h3><p>不是“需求直接交给 Agent 写代码”，而是先规划和约束，再执行和采证，最后审查、整改和沉淀。</p></div></div>
+      <div class="flow-track">
+        <div class="flow-step cloud"><span class="flow-step-num">STEP 01</span><b>研发基线建立</b><span>规范、架构、工作流、门禁和知识版本化</span></div>
+        <div class="flow-step cloud"><span class="flow-step-num">STEP 02</span><b>需求理解与任务规划</b><span>形成需求基线、任务图、风险和责任分工</span></div>
+        <div class="flow-step cloud"><span class="flow-step-num">STEP 03</span><b>任务执行包下发</b><span>明确目标、边界、上下文、工作流与验证要求</span></div>
+        <div class="flow-step local"><span class="flow-step-num">STEP 04</span><b>本地受控智能研发</b><span>开发人员控制 Agent 完成分析、编码、测试和自审</span></div>
+        <div class="flow-step trace"><span class="flow-step-num">STEP 05</span><b>Trace 与成果上报</b><span>持续记录交互、变更、验证、产物和人工决策</span></div>
+        <div class="flow-step cloud"><span class="flow-step-num">STEP 06</span><b>智能审查与人工卡点</b><span>判断过程合规性、结果质量与阶段推进条件</span></div>
+        <div class="flow-step local"><span class="flow-step-num">STEP 07</span><b>整改或阶段推进</b><span>问题反馈本地修订，通过后进入合并或交付</span></div>
+        <div class="flow-step cloud"><span class="flow-step-num">STEP 08</span><b>知识审核与反哺</b><span>经验经人工审核后更新基线、模板和规则</span></div>
+      </div>
+      <div class="loop-bar"><div class="loop-item">审查发现问题</div><div class="loop-arrow">→</div><div class="loop-item">生成结构化整改任务</div><div class="loop-arrow">→</div><div class="loop-item">本地修订并重新形成 Trace</div></div>
+    </div>
+
+    <div class="subhead"><h3>流程围绕六类核心业务对象运行</h3><p>每次研发都必须能够绑定明确版本和责任关系，避免聊天、代码、任务和审查记录彼此割裂。</p></div>
+    <div class="object-grid">
+      <article class="panel object-card"><small>OBJECT 01</small><h4>项目研发基线</h4><p>团队规范、架构边界、Agent、工作流、门禁和项目知识的统一版本。</p></article>
+      <article class="panel object-card"><small>OBJECT 02</small><h4>需求基线</h4><p>经确认的业务目标、范围、规则、验收标准和非本次范围内容。</p></article>
+      <article class="panel object-card"><small>OBJECT 03</small><h4>任务执行包</h4><p>下发本地的目标、边界、依赖、上下文、工作流和完成定义。</p></article>
+      <article class="panel object-card"><small>OBJECT 04</small><h4>研发执行实例</h4><p>某项任务在具体人员、环境、分支、Agent 和版本下的一次真实运行。</p></article>
+      <article class="panel object-card"><small>OBJECT 05</small><h4>Trace 证据包</h4><p>经过组织和筛选、可供过程与成果审查使用的任务级证据集合。</p></article>
+      <article class="panel object-card"><small>OBJECT 06</small><h4>审查单与知识候选</h4><p>记录审查依据、问题、结论、整改要求及待审核的经验沉淀。</p></article>
+    </div>
+
+    <div class="subhead"><h3>按阶段快速审阅流程输入、处理与输出</h3><p>选择阶段查看其核心动作、控制要求和可验收成果。</p></div>
+    <div class="tabs" role="tablist" aria-label="流程阶段切换">
+      <button class="tab-btn active" data-flow="baseline">研发基线</button>
+      <button class="tab-btn" data-flow="planning">需求与任务</button>
+      <button class="tab-btn" data-flow="package">任务下发</button>
+      <button class="tab-btn" data-flow="execution">本地执行</button>
+      <button class="tab-btn" data-flow="review">审查整改</button>
+      <button class="tab-btn" data-flow="knowledge">知识演进</button>
+    </div>
+
+    <div class="flow-view active" id="flow-baseline">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">让规范成为可执行基线</div><h4>参与角色</h4><ul><li>管理人员与技术负责人确认规则。</li><li>云端总控智能体辅助识别显性规范和历史实践。</li><li>平台管理员配置 Agent、工具、权限与集成。</li></ul><div class="stage-output">输出：版本化项目研发基线、工作流、门禁、Owner 和发布记录。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>导入项目说明、架构文档、代码仓库和团队规范。</li><li>识别项目级、模块级、文件级和任务级约束。</li><li>配置不同风险任务的 Agent 工作流、门禁和人工卡点。</li><li>经责任人确认后发布基线版本。</li><li>已启动任务继续绑定原版本，避免规则变化污染历史执行。</li></ol></article></div>
+    </div>
+    <div class="flow-view" id="flow-planning">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">把原始诉求变成可执行任务图</div><h4>关键控制</h4><ul><li>缺少目标、范围和验收标准不得直接编码。</li><li>公共契约、数据、安全和架构变更必须先确认方案。</li><li>并行与互斥关系必须显式说明。</li></ul><div class="stage-output">输出：需求基线、任务清单、依赖图、风险等级、责任人与人工卡点。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>提炼业务目标、使用对象、核心流程和业务规则。</li><li>识别信息缺失、冲突和待确认事项。</li><li>形成可核对的验收标准。</li><li>识别影响模块、公共契约、数据、安全和集成风险。</li><li>拆分契约任务、独立实现任务、共享资产任务和集成验证任务。</li><li>人工调整并确认需求与任务规划。</li></ol></article></div>
+    </div>
+    <div class="flow-view" id="flow-package">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">把计划转成可直接执行的任务包</div><h4>关键控制</h4><ul><li>任务包绑定需求、研发基线和上下文版本。</li><li>明确允许修改和禁止修改范围。</li><li>重大范围或契约变化后必须重新生成。</li></ul><div class="stage-output">输出：任务执行包、上下文包、工作流、权限和验证清单。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>根据任务类型和风险选择适用工作流。</li><li>装配相关需求、代码、接口、数据模型和历史案例。</li><li>注入必须复用能力、禁止事项和质量要求。</li><li>绑定 Agent、Skill、工具权限和验证命令。</li><li>下发本地，由开发人员确认环境和可执行性。</li></ol></article></div>
+    </div>
+    <div class="flow-view" id="flow-execution">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">在真实工程环境中受控研发</div><h4>关键控制</h4><ul><li>智能体只能在批准范围和权限内操作。</li><li>高风险事项必须暂停并请求人工确认。</li><li>不允许静默重试掩盖失败原因。</li></ul><div class="stage-output">输出：代码、测试、文档、验证结果、风险说明和待审查成果。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>创建任务分支、工作区或隔离会话。</li><li>Agent 读取任务包并形成实现计划。</li><li>开发人员控制其完成分析、编码、测试、自审和修复。</li><li>执行构建、测试、扫描和越界检查。</li><li>形成变更说明、验证证据和未解决问题。</li><li>全过程持续采集并关联 Trace。</li></ol></article></div>
+    </div>
+    <div class="flow-view" id="flow-review">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">用证据判断过程和结果是否可信</div><h4>双重审查</h4><ul><li>过程规范性：是否按批准的任务包和工作流执行。</li><li>结果质量：是否满足需求、架构、测试与交付要求。</li><li>关键结论由责任人作出，不由 Agent 代替。</li></ul><div class="stage-output">输出：审查单、风险问题、整改任务、通过/驳回/有条件通过结论。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>云端汇总需求、任务、基线、Trace 和成果物。</li><li>总控智能体生成审查摘要、问题清单和待人工确认项。</li><li>责任人完成需求、方案、阶段成果或合并交付卡点。</li><li>问题关联到任务、文件、Diff 或验证项。</li><li>本地修订后重新形成 Trace 并复核。</li><li>通过后进入合并、交付或下一阶段。</li></ol></article></div>
+    </div>
+    <div class="flow-view" id="flow-knowledge">
+      <div class="stage-layout"><article class="panel stage-summary"><span class="label">阶段目标</span><div class="big">把一次经验变成后续可复用约束</div><h4>关键控制</h4><ul><li>原始 Trace 不等于正式知识。</li><li>单次评审意见不自动升级为团队规范。</li><li>知识必须标明来源、适用范围和版本。</li></ul><div class="stage-output">输出：知识候选、审核记录、正式知识、基线更新与效果数据。</div></article><article class="panel stage-detail"><h4>主流程</h4><ol><li>从评审意见、门禁失败、越界修改和优秀实践中识别经验。</li><li>生成知识候选并说明来源、适用范围和预期作用。</li><li>责任人判断其正确性和通用性。</li><li>审核通过后发布为开发契约、任务模板、上下文或检查规则。</li><li>跟踪使用效果，对无效知识修订、停用或回退。</li></ol></article></div>
+    </div>
+
+    <div class="subhead"><h3>流程中的六类人工卡点</h3><p>Agent 可以辅助分析和给出建议，但重大需求、架构、阶段推进和知识发布必须保留清晰的人类责任。</p></div>
+    <div class="control-points">
+      <article class="panel control-card"><small>GATE 01</small><h4>需求确认</h4><p>确认需求理解、范围和验收标准。</p></article>
+      <article class="panel control-card"><small>GATE 02</small><h4>任务规划确认</h4><p>确认拆分、依赖、并行边界和责任分工。</p></article>
+      <article class="panel control-card"><small>GATE 03</small><h4>高风险方案确认</h4><p>确认架构、数据、安全和公共契约变更。</p></article>
+      <article class="panel control-card"><small>GATE 04</small><h4>阶段成果审查</h4><p>判断过程合规和成果进入下一阶段条件。</p></article>
+      <article class="panel control-card"><small>GATE 05</small><h4>合并或交付批准</h4><p>决定是否允许进入主干、制品或交付环节。</p></article>
+      <article class="panel control-card"><small>GATE 06</small><h4>知识发布确认</h4><p>确认经验是否可复用及其正确适用范围。</p></article>
+    </div>
+  </section>
+
+  <section class="section" id="functions">
+    <div class="section-head">
+      <div class="section-index">03</div>
+      <div><p class="section-eyebrow">Functions</p><h2>最后看功能：六个核心模块支撑完整研发闭环</h2><p class="section-intro">功能不按传统菜单堆叠，而是围绕“建立基线、规划任务、下发上下文、本地执行、云端审查、知识演进”组织，并明确每个模块可核对的产出和验收价值。</p></div>
+    </div>
+
+    <div class="function-map">
+      <article class="panel layer-card"><h3>云端治理能力</h3><p>负责项目研发基线、需求任务规划、审查决策和知识发布。</p><span class="layer-count">规划与决策</span></article>
+      <article class="panel layer-card"><h3>本地研发能力</h3><p>负责真实工程环境中的 Agent 工作流、编码测试和过程采集。</p><span class="layer-count">执行与验证</span></article>
+      <article class="panel layer-card"><h3>云地协同能力</h3><p>通过任务执行包、Trace、整改反馈和工程系统集成连接两端。</p><span class="layer-count">贯穿全流程</span></article>
+    </div>
+
+    <div class="function-toolbar">
+      <div class="function-filters" aria-label="功能筛选">
+        <button class="filter-btn active" data-filter="all">全部功能</button>
+        <button class="filter-btn" data-filter="cloud">云端治理</button>
+        <button class="filter-btn" data-filter="local">本地研发</button>
+        <button class="filter-btn" data-filter="cross">云地协同</button>
+      </div>
+    </div>
+
+    <div class="function-list">
+      <details class="function-card" data-category="cloud" open>
+        <summary><span class="function-num">01</span><span class="function-title"><h3>项目研发基线与智能体能力管理</h3><p>把团队规范、工程事实和 Agent 能力形成可版本化、可发布的统一研发基线。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为团队智能研发的基础配置中心，承接项目目标、架构边界、研发规范和智能体能力，形成所有任务共同遵循的执行依据。</p><ul><li>维护项目目标、技术栈、模块职责和依赖边界。</li><li>管理编码、测试、安全、分支和提交规范。</li><li>配置 Agent、Skill、模型、工具、MCP 和研发工作流。</li><li>配置质量门禁、人工卡点、代码 Owner 和评审路由。</li><li>支持基线审批、发布、版本管理和回退。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>每次执行绑定唯一研发基线版本。</li><li>历史版本不可被覆盖，可查询发布和审批记录。</li><li>规则、工作流和 Agent 能力具有明确适用范围。</li><li>基线变化不自动污染已启动任务。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="cloud" open>
+        <summary><span class="function-num">02</span><span class="function-title"><h3>需求理解与任务规划</h3><p>把原始需求转化为可确认、可拆分、可执行和可验收的需求基线与任务图。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为研发任务进入平台的总控入口，承接原始需求和项目研发基线，完成需求结构化、风险识别、任务拆分和责任分配。</p><ul><li>提取业务目标、范围、规则和验收标准。</li><li>识别缺失信息、冲突和待确认事项。</li><li>分析影响模块、公共契约、数据、安全与集成风险。</li><li>生成任务依赖图、并行建议和互斥修改范围。</li><li>推荐风险等级、责任人、Owner、评审人和人工卡点。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>任务包含目标、边界、验收和验证方式。</li><li>高风险任务能够识别并强制进入方案确认。</li><li>任务拆分、依赖和并行关系可人工调整。</li><li>需求和任务规划具有版本及确认记录。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="cross" open>
+        <summary><span class="function-num">03</span><span class="function-title"><h3>任务上下文装配与本地下发</h3><p>把云端规划转化为本地人员和 Agent 可以直接执行的受控任务包。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为云端规划与本地执行之间的衔接能力，承接已确认任务，生成目标、边界、上下文、工作流和验证要求完整的任务执行包。</p><ul><li>检索相关代码、接口、文档、数据模型和历史案例。</li><li>推荐必须复用的组件和公共能力。</li><li>配置允许修改、禁止修改和敏感访问范围。</li><li>绑定研发基线、上下文、Agent 工作流和验证命令版本。</li><li>支持任务包生成、审批、同步、更新和失效控制。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>任务包可追溯到需求、任务和研发基线。</li><li>本地能够明确知道“做什么、怎么做、不能做什么”。</li><li>重大范围或契约变化后旧任务包自动失效。</li><li>上下文来源、版本和适用范围可核对。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="local" open>
+        <summary><span class="function-num">04</span><span class="function-title"><h3>本地智能研发执行与过程采集</h3><p>在真实工程环境中完成分析、编码、测试、自审和修复，并形成全过程 Trace。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为真实研发环境中的执行载体，承接任务执行包，由开发人员控制本地 Agent 工作流完成研发，并采集关键交互、操作和成果。</p><ul><li>同步项目和任务，创建分支、工作区或隔离环境。</li><li>启动 Agent 工作流并执行计划、编码、测试和修复。</li><li>控制高风险操作暂停、人工确认和权限边界。</li><li>采集交互、工具调用、命令、文件变更和验证结果。</li><li>支持断网缓存、失败补传、敏感信息过滤和脱敏。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>Agent 不得越出批准的工作区和操作权限。</li><li>每次执行绑定人员、环境、分支、任务和版本。</li><li>关键文件 Diff、命令结果和人工操作可完整回溯。</li><li>失败、暂停、取消和人工接管状态清晰。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="cloud" open>
+        <summary><span class="function-num">05</span><span class="function-title"><h3>智能审查、人工卡点与阶段推进</h3><p>基于需求、基线、Trace 和成果判断过程是否合规、结果是否满足要求。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为研发过程和成果的质量控制中心，汇总任务证据，开展过程规范性与结果质量双重审查，生成整改意见并控制阶段推进。</p><ul><li>检查任务包、工作流、上下文和人工卡点执行情况。</li><li>分析需求、代码、测试、文档和变更说明的一致性。</li><li>识别越界修改、公共契约、共享资产和架构边界风险。</li><li>生成智能审查摘要、风险清单和待人工确认项。</li><li>支持通过、驳回、有条件通过、整改复核和阶段流转。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>审查结论具有依据、责任人、时间和版本。</li><li>过程合规与结果质量能够分别给出结论。</li><li>问题可关联到任务、文件、Diff 或验证项。</li><li>未满足关键卡点或证据要求时不得误推进。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="cross" open>
+        <summary><span class="function-num">06</span><span class="function-title"><h3>Trace 治理与项目知识演进</h3><p>把过程证据、审查意见和任务结果转化为可信、可审核、可复用的项目资产。</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p><strong>职责：</strong>作为团队研发经验沉淀和持续优化中心，承接全过程 Trace 与审查结果，形成任务时间线、证据包、知识候选和研发基线更新。</p><ul><li>关联项目、需求、任务、执行实例、产物和审查记录。</li><li>形成任务时间线、关键决策和阶段证据包。</li><li>归类评审意见、失败原因、越界行为和优秀实践。</li><li>生成知识候选并分析来源、适用范围和影响。</li><li>支持人工审核、发布、版本、回退和效果评估。</li></ul></div><div class="acceptance"><h4>验收重点</h4><ul><li>能够回答“谁基于什么，通过什么过程，产生了什么结果”。</li><li>原始 Trace、经验候选和正式知识分层管理。</li><li>未经审核的经验不得自动成为正式规范。</li><li>知识发布后能够追踪使用和问题改善效果。</li></ul></div></div>
+      </details>
+    </div>
+
+    <div class="subhead"><h3>贯穿性工程集成</h3><p>这些能力作为现有工程体系的连接层，不替代 Git、CI、需求管理、制品和部署平台。</p></div>
+    <div class="support-strip">
+      <div class="support-item">Git / 分支 / PR-MR</div>
+      <div class="support-item">CI / 测试 / 扫描</div>
+      <div class="support-item">Issue / 需求管理</div>
+      <div class="support-item">制品库 / 部署平台</div>
+      <div class="support-item">身份 / 权限 / 密钥</div>
+      <div class="support-item">消息 / 待办 / 审计</div>
+    </div>
+  </section>
+
+  <section class="section" id="mvp">
+    <div class="section-head">
+      <div class="section-index">M</div>
+      <div><p class="section-eyebrow">Roadmap & Acceptance</p><h2>建设重点：先验证一条真实任务的完整闭环</h2><p class="section-intro">第一阶段不追求复杂多 Agent 编排和全面工程集成，先证明平台能够围绕一个真实研发任务完成云端规划、本地执行、过程上报、云端审查和整改通过。</p></div>
+    </div>
+
+    <div class="mvp-wrap">
+      <article class="panel mvp-core"><h3>第一阶段核心验收问题</h3><blockquote>能否围绕一个真实研发任务，稳定完成“云端需求与任务规划 → 任务执行包下发 → 本地 Agent 受控执行 → Trace 上报 → 云端审查 → 整改闭环 → 阶段通过”。</blockquote><div class="stack"><span>项目研发基线</span><span>任务执行包</span><span>本地 Agent 工作流</span><span>基础 Trace</span><span>人工卡点</span><span>整改反馈</span></div></article>
+      <article class="panel mvp-scope"><div class="scope-columns"><div><h4>第一阶段优先纳入</h4><ul><li>项目研发基线和版本绑定。</li><li>云端需求理解、任务规划和人工确认。</li><li>任务执行包生成与本地同步。</li><li>本地 Agent 工作流启动与基础执行控制。</li><li>交互、文件变更、测试结果和产物 Trace。</li><li>云端审查摘要、整改反馈和阶段流转。</li></ul></div><div><h4>第一阶段暂不追求</h4><ul><li>复杂全自动多 Agent 协商。</li><li>自动合并和自动生产发布。</li><li>覆盖全部技术栈和工程系统。</li><li>一次性沉淀完整隐性规范。</li><li>未经人工审核的知识自动发布。</li><li>把所有原始日志都作为审查证据。</li></ul></div></div></article>
+    </div>
+
+    <div class="subhead"><h3>分阶段形成能力</h3><p>先形成最小闭环，再强化工程质量，最终形成知识驱动的持续演进。</p></div>
+    <div class="phase-grid">
+      <article class="panel phase-card"><small>PHASE 01</small><h3>形成最小闭环</h3><p>证明云端规划、本地执行、过程上报、审查整改能够贯通。</p><ul><li>项目研发基线。</li><li>需求与任务规划。</li><li>任务执行包。</li><li>本地工作流与基础 Trace。</li><li>审查卡点和阶段流转。</li></ul></article>
+      <article class="panel phase-card"><small>PHASE 02</small><h3>强化工程质量控制</h3><p>接入现有工程系统，增强范围、质量和集成风险判断。</p><ul><li>Git、PR/MR 和 CI 集成。</li><li>越界修改与共享资产冲突检测。</li><li>需求到代码、测试和文档映射。</li><li>分级门禁和证据包优化。</li></ul></article>
+      <article class="panel phase-card"><small>PHASE 03</small><h3>形成知识驱动演进</h3><p>让规范、任务模板和 Agent 工作流根据真实研发结果持续改善。</p><ul><li>经验与知识候选提炼。</li><li>知识审核、版本发布和回退。</li><li>同类问题复发分析。</li><li>Agent 与工作流效果评测。</li><li>组织级知识复用。</li></ul></article>
+    </div>
+
+    <div class="subhead"><h3>建议重点度量</h3><p>评价团队开发是否更稳定、更高效，而不是统计 Agent 生成了多少代码。</p></div>
+    <div class="metric-grid">
+      <article class="panel metric-card"><span class="metric-value">任务</span><span class="metric-label">规范化覆盖率</span></article>
+      <article class="panel metric-card"><span class="metric-value">Trace</span><span class="metric-label">完整率</span></article>
+      <article class="panel metric-card"><span class="metric-value">首轮</span><span class="metric-label">审查通过率</span></article>
+      <article class="panel metric-card"><span class="metric-value">越界</span><span class="metric-label">修改拦截率</span></article>
+      <article class="panel metric-card"><span class="metric-value">人工</span><span class="metric-label">平均评审时长</span></article>
+      <article class="panel metric-card"><span class="metric-value">知识</span><span class="metric-label">复用与改善率</span></article>
+    </div>
+  </section>
+
+  <footer class="footer"><div class="footer-inner"><span>审阅主线：理解团队规范化智能开发 → 看云端与本地闭环 → 看六个核心功能 → 看第一阶段建设重点</span><span>版本 0.2 · 2026-07-10</span></div></footer>
+</main>
+
+<button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
+<script>
+  const tabButtons=document.querySelectorAll('.tab-btn');
+  const flowViews=document.querySelectorAll('.flow-view');
+  tabButtons.forEach(btn=>btn.addEventListener('click',()=>{
+    tabButtons.forEach(item=>item.classList.remove('active'));
+    flowViews.forEach(item=>item.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('flow-'+btn.dataset.flow).classList.add('active');
+  }));
+
+  const filterButtons=document.querySelectorAll('.filter-btn');
+  const functionCards=document.querySelectorAll('.function-card');
+  filterButtons.forEach(btn=>btn.addEventListener('click',()=>{
+    filterButtons.forEach(item=>item.classList.remove('active'));
+    btn.classList.add('active');
+    const filter=btn.dataset.filter;
+    functionCards.forEach(card=>card.hidden=filter!=='all'&&card.dataset.category!==filter);
+  }));
+
+  const toggleAll=document.getElementById('toggleAll');
+  let allOpen=true;
+  toggleAll.addEventListener('click',()=>{
+    allOpen=!allOpen;
+    functionCards.forEach(card=>card.open=allOpen);
+    toggleAll.textContent=allOpen?'收起全部功能':'展开全部功能';
+  });
+
+  const backTop=document.getElementById('backTop');
+  backTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+  const navLinks=document.querySelectorAll('.topnav a');
+  const sections=[...document.querySelectorAll('main section[id]')];
+  const updateOnScroll=()=>{
+    backTop.classList.toggle('show',window.scrollY>520);
+    const current=sections.reduce((active,section)=>window.scrollY>=section.offsetTop-130?section.id:active,'top');
+    navLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')==='#'+current));
+  };
+  window.addEventListener('scroll',updateOnScroll,{passive:true});
+  updateOnScroll();
+</script>
+</body>
+</html>

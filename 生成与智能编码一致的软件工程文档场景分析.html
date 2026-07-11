@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="生成与智能编码一致的软件工程文档领导审阅版，重点呈现场景理解、云边协同流程与核心功能。"/>
+<title>生成与智能编码一致的软件工程文档｜领导审阅版</title>
+<style>
+    :root {
+      --red-900: #7f1020;
+      --red-800: #a31328;
+      --red-700: #c41632;
+      --red-600: #d92743;
+      --red-100: #fde9ed;
+      --red-050: #fff5f7;
+      --ink-950: #16181d;
+      --ink-800: #2b2f38;
+      --ink-700: #434955;
+      --ink-600: #5f6673;
+      --ink-500: #7c8492;
+      --line: #e3e6eb;
+      --line-strong: #d2d6dd;
+      --paper: #ffffff;
+      --canvas: #f5f6f8;
+      --success: #147a54;
+      --success-bg: #eaf8f2;
+      --warning: #a15c00;
+      --warning-bg: #fff6df;
+      --info: #245f9e;
+      --info-bg: #edf5ff;
+      --shadow-sm: 0 2px 10px rgba(25, 28, 35, 0.06);
+      --shadow-md: 0 14px 40px rgba(25, 28, 35, 0.10);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --max-width: 1260px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink-950);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(196, 22, 50, .06), transparent 28%),
+        linear-gradient(180deg, #fff 0, var(--canvas) 680px);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    button, input { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    strong { font-weight: 750; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(210, 214, 221, .86);
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      width: min(var(--max-width), calc(100% - 32px));
+      min-height: 68px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 280px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      position: relative;
+      border-radius: 9px;
+      background: linear-gradient(145deg, var(--red-600), var(--red-900));
+      box-shadow: 0 8px 20px rgba(196, 22, 50, .22);
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      background: #fff;
+      border-radius: 2px;
+    }
+    .brand-mark::before { width: 18px; height: 4px; left: 8px; top: 9px; }
+    .brand-mark::after { width: 12px; height: 4px; left: 8px; top: 20px; }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .topnav a {
+      padding: 9px 13px;
+      border-radius: 9px;
+      color: var(--ink-700);
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .topnav a:hover, .topnav a.active { background: var(--red-050); color: var(--red-700); }
+
+    .toolbar { display: flex; gap: 8px; }
+    .tool-btn {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink-700);
+      padding: 8px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .tool-btn:hover { border-color: var(--red-600); color: var(--red-700); }
+
+    .page {
+      width: min(var(--max-width), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 88px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 460px;
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 54px;
+      align-items: center;
+      padding: 64px 66px;
+      border-radius: var(--radius-lg);
+      color: #fff;
+      background:
+        linear-gradient(120deg, rgba(127,16,32,.96), rgba(196,22,50,.92)),
+        #9b1428;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 50%;
+      right: -150px;
+      top: -165px;
+      box-shadow: 0 0 0 65px rgba(255,255,255,.035), 0 0 0 130px rgba(255,255,255,.025);
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(36px, 5vw, 64px);
+      line-height: 1.12;
+      letter-spacing: -.035em;
+    }
+
+    .hero-lead {
+      max-width: 760px;
+      margin: 24px 0 0;
+      color: rgba(255,255,255,.86);
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .hero-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+    .hero-tag {
+      padding: 8px 12px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 9px;
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .hero-map {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      gap: 10px;
+    }
+    .hero-map-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 13px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.17);
+      background: rgba(255,255,255,.09);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .hero-map-num {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--red-800);
+      font-weight: 850;
+      font-size: 20px;
+    }
+    .hero-map-item b { display: block; font-size: 16px; }
+    .hero-map-item span { display: block; color: rgba(255,255,255,.72); font-size: 13px; }
+
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      margin: 22px 0 54px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .meta-item { padding: 17px 20px; background: #fff; }
+    .meta-label { display: block; color: var(--ink-500); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .meta-value { display: block; margin-top: 3px; color: var(--ink-800); font-size: 14px; font-weight: 700; }
+
+    .section { scroll-margin-top: 92px; margin-top: 78px; }
+    .section-head {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 30px;
+    }
+    .section-index {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      color: var(--red-700);
+      background: var(--red-050);
+      border: 1px solid var(--red-100);
+      font-size: 26px;
+      font-weight: 850;
+    }
+    .section-eyebrow { margin: 1px 0 5px; color: var(--red-700); font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .section h2 { margin: 0; font-size: clamp(28px, 3vw, 42px); line-height: 1.22; letter-spacing: -.02em; }
+    .section-intro { max-width: 900px; margin: 12px 0 0; color: var(--ink-600); font-size: 16px; }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .statement {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 25px;
+      align-items: center;
+      padding: 28px 32px;
+      border-left: 5px solid var(--red-700);
+    }
+    .statement-label { color: var(--red-700); font-weight: 850; text-align: center; }
+    .statement-text { font-size: 21px; line-height: 1.65; font-weight: 720; }
+
+    .responsibility-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .responsibility-card { padding: 24px; }
+    .responsibility-card .role {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      border-radius: 13px;
+      background: var(--red-050);
+      color: var(--red-700);
+      font-weight: 850;
+    }
+    .responsibility-card h3 { margin: 0 0 7px; font-size: 18px; }
+    .responsibility-card p { margin: 0; color: var(--ink-600); font-size: 14px; }
+    .responsibility-card.primary { border-color: rgba(196,22,50,.30); box-shadow: 0 12px 30px rgba(196,22,50,.09); }
+
+    .subhead { margin: 48px 0 20px; }
+    .subhead h3 { margin: 0; font-size: 24px; }
+    .subhead p { margin: 6px 0 0; color: var(--ink-600); }
+
+    .dimension-formula {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 22px;
+      margin-bottom: 18px;
+      background: linear-gradient(180deg, #fff, #fafbfc);
+    }
+    .formula-chip {
+      padding: 10px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: #fff;
+      font-weight: 740;
+      font-size: 14px;
+    }
+    .formula-op { color: var(--red-700); font-weight: 900; font-size: 20px; }
+    .formula-result { border-color: var(--red-600); color: #fff; background: var(--red-700); }
+
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 13px;
+    }
+    .dimension-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 210px;
+      padding: 21px;
+    }
+    .dimension-card::after {
+      content: attr(data-num);
+      position: absolute;
+      right: 9px;
+      bottom: -25px;
+      color: rgba(196,22,50,.055);
+      font-size: 94px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .dimension-card h4 { position: relative; z-index: 1; margin: 0 0 13px; font-size: 17px; }
+    .dimension-card ul { position: relative; z-index: 1; margin: 0; padding-left: 18px; color: var(--ink-600); font-size: 13px; }
+    .dimension-card li { margin: 5px 0; }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .insight-card { padding: 24px; }
+    .insight-card h4 { margin: 0 0 10px; font-size: 17px; }
+    .insight-card ul { margin: 0; padding-left: 20px; color: var(--ink-600); }
+    .insight-card li { margin: 7px 0; }
+    .insight-card.warning { background: var(--warning-bg); border-color: #f2d593; }
+    .insight-card.success { background: var(--success-bg); border-color: #bce8d8; }
+
+    .decision-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f9fafb; color: var(--ink-700); font-size: 13px; font-weight: 800; }
+    td { color: var(--ink-700); font-size: 14px; }
+    tr:last-child td { border-bottom: 0; }
+
+    .review-note {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 16px;
+      align-items: start;
+      margin-top: 20px;
+      padding: 22px;
+      background: var(--info-bg);
+      border: 1px solid #cde2fa;
+      border-radius: 14px;
+    }
+    .review-note-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: var(--info);
+      background: #fff;
+      font-weight: 900;
+    }
+    .review-note h4 { margin: 0 0 4px; color: var(--info); }
+    .review-note p { margin: 0; color: #365a7d; }
+
+    .flow-shell { padding: 28px; }
+    .flow-title-row { display: flex; align-items: start; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .flow-title-row h3 { margin: 0; font-size: 23px; }
+    .flow-title-row p { margin: 5px 0 0; color: var(--ink-600); }
+
+    .flow-track {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(125px, 1fr));
+      gap: 22px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding: 8px 4px 20px;
+    }
+    .flow-step {
+      min-width: 126px;
+      position: relative;
+      padding: 18px 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(27,31,38,.05);
+    }
+    .flow-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      width: 23px;
+      height: 2px;
+      right: -23px;
+      top: 50%;
+      background: linear-gradient(90deg, var(--red-600), #e3a7b1);
+    }
+    .flow-step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      right: -23px;
+      top: calc(50% - 4px);
+      border-left: 7px solid var(--red-600);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+    .flow-step-num { color: var(--red-700); font-size: 12px; font-weight: 850; letter-spacing: .08em; }
+    .flow-step b { display: block; margin: 5px 0; font-size: 15px; }
+    .flow-step span { display: block; color: var(--ink-600); font-size: 12px; line-height: 1.5; }
+    .flow-step.emphasis { border-color: rgba(196,22,50,.42); background: var(--red-050); }
+
+    .flow-loop {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px dashed #e4a2ae;
+      background: var(--red-050);
+    }
+    .loop-item { text-align: center; color: var(--ink-700); font-size: 13px; font-weight: 700; }
+    .loop-arrow { color: var(--red-700); text-align: center; font-weight: 900; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 30px 0 18px; }
+    .tab-btn {
+      padding: 10px 15px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink-700);
+      cursor: pointer;
+      font-weight: 750;
+      font-size: 14px;
+    }
+    .tab-btn:hover, .tab-btn.active { border-color: var(--red-700); color: #fff; background: var(--red-700); }
+    .flow-view { display: none; }
+    .flow-view.active { display: block; animation: fadeIn .2s ease-out; }
+    @keyframes fadeIn { from { opacity: .3; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .scenario-layout { display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; }
+    .scenario-summary, .scenario-steps { padding: 24px; }
+    .scenario-summary h4, .scenario-steps h4 { margin: 0 0 14px; font-size: 18px; }
+    .scenario-summary .label { display: block; color: var(--ink-500); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .scenario-summary .big { margin: 5px 0 16px; font-size: 25px; font-weight: 850; color: var(--red-700); }
+    .scenario-summary ul, .scenario-steps ol { margin: 0; padding-left: 21px; color: var(--ink-600); }
+    .scenario-summary li, .scenario-steps li { margin: 8px 0; }
+
+    .control-points {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .control-card { padding: 20px; }
+    .control-card small { color: var(--red-700); font-weight: 850; }
+    .control-card h4 { margin: 5px 0 7px; font-size: 16px; }
+    .control-card p { margin: 0; color: var(--ink-600); font-size: 13px; }
+
+    .function-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .function-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-btn {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink-700);
+      padding: 8px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .filter-btn.active, .filter-btn:hover { color: var(--red-700); border-color: var(--red-600); background: var(--red-050); }
+
+    .function-map {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .layer-card { padding: 22px; }
+    .layer-card h3 { margin: 0 0 6px; font-size: 18px; }
+    .layer-card p { margin: 0; color: var(--ink-600); font-size: 13px; }
+    .layer-card .layer-count { display: inline-flex; margin-top: 15px; padding: 4px 8px; border-radius: 999px; color: var(--red-700); background: var(--red-050); font-size: 12px; font-weight: 800; }
+
+    .function-list { display: grid; gap: 12px; }
+    .function-card {
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .function-card[hidden] { display: none; }
+    .function-card summary {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 58px 1fr 24px;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 22px;
+      cursor: pointer;
+    }
+    .function-card summary::-webkit-details-marker { display: none; }
+    .function-num {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: var(--red-050);
+      color: var(--red-700);
+      font-weight: 900;
+    }
+    .function-title h3 { margin: 0; font-size: 18px; }
+    .function-title p { margin: 3px 0 0; color: var(--ink-600); font-size: 13px; }
+    .chevron { color: var(--ink-500); font-weight: 900; transition: transform .2s; }
+    details[open] .chevron { transform: rotate(90deg); color: var(--red-700); }
+    .function-body {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      padding: 0 22px 22px 96px;
+    }
+    .function-copy { color: var(--ink-700); }
+    .function-copy p { margin: 0 0 14px; }
+    .function-copy ul { margin: 0; padding-left: 20px; color: var(--ink-600); }
+    .function-copy li { margin: 6px 0; }
+    .acceptance {
+      padding: 17px 18px;
+      border-radius: 12px;
+      background: #f8f9fb;
+      border: 1px solid var(--line);
+    }
+    .acceptance h4 { margin: 0 0 10px; color: var(--red-700); font-size: 14px; }
+    .acceptance ul { margin: 0; padding-left: 19px; color: var(--ink-700); font-size: 13px; }
+    .acceptance li { margin: 6px 0; }
+
+    .mvp-wrap {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .mvp-core { padding: 28px; background: linear-gradient(145deg, var(--red-900), var(--red-700)); color: #fff; }
+    .mvp-core h3 { margin: 0 0 14px; font-size: 25px; }
+    .mvp-core blockquote { margin: 0; padding: 0; color: rgba(255,255,255,.86); font-size: 17px; line-height: 1.8; }
+    .mvp-core .stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .mvp-core .stack span { padding: 6px 9px; border-radius: 8px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); font-size: 12px; font-weight: 700; }
+    .mvp-scope { padding: 28px; }
+    .scope-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .scope-columns h4 { margin: 0 0 9px; }
+    .scope-columns ul { margin: 0; padding-left: 19px; color: var(--ink-600); font-size: 13px; }
+    .scope-columns li { margin: 6px 0; }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .metric-card { padding: 18px; text-align: center; }
+    .metric-value { display: block; color: var(--red-700); font-size: 27px; font-weight: 900; }
+    .metric-label { display: block; margin-top: 2px; color: var(--ink-600); font-size: 12px; }
+
+    .footer {
+      margin-top: 80px;
+      padding: 34px 0 10px;
+      border-top: 1px solid var(--line);
+      color: var(--ink-500);
+      font-size: 13px;
+    }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+
+    .back-top {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 40;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 13px;
+      color: #fff;
+      background: var(--red-700);
+      box-shadow: 0 10px 28px rgba(196,22,50,.26);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: .2s;
+    }
+    .back-top.show { opacity: 1; transform: none; pointer-events: auto; }
+
+    @media (max-width: 1080px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-map { grid-template-columns: repeat(3, 1fr); }
+      .dimension-grid { grid-template-columns: repeat(3, 1fr); }
+      .flow-track { grid-template-columns: repeat(7, 150px); }
+      .metric-grid { grid-template-columns: repeat(3, 1fr); }
+      .topnav { display: none; }
+      .brand { flex: 1; }
+    }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 22px, var(--max-width)); padding-top: 16px; }
+      .topbar-inner { width: calc(100% - 22px); min-height: 58px; }
+      .brand { min-width: auto; font-size: 14px; }
+      .toolbar .tool-btn:first-child { display: none; }
+      .hero { min-height: auto; padding: 36px 24px; border-radius: 18px; }
+      .hero h1 { font-size: 37px; }
+      .hero-lead { font-size: 15px; }
+      .hero-map { grid-template-columns: 1fr; }
+      .meta-strip { grid-template-columns: 1fr 1fr; }
+      .section { margin-top: 60px; }
+      .section-head { grid-template-columns: 58px 1fr; gap: 14px; }
+      .section-index { width: 54px; height: 54px; border-radius: 15px; font-size: 20px; }
+      .statement { grid-template-columns: 1fr; gap: 8px; padding: 22px; }
+      .statement-label { text-align: left; }
+      .statement-text { font-size: 18px; }
+      .responsibility-grid, .insight-grid, .scenario-layout, .control-points, .function-map, .mvp-wrap, .scope-columns { grid-template-columns: 1fr; }
+      .dimension-grid { grid-template-columns: 1fr; }
+      .flow-loop { grid-template-columns: 1fr; }
+      .loop-arrow { transform: rotate(90deg); }
+      .function-body { grid-template-columns: 1fr; padding: 0 18px 18px; }
+      .function-card summary { grid-template-columns: 46px 1fr 20px; padding: 16px; gap: 11px; }
+      .function-num { width: 42px; height: 42px; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .footer-inner { flex-direction: column; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .topbar, .back-top, .toolbar, .function-toolbar { display: none !important; }
+      .page { width: 100%; padding: 0; }
+      .hero { box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .panel, .function-card { break-inside: avoid; box-shadow: none; }
+      .section { break-before: page; }
+      .section:first-of-type { break-before: auto; }
+      .flow-track { overflow: visible; grid-template-columns: repeat(4, 1fr); }
+      .flow-step::after, .flow-step::before { display: none; }
+      details { display: block; }
+      details .function-body { display: grid !important; }
+    }
+
+    .strategy-map { margin-top: 24px; display: grid; gap: 18px; }
+    .strategy-legend { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .legend-pill { border:1px solid var(--line); background:#fff; border-radius:999px; padding:7px 12px; font-size:12px; color:var(--ink-700); }
+    .legend-pill strong { color:var(--red-800); }
+    .engineering-lanes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .engineering-lane { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 10px 25px rgba(31,39,52,.05); }
+    .lane-head { padding:16px 18px; background:linear-gradient(135deg,var(--red-050),#fff); border-bottom:1px solid var(--line); }
+    .lane-head span { display:block; font-size:11px; font-weight:800; letter-spacing:.09em; color:var(--red-700); text-transform:uppercase; }
+    .lane-head h4 { margin:5px 0 4px; font-size:18px; }
+    .lane-head p { margin:0; font-size:12px; color:var(--ink-600); }
+    .lane-body { padding:14px; display:grid; gap:9px; }
+    .lane-step { position:relative; padding:11px 12px 11px 34px; border-radius:12px; background:var(--ink-050); font-size:12px; line-height:1.55; color:var(--ink-700); }
+    .lane-step::before { content:attr(data-no); position:absolute; left:10px; top:11px; width:17px; height:17px; border-radius:50%; display:grid; place-items:center; background:var(--red-700); color:#fff; font-size:9px; font-weight:800; }
+    .lane-output { margin-top:2px; padding:11px 12px; border-radius:12px; border:1px dashed var(--red-300,#ef9aaa); background:var(--red-050); font-size:12px; color:var(--red-900); font-weight:700; }
+    .risk-overlay { display:grid; grid-template-columns:170px repeat(3,minmax(0,1fr)); border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; }
+    .risk-overlay > div { padding:14px 15px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); font-size:12px; line-height:1.55; }
+    .risk-overlay > div:nth-child(4n) { border-right:0; }
+    .risk-overlay > div:nth-last-child(-n+4) { border-bottom:0; }
+    .risk-corner { background:var(--ink-950); color:#fff; font-weight:800; }
+    .risk-col-head { background:var(--ink-050); font-weight:800; color:var(--ink-800); }
+    .risk-row-head { font-weight:800; color:var(--red-800); background:var(--red-050); }
+    .risk-cell strong { display:block; color:var(--ink-900); margin-bottom:4px; }
+    .decision-examples { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .decision-card { border-left:4px solid var(--red-700); border-radius:12px; background:#fff; border-top:1px solid var(--line); border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:14px 15px; }
+    .decision-card b { display:block; margin-bottom:5px; font-size:13px; }
+    .decision-card p { margin:0; font-size:12px; line-height:1.6; color:var(--ink-600); }
+    .branch-note { margin-top:18px; padding:14px 16px; border-radius:14px; background:var(--ink-950); color:#fff; font-size:13px; line-height:1.7; }
+    .branch-note strong { color:#ffd8df; }
+    @media (max-width: 900px) {
+      .engineering-lanes,.decision-examples { grid-template-columns:1fr; }
+      .risk-overlay { grid-template-columns:125px repeat(3,minmax(180px,1fr)); overflow-x:auto; }
+    }
+  
+.topic-triad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px}.topic-card{position:relative;overflow:hidden;padding:25px}.topic-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--red-700)}.topic-card.cloud:before{background:var(--info)}.topic-card.harness:before{background:var(--ink-950)}.topic-no{display:inline-grid;place-items:center;min-width:38px;height:30px;padding:0 9px;border-radius:999px;background:var(--red-050);color:var(--red-700);font-size:12px;font-weight:850}.topic-card.cloud .topic-no{background:var(--info-bg);color:var(--info)}.topic-card.harness .topic-no{background:#eef0f3;color:var(--ink-800)}.topic-card h3{margin:14px 0 7px}.topic-card p{color:var(--ink-600);font-size:14px}.topic-card ul{margin:15px 0 0;padding-left:19px;color:var(--ink-700);font-size:13px}.two-axis{display:grid;grid-template-columns:1fr 55px 1fr;align-items:center;padding:22px}.axis-arrow{font-size:28px;font-weight:900;color:var(--red-700);text-align:center}.axis-title{font-weight:800;margin-bottom:12px}.axis-items{display:grid;gap:9px}.axis-items div{display:grid;grid-template-columns:92px 1fr;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--canvas)}.axis-items span{color:var(--ink-600);font-size:13px}.topic-mainline{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr;align-items:stretch;gap:0;margin-top:20px}.mainline-stage{min-height:145px;padding:16px 13px;border:1px solid var(--line);border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:7px}.mainline-stage span{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--red-050);color:var(--red-700);font-weight:850;font-size:12px}.mainline-stage b{font-size:14px;line-height:1.4}.mainline-stage small{color:var(--ink-600);font-size:12px;line-height:1.55}.mainline-stage.generate,.mainline-stage.cloud{border-color:#efb6c1;background:linear-gradient(180deg,#fff,var(--red-050))}.mainline-stage.verify,.mainline-stage.gate{background:linear-gradient(180deg,#fff,var(--info-bg))}.mainline-arrow{display:grid;place-items:center;color:var(--red-600);font-weight:900;font-size:20px}.concise-lanes .lane-body{min-height:245px}.mainline-shell{overflow:visible}@media(max-width:1100px){.topic-mainline{grid-template-columns:1fr}.mainline-arrow{transform:rotate(90deg);height:28px}.topic-triad{grid-template-columns:1fr}.two-axis{grid-template-columns:1fr}.axis-arrow{transform:rotate(90deg)}}
+
+
+    :root { --ink-050:#f8f9fb; --red-300:#ef9aaa; }
+    .concept-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-top:22px; }
+    .concept-card { position:relative; overflow:hidden; padding:24px; min-height:235px; }
+    .concept-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--red-700); }
+    .concept-card.local::before { background:var(--info); }
+    .concept-card.trace::before { background:var(--warning); }
+    .concept-card.knowledge::before { background:var(--success); }
+    .concept-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:var(--red-050); color:var(--red-700); font-weight:900; }
+    .concept-card.local .concept-icon { background:var(--info-bg); color:var(--info); }
+    .concept-card.trace .concept-icon { background:var(--warning-bg); color:var(--warning); }
+    .concept-card.knowledge .concept-icon { background:var(--success-bg); color:var(--success); }
+    .concept-card h3 { margin:16px 0 8px; font-size:18px; }
+    .concept-card p { margin:0; color:var(--ink-600); font-size:14px; }
+    .concept-card ul { margin:14px 0 0; padding-left:18px; color:var(--ink-700); font-size:13px; }
+    .concept-card li { margin:6px 0; }
+
+    .system-map { display:grid; grid-template-columns:1fr 170px 1fr; gap:16px; align-items:stretch; padding:24px; }
+    .system-zone { border:1px solid var(--line); border-radius:16px; padding:22px; background:#fff; }
+    .system-zone.cloud { border-top:5px solid var(--red-700); }
+    .system-zone.local { border-top:5px solid var(--info); }
+    .system-zone h3 { margin:0 0 5px; font-size:20px; }
+    .system-zone > p { margin:0 0 16px; color:var(--ink-600); font-size:13px; }
+    .zone-items { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .zone-item { padding:10px 11px; border-radius:10px; background:var(--canvas); border:1px solid var(--line); font-size:12px; color:var(--ink-700); }
+    .system-bridge { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; text-align:center; }
+    .bridge-pill { width:100%; padding:10px 9px; border-radius:11px; border:1px solid var(--red-100); background:var(--red-050); color:var(--red-800); font-size:12px; font-weight:800; }
+    .bridge-arrow { color:var(--red-700); font-size:24px; font-weight:900; }
+
+    .consistency-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .consistency-card { padding:18px; min-height:145px; }
+    .consistency-card small { color:var(--red-700); font-weight:850; letter-spacing:.08em; }
+    .consistency-card h4 { margin:6px 0 7px; font-size:16px; }
+    .consistency-card p { margin:0; color:var(--ink-600); font-size:12px; }
+
+    .process-track { display:grid; grid-template-columns:repeat(9,minmax(135px,1fr)); gap:22px; overflow-x:auto; padding:10px 4px 22px; }
+    .process-step { min-width:135px; position:relative; padding:18px 15px; border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:0 6px 20px rgba(27,31,38,.05); }
+    .process-step:not(:last-child)::after { content:""; position:absolute; width:23px; height:2px; right:-23px; top:50%; background:linear-gradient(90deg,var(--red-600),#e3a7b1); }
+    .process-step:not(:last-child)::before { content:""; position:absolute; z-index:2; right:-23px; top:calc(50% - 4px); border-left:7px solid var(--red-600); border-top:4px solid transparent; border-bottom:4px solid transparent; }
+    .process-step .no { color:var(--red-700); font-size:12px; font-weight:850; letter-spacing:.08em; }
+    .process-step b { display:block; margin:6px 0; font-size:15px; }
+    .process-step span { color:var(--ink-600); font-size:12px; line-height:1.55; }
+    .process-step.cloud { background:linear-gradient(180deg,#fff,var(--red-050)); border-color:#efb6c1; }
+    .process-step.local { background:linear-gradient(180deg,#fff,var(--info-bg)); border-color:#cde2fa; }
+    .process-step.review { background:linear-gradient(180deg,#fff,var(--warning-bg)); border-color:#f2d593; }
+    .process-step.asset { background:linear-gradient(180deg,#fff,var(--success-bg)); border-color:#bce8d8; }
+
+    .swimlane { overflow-x:auto; border:1px solid var(--line); border-radius:16px; background:#fff; }
+    .swimlane-grid { min-width:1050px; display:grid; grid-template-columns:135px repeat(7,1fr); }
+    .swimlane-grid > div { min-height:78px; padding:12px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); font-size:12px; display:flex; align-items:center; }
+    .swimlane-grid > div:nth-child(8n) { border-right:0; }
+    .swimlane-grid > div:nth-last-child(-n+8) { border-bottom:0; }
+    .lane-corner { background:var(--ink-950); color:#fff; font-weight:850; }
+    .lane-head-cell { background:var(--ink-050); color:var(--ink-800); font-weight:800; justify-content:center; text-align:center; }
+    .lane-name { font-weight:850; color:var(--red-800); background:var(--red-050); }
+    .lane-name.local { color:var(--info); background:var(--info-bg); }
+    .lane-name.data { color:var(--warning); background:var(--warning-bg); }
+    .lane-name.human { color:var(--success); background:var(--success-bg); }
+    .lane-action { margin:0 auto; width:100%; padding:9px 8px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink-700); text-align:center; line-height:1.45; }
+    .lane-action.strong { border-color:#efb6c1; background:var(--red-050); color:var(--red-800); font-weight:750; }
+
+    .evidence-chain { display:grid; grid-template-columns:1fr 36px 1fr 36px 1fr 36px 1fr; align-items:stretch; gap:0; }
+    .chain-card { padding:20px; text-align:center; }
+    .chain-card b { display:block; margin-bottom:6px; font-size:16px; }
+    .chain-card span { color:var(--ink-600); font-size:12px; }
+    .chain-arrow { display:grid; place-items:center; color:var(--red-700); font-size:22px; font-weight:900; }
+
+    .checkpoint-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+    .checkpoint-card { padding:18px; }
+    .checkpoint-card small { color:var(--red-700); font-weight:850; }
+    .checkpoint-card h4 { margin:5px 0 7px; font-size:15px; }
+    .checkpoint-card p { margin:0; color:var(--ink-600); font-size:12px; }
+
+    .review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .review-question { padding:20px; border-left:4px solid var(--red-700); }
+    .review-question b { display:block; margin-bottom:6px; }
+    .review-question span { color:var(--ink-600); font-size:13px; }
+
+    .tag-row { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+    .mini-tag { padding:5px 8px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink-600); font-size:11px; font-weight:700; }
+
+    @media (max-width:1080px) {
+      .concept-grid { grid-template-columns:repeat(2,1fr); }
+      .system-map { grid-template-columns:1fr; }
+      .system-bridge { flex-direction:row; }
+      .bridge-arrow { transform:rotate(90deg); }
+      .consistency-grid { grid-template-columns:repeat(2,1fr); }
+      .checkpoint-grid { grid-template-columns:repeat(3,1fr); }
+    }
+    @media (max-width:760px) {
+      .concept-grid,.consistency-grid,.checkpoint-grid,.review-grid { grid-template-columns:1fr; }
+      .system-bridge { flex-direction:column; }
+      .bridge-arrow { transform:none; }
+      .zone-items { grid-template-columns:1fr; }
+      .evidence-chain { grid-template-columns:1fr; }
+      .chain-arrow { transform:rotate(90deg); height:30px; }
+    }
+    @page { size: A4 landscape; margin: 12mm; }
+    @media print {
+      .hero { min-height:auto; grid-template-columns:1fr; gap:22px; padding:34px 38px; }
+      .hero::before { display:none; }
+      .hero-map { grid-template-columns:repeat(3,1fr); }
+      .hero h1 { font-size:38px; }
+      .hero-lead { font-size:14px; margin-top:16px; }
+      .hero-tags { margin-top:18px; }
+      .hero-map-item { padding:11px; }
+      .concept-grid,.consistency-grid,.checkpoint-grid { grid-template-columns:repeat(2,1fr); }
+      .process-track { grid-template-columns:repeat(3,1fr); overflow:visible; }
+      .process-step::after,.process-step::before { display:none; }
+      .swimlane { overflow:visible; }
+    }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a aria-label="返回顶部" class="brand" href="#top"><span aria-hidden="true" class="brand-mark"></span><span>AISF / Harness 专题审阅</span></a>
+    <nav aria-label="页面目录" class="topnav">
+      <a href="#understanding">01 理解</a>
+      <a href="#process">02 流程</a>
+      <a href="#functions">03 功能</a>
+      <a href="#review">审查重点</a>
+    </nav>
+    <div class="toolbar">
+      <button class="tool-btn" id="toggleAll">展开全部功能</button>
+      <button class="tool-btn" onclick="window.print()">打印 / 导出PDF</button>
+    </div>
+  </div>
+</header>
+
+<main class="page" id="top">
+  <section aria-labelledby="hero-title" class="hero">
+    <div>
+      <span class="hero-kicker">领导专题 · 场景审阅可视化版</span>
+      <h1 id="hero-title">生成与智能编码一致的<br/>软件工程文档</h1>
+      <p class="hero-lead">以<strong>云端治理 Agent</strong>连接管理人员，以<strong>本地研发 Agent 工作流</strong>执行真实研发，通过<strong>全过程 Trace、人工卡点和工程证据</strong>，持续形成与软件真实演进一致的工程文档和项目知识。</p>
+      <div class="hero-tags">
+        <span class="hero-tag">云端规划与治理</span>
+        <span class="hero-tag">本地 Agent 工作流</span>
+        <span class="hero-tag">全过程 Trace</span>
+        <span class="hero-tag">人机协同卡点</span>
+        <span class="hero-tag">文档双向一致性</span>
+        <span class="hero-tag">项目知识沉淀</span>
+      </div>
+    </div>
+    <div aria-label="审阅重点" class="hero-map">
+      <a class="hero-map-item" href="#understanding"><span class="hero-map-num">1</span><span><b>理解</b><span>这个场景到底解决什么，文档处于什么位置</span></span></a>
+      <a class="hero-map-item" href="#process"><span class="hero-map-num">2</span><span><b>流程</b><span>云端规划、本地执行、回传审查和沉淀如何闭环</span></span></a>
+      <a class="hero-map-item" href="#functions"><span class="hero-map-num">3</span><span><b>功能</b><span>八个模块如何支撑管理、执行、审查和资产化</span></span></a>
+    </div>
+  </section>
+
+  <section aria-label="专题信息" class="meta-strip">
+    <div class="meta-item"><span class="meta-label">场景定位</span><span class="meta-value">云端治理 × 本地智能研发</span></div>
+    <div class="meta-item"><span class="meta-label">核心主线</span><span class="meta-value">规划 → 执行 → 审查 → 沉淀</span></div>
+    <div class="meta-item"><span class="meta-label">可信基础</span><span class="meta-value">Trace → 事实 → Evidence</span></div>
+    <div class="meta-item"><span class="meta-label">最终成果</span><span class="meta-value">软件与文档共同基线</span></div>
+  </section>
+
+  <section class="section" id="understanding">
+    <div class="section-head">
+      <div class="section-index">01</div>
+      <div><p class="section-eyebrow">Understanding</p><h2>先看理解：不是“编码后补文档”，而是研发治理闭环</h2><p class="section-intro">文档既是云端确认并下发的研发约束，也是本地智能编码的伴生产物、云端人工审查的结构化载体，以及最终进入项目知识和正式基线的长期资产。</p></div>
+    </div>
+
+    <div class="panel statement">
+      <div class="statement-label">一句话理解</div>
+      <div class="statement-text">云端负责规划、治理、审查和沉淀，本地负责基于受控上下文执行研发；全过程产生的交互、代码、测试、文档和证据统一回流云端，形成与软件真实状态一致的工程文档。</div>
+    </div>
+
+    <div class="concept-grid">
+      <article class="panel concept-card cloud"><div class="concept-icon">云</div><h3>云端治理 Agent</h3><p>面向管理人员组织项目全局，负责需求、任务、规则、状态和人工决策。</p><ul><li>辅助需求分析和验收项确认</li><li>任务拆分、依赖与人工卡点</li><li>阶段预审、问题反馈和状态推进</li></ul></article>
+      <article class="panel concept-card local"><div class="concept-icon">端</div><h3>本地研发 Agent 工作流</h3><p>在真实代码、工具链和网络环境中完成研发，确保产出可运行、可验证。</p><ul><li>获取 Context Package</li><li>多 Agent 编码、测试和审阅</li><li>接收云端意见并整改复验</li></ul></article>
+      <article class="panel concept-card trace"><div class="concept-icon">迹</div><h3>Trace 与工程证据</h3><p>Trace 还原过程，Evidence 证明结论，避免只相信 Agent 的“已完成”描述。</p><ul><li>交互、工具、文件和命令留痕</li><li>提取工程事实并关联版本</li><li>形成实现、验证和审批证据</li></ul></article>
+      <article class="panel concept-card knowledge"><div class="concept-icon">知</div><h3>文档与项目知识</h3><p>将已确认的需求、设计、实现、测试和审查结论固化，并反哺后续 Agent。</p><ul><li>章节级增量生成与一致性校核</li><li>软件与文档共同形成基线</li><li>经验经审核后进入项目知识</li></ul></article>
+    </div>
+
+    <div class="subhead"><h3>云端与本地端如何分工</h3><p>边界原则是：云端掌握权威状态和治理决策，本地掌握真实代码环境和研发动作。</p></div>
+    <div class="panel system-map">
+      <div class="system-zone cloud"><h3>云端：管全局、管规则、管决策</h3><p>面向管理人员，负责跨任务、跨阶段的治理。</p><div class="zone-items">
+        <div class="zone-item">需求分析与验收项</div><div class="zone-item">任务规划与阶段推进</div>
+        <div class="zone-item">上下文与工作流配置</div><div class="zone-item">Trace 与产物汇聚</div>
+        <div class="zone-item">Agent 预审与人工卡点</div><div class="zone-item">文档、基线与知识管理</div>
+      </div></div>
+      <div class="system-bridge"><div class="bridge-pill">Context Package 下发</div><div class="bridge-arrow">⇄</div><div class="bridge-pill">Trace / Artifact / Evidence 回传</div></div>
+      <div class="system-zone local"><h3>本地：做研发、做验证、产事实</h3><p>面向研发用户，在真实环境执行项目工作流。</p><div class="zone-items">
+        <div class="zone-item">项目与任务同步</div><div class="zone-item">主 Agent / 子 Agent 协作</div>
+        <div class="zone-item">代码修改与本地审阅</div><div class="zone-item">测试、构建与运行验证</div>
+        <div class="zone-item">过程 Trace 采集</div><div class="zone-item">整改意见接收与复验</div>
+      </div></div>
+    </div>
+
+    <div class="subhead"><h3>“一致”不是文字相似，而是八个维度可相互验证</h3><p>判断标准必须落到同一项目、任务、Harness Run 和软件版本上。</p></div>
+    <div class="consistency-grid">
+      <article class="panel consistency-card"><small>01</small><h4>需求一致性</h4><p>需求与验收项是否有真实实现和验证证据。</p></article>
+      <article class="panel consistency-card"><small>02</small><h4>设计一致性</h4><p>代码结构与关键机制是否符合已批准设计。</p></article>
+      <article class="panel consistency-card"><small>03</small><h4>接口一致性</h4><p>接口参数、返回、错误码与真实实现是否一致。</p></article>
+      <article class="panel consistency-card"><small>04</small><h4>数据一致性</h4><p>实体、表结构、约束和迁移脚本是否一致。</p></article>
+      <article class="panel consistency-card"><small>05</small><h4>测试一致性</h4><p>测试结论是否由真实执行结果和回归证据支撑。</p></article>
+      <article class="panel consistency-card"><small>06</small><h4>状态一致性</h4><p>“已完成、已通过”等状态是否经过门禁或人工确认。</p></article>
+      <article class="panel consistency-card"><small>07</small><h4>过程一致性</h4><p>是否使用正确上下文、工作流和强制人工卡点。</p></article>
+      <article class="panel consistency-card"><small>08</small><h4>版本一致性</h4><p>文档、代码、构建产物和审查结论是否绑定同一基线。</p></article>
+    </div>
+
+    <div class="insight-grid">
+      <article class="panel insight-card success"><h4>建设后的变化</h4><ul><li>从“本地 Agent 自己做、云端只看结果”转为云端可治理、过程可下钻。</li><li>从“用户重复解释项目”转为版本化项目上下文直接供给。</li><li>从“Agent 说完成”转为 Trace、代码、测试和人工确认共同证明。</li><li>从“项目结束补文档”转为文档随编码增量演化。</li></ul></article>
+      <article class="panel insight-card warning"><h4>必须守住的边界</h4><ul><li>云端 Agent 不能替代人工批准和风险接受。</li><li>Trace 不等于正式 Evidence，必须关联结论和版本。</li><li>代码现状不能自动反向定义需求和设计。</li><li>人工编写、已审核和已归档内容不得静默覆盖。</li></ul></article>
+    </div>
+    <div class="review-note"><div class="review-note-icon">审</div><div><h4>领导审阅时重点看什么</h4><p>这个场景的价值不在“自动写了多少字”，而在是否形成云端可治理、本地可执行、过程可还原、结果可验证、问题可闭环、知识可复用的研发机制。</p></div></div>
+  </section>
+
+  <section class="section" id="process">
+    <div class="section-head">
+      <div class="section-index">02</div>
+      <div><p class="section-eyebrow">Process</p><h2>再看流程：从云端需求规划到文档与知识沉淀</h2><p class="section-intro">主流程不是单向“下发任务—返回结果”，而是通过人工卡点和结构化整改形成多轮闭环，直到软件、文档和证据共同满足阶段要求。</p></div>
+    </div>
+
+    <div class="panel flow-shell">
+      <div class="flow-title-row"><div><h3>九步总体业务闭环</h3><p>红色表示云端治理，蓝色表示本地执行，黄色表示审查决策，绿色表示资产固化。</p></div></div>
+      <div class="process-track">
+        <div class="process-step cloud"><span class="no">01</span><b>需求分析</b><span>云端 Agent 辅助形成细化需求、验收项和待确认问题。</span></div>
+        <div class="process-step cloud"><span class="no">02</span><b>任务规划</b><span>拆分任务、依赖、工作流、产物要求和人工卡点。</span></div>
+        <div class="process-step cloud"><span class="no">03</span><b>上下文下发</b><span>形成版本化 Context Package，供本地用户和 Agent 使用。</span></div>
+        <div class="process-step local"><span class="no">04</span><b>本地智能研发</b><span>多 Agent 完成代码、测试、构建、文档候选和本地审阅。</span></div>
+        <div class="process-step local"><span class="no">05</span><b>Trace 与产物回传</b><span>上报交互、工具、文件变化、执行结果和 Artifact。</span></div>
+        <div class="process-step review"><span class="no">06</span><b>云端预审</b><span>提取事实和 Evidence，分析完成度、差异、风险和缺失。</span></div>
+        <div class="process-step review"><span class="no">07</span><b>人工卡点</b><span>管理人员决定通过、退回、补充、暂停或风险接受。</span></div>
+        <div class="process-step cloud"><span class="no">08</span><b>整改与一致性校核</b><span>问题返回本地复验，云端增量更新文档并双向校核。</span></div>
+        <div class="process-step asset"><span class="no">09</span><b>基线与知识</b><span>软件、文档、证据共同固化，经验审核后反哺后续任务。</span></div>
+      </div>
+      <div class="flow-loop"><div class="loop-item">人工退回 / 补充证据</div><div class="loop-arrow">→</div><div class="loop-item">结构化整改意见下发</div><div class="loop-arrow">→</div><div class="loop-item">本地新 Run 整改并重新上报</div></div>
+    </div>
+
+    <div class="subhead"><h3>四条协同泳道</h3><p>同一任务中，云端治理、本地执行、数据证据和人工决策并行推进。</p></div>
+    <div class="swimlane">
+      <div class="swimlane-grid">
+        <div class="lane-corner">责任域 / 阶段</div><div class="lane-head-cell">需求</div><div class="lane-head-cell">规划</div><div class="lane-head-cell">下发</div><div class="lane-head-cell">执行</div><div class="lane-head-cell">预审</div><div class="lane-head-cell">决策整改</div><div class="lane-head-cell">固化复用</div>
+        <div class="lane-name">云端 Agent</div><div><div class="lane-action strong">深化需求、生成验收项</div></div><div><div class="lane-action strong">拆任务、配工作流与卡点</div></div><div><div class="lane-action">生成 Context Package</div></div><div><div class="lane-action">汇聚状态与异常</div></div><div><div class="lane-action strong">完成度、风险和差异预审</div></div><div><div class="lane-action">生成整改意见与复审重点</div></div><div><div class="lane-action strong">生成文档和知识候选</div></div>
+        <div class="lane-name local">本地用户 / Agent</div><div><div class="lane-action">提供技术背景</div></div><div><div class="lane-action">确认执行约束</div></div><div><div class="lane-action">同步项目、任务和上下文</div></div><div><div class="lane-action strong">编码、测试、构建、本地审阅</div></div><div><div class="lane-action">补充说明与产物</div></div><div><div class="lane-action strong">按问题整改并重新验证</div></div><div><div class="lane-action">使用最新知识继续研发</div></div>
+        <div class="lane-name data">Trace / Evidence</div><div><div class="lane-action">需求来源和确认记录</div></div><div><div class="lane-action">任务、规则和上下文版本</div></div><div><div class="lane-action">下发、接收与使用记录</div></div><div><div class="lane-action strong">交互、工具、Diff、测试与构建</div></div><div><div class="lane-action">事实提取、证据候选和缺失项</div></div><div><div class="lane-action">问题处置、复验和风险记录</div></div><div><div class="lane-action strong">正式 Evidence 与基线索引</div></div>
+        <div class="lane-name human">管理人员</div><div><div class="lane-action strong">确认需求和验收项</div></div><div><div class="lane-action">确认任务边界和高风险方案</div></div><div><div class="lane-action">确认关键约束</div></div><div><div class="lane-action">按需干预本地执行</div></div><div><div class="lane-action">查看 Agent 建议和证据</div></div><div><div class="lane-action strong">通过、退回、风险接受</div></div><div><div class="lane-action strong">批准基线和发布知识</div></div>
+      </div>
+    </div>
+
+    <div class="subhead"><h3>过程信息如何变成可用资产</h3><p>这是避免“日志很多但无法审查、文档漂亮但没有依据”的关键转换链。</p></div>
+    <div class="evidence-chain">
+      <article class="panel chain-card"><b>Trace</b><span>记录发生了什么：消息、工具、命令、文件、测试和人工干预。</span></article><div class="chain-arrow">→</div>
+      <article class="panel chain-card"><b>工程事实</b><span>描述真实状态：修改范围、接口变化、测试执行和版本关系。</span></article><div class="chain-arrow">→</div>
+      <article class="panel chain-card"><b>Evidence</b><span>证明具体结论：需求已实现、验收已通过、风险已接受。</span></article><div class="chain-arrow">→</div>
+      <article class="panel chain-card"><b>文档与知识</b><span>固化已确认结论，并为后续任务和 Agent 提供长期上下文。</span></article>
+    </div>
+
+    <div class="subhead"><h3>人工卡点不是最后审批，而是贯穿全过程</h3><p>Agent 负责准备信息和建议，人负责确认业务边界、风险和正式结论。</p></div>
+    <div class="checkpoint-grid">
+      <article class="panel checkpoint-card"><small>卡点 01</small><h4>需求与验收确认</h4><p>目标、边界、验收方式是否准确。</p></article>
+      <article class="panel checkpoint-card"><small>卡点 02</small><h4>任务与方案确认</h4><p>拆分、依赖、技术方案和高风险变化是否合理。</p></article>
+      <article class="panel checkpoint-card"><small>卡点 03</small><h4>本地执行确认</h4><p>计划、范围外修改和高风险工具调用是否允许。</p></article>
+      <article class="panel checkpoint-card"><small>卡点 04</small><h4>阶段成果审查</h4><p>根据 Trace、产物和 Evidence 决定通过或退回。</p></article>
+      <article class="panel checkpoint-card"><small>卡点 05</small><h4>基线与知识批准</h4><p>正式文档、软件版本和项目知识是否可以发布。</p></article>
+    </div>
+  </section>
+
+  <section class="section" id="functions">
+    <div class="section-head">
+      <div class="section-index">03</div>
+      <div><p class="section-eyebrow">Functions</p><h2>最后看功能：八个模块支撑一条可治理研发闭环</h2><p class="section-intro">功能不按“文档生成器”单点展开，而是覆盖云端规划、本地执行、过程证据、人工审查、文档基线和知识复用。</p></div>
+    </div>
+
+    <div class="function-toolbar">
+      <div class="function-filters">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="cloud">云端治理</button>
+        <button class="filter-btn" data-filter="local">本地执行</button>
+        <button class="filter-btn" data-filter="evidence">过程可信</button>
+        <button class="filter-btn" data-filter="asset">文档资产</button>
+      </div>
+    </div>
+
+    <div class="function-map">
+      <article class="panel layer-card"><h3>规划与供给层</h3><p>把管理要求转化为本地可执行的任务、上下文和工作流。</p><span class="layer-count">2 个模块</span></article>
+      <article class="panel layer-card"><h3>执行与治理层</h3><p>完成本地研发、全过程采集、云端预审和人工决策。</p><span class="layer-count">3 个模块</span></article>
+      <article class="panel layer-card"><h3>成果资产层</h3><p>形成可信文档、共同基线和可持续复用的项目知识。</p><span class="layer-count">3 个模块</span></article>
+    </div>
+
+    <div class="function-list">
+      <details class="function-card" data-category="cloud" open>
+        <summary><span class="function-num">01</span><span class="function-title"><h3>云端项目总控与需求任务规划</h3><p>管理人员与云端 Agent 的统一治理入口</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接原始需求、项目现状和历史知识，完成需求分析、验收项确认、任务拆分、依赖编排、人工卡点设置和阶段状态管理。</p><ul><li>云端总控 Agent 对话与项目总览</li><li>需求版本、验收项和待决问题</li><li>任务目标、边界、依赖、产物与验证要求</li><li>暂停、退回、重开、终止和风险管理</li></ul><div class="tag-row"><span class="mini-tag">Requirement</span><span class="mini-tag">Task</span><span class="mini-tag">Gate</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>原始需求可形成已确认需求和验收项。</li><li>每个任务具备明确输入、输出、边界和通过条件。</li><li>正式状态推进必须保留人工或规则依据。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="cloud">
+        <summary><span class="function-num">02</span><span class="function-title"><h3>项目上下文与 Agent 工作流供给</h3><p>将云端权威信息转化为本地可用的 Context Package</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接需求、设计、规则、知识、Agent、Skill 和工具权限，形成可版本化、可裁剪、可追踪的项目上下文包。</p><ul><li>需求、设计、接口和软件基线裁剪</li><li>Agent、Skill、MCP 与工作流配置</li><li>验证命令、必须产物和安全策略</li><li>上下文版本、下发、接收和使用记录</li></ul><div class="tag-row"><span class="mini-tag">Context Package</span><span class="mini-tag">Agent Profile</span><span class="mini-tag">Workflow</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>每次 Harness Run 关联唯一上下文版本。</li><li>上下文变化可提示对进行中任务的影响。</li><li>本地可识别过期、冲突和缺失上下文。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="local">
+        <summary><span class="function-num">03</span><span class="function-title"><h3>本地智能研发与过程审阅</h3><p>在真实代码和工具环境中执行项目 Agent 工作流</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接云端任务和 Context Package，完成主 Agent 与专业 Agent 协作、代码实现、测试构建、本地审阅和整改复验。</p><ul><li>项目同步、工作区校验和 Harness Run 管理</li><li>多 Agent 阶段执行和用户人工干预</li><li>代码 Diff、测试、构建和成果预览</li><li>离线缓存、失败恢复和云端意见接收</li></ul><div class="tag-row"><span class="mini-tag">Harness Run</span><span class="mini-tag">Local Agent</span><span class="mini-tag">Workspace</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>Agent 只能在项目授权的工具和工作流内执行。</li><li>范围外修改和高风险调用必须提示并留痕。</li><li>整改结果能够关联原审查问题和新 Run。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="evidence">
+        <summary><span class="function-num">04</span><span class="function-title"><h3>全过程 Trace 与研发证据管理</h3><p>把本地研发过程转化为可检索、可审查的事实和证据</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>采集用户与 Agent、Agent 与 Agent 的关键交互，以及工具、命令、文件、Git、测试、构建和人工干预记录。</p><ul><li>Trace 检索、关键路径和 Run 回放</li><li>Artifact 管理和工程事实提取</li><li>Evidence 候选、确认、冲突和失效</li><li>脱敏、摘要、引用、缓存和断点补传</li></ul><div class="tag-row"><span class="mini-tag">Trace</span><span class="mini-tag">Artifact</span><span class="mini-tag">Evidence</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>能够按项目、任务、Run、Agent 和时间检索。</li><li>关键完成结论必须关联可访问 Evidence。</li><li>上报失败不得造成过程数据静默丢失。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="evidence">
+        <summary><span class="function-num">05</span><span class="function-title"><h3>云端智能审查与人机协同卡点</h3><p>Agent 先预审，人再基于差异和证据作正式决策</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接任务要求、Trace、Artifact 和 Evidence，形成完成度、验收覆盖、超范围变化、风险和缺失证据的预审结果。</p><ul><li>任务执行摘要和关键 Trace 定位</li><li>代码、测试、文档综合预审</li><li>通过、退回、补充、暂停和风险接受</li><li>结构化整改、责任人、期限和复审</li></ul><div class="tag-row"><span class="mini-tag">Review Task</span><span class="mini-tag">Human Gate</span><span class="mini-tag">Feedback</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>审查视图同时展示任务要求、变化、证据和问题。</li><li>Agent 建议必须显示依据，不替代人工决定。</li><li>退回问题可被本地 Agent 结构化读取。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="asset" open>
+        <summary><span class="function-num">06</span><span class="function-title"><h3>工程文档生成与一致性校核</h3><p>让文档约束编码、随编码演化并接受双向校核</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接需求、设计、代码、测试、Trace、Evidence 和审查结论，完成文档影响分析、章节级增量生成、追溯矩阵和八维一致性校核。</p><ul><li>文档适用性、模板和结构化内容管理</li><li>受影响章节定位和增量修改建议</li><li>内容来源、AI 推断、冲突和失效标注</li><li>人工内容保护、差异合并和证据索引</li></ul><div class="tag-row"><span class="mini-tag">Document Package</span><span class="mini-tag">Traceability</span><span class="mini-tag">Consistency Check</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>文档关键结论 Evidence 关联率达到 100%。</li><li>未受影响章节不得无故重新生成。</li><li>人工、已审核和已归档内容不得静默覆盖。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="asset">
+        <summary><span class="function-num">07</span><span class="function-title"><h3>软件、文档与交付基线管理</h3><p>将软件版本、文档、制品、证据和审查结论共同固化</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>承接已通过审查的软件版本和文档包，完成共同基线、审核批准、归档锁定以及后续偏离和失效检测。</p><ul><li>软件、文档、构建制品和 Evidence 绑定</li><li>校对、技术审核、质量审核和正式批准</li><li>基线锁定、差异对比和版本追溯</li><li>文档、证据和测试结论失效提示</li></ul><div class="tag-row"><span class="mini-tag">Baseline</span><span class="mini-tag">Release</span><span class="mini-tag">Archive</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>每个正式文档包绑定明确软件和构建版本。</li><li>正式基线必须经过人工批准。</li><li>任一基线可还原当时的代码、文档、证据和审查状态。</li></ul></div></div>
+      </details>
+
+      <details class="function-card" data-category="asset">
+        <summary><span class="function-num">08</span><span class="function-title"><h3>项目知识沉淀与复用</h3><p>把已确认经验转化为后续 Agent 可使用的长期上下文</p></span><span class="chevron">›</span></summary>
+        <div class="function-body"><div class="function-copy"><p>从需求解释、设计决策、问题处置、失败经验和审查意见中提取知识候选，经去重、适用性判断和人工审核后发布。</p><ul><li>术语、设计决策、约束和问题方案整理</li><li>知识来源、Evidence、范围和时效管理</li><li>冲突检测、审核发布和版本管理</li><li>Context Package 自动引用和使用反馈</li></ul><div class="tag-row"><span class="mini-tag">Knowledge Entry</span><span class="mini-tag">Decision</span><span class="mini-tag">Reuse</span></div></div><div class="acceptance"><h4>验收重点</h4><ul><li>未审核知识不得成为强制项目约束。</li><li>每条正式知识具有来源、范围和版本。</li><li>后续上下文能够引用当前有效知识并反馈使用结果。</li></ul></div></div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="review">
+    <div class="section-head">
+      <div class="section-index">审</div>
+      <div><p class="section-eyebrow">Review Focus</p><h2>领导快速审查：重点判断六件事</h2><p class="section-intro">以下问题能够帮助快速判断该场景是否真正形成产品闭环，而不是功能堆叠。</p></div>
+    </div>
+    <div class="review-grid">
+      <article class="panel review-question"><b>1. 云端是否真正能够治理本地 Agent？</b><span>是否能下发任务、上下文、工作流和卡点，并获得真实执行过程，而不只是最终总结。</span></article>
+      <article class="panel review-question"><b>2. 本地是否真正基于项目权威上下文研发？</b><span>每次 Run 是否明确使用哪个需求、设计、规则、知识和 Agent 版本。</span></article>
+      <article class="panel review-question"><b>3. Trace 是否能够转化为可信 Evidence？</b><span>是否能证明需求实现、测试通过和风险接受，而不是简单保存大量日志。</span></article>
+      <article class="panel review-question"><b>4. 人工卡点是否有信息支撑并形成反馈闭环？</b><span>管理人员是否能快速看到差异和风险，退回意见是否能被本地 Agent 继续执行。</span></article>
+      <article class="panel review-question"><b>5. 文档是否真正与智能编码双向一致？</b><span>文档能否约束编码，代码变化能否定位并增量更新文档，错误代码是否会被直接包装成设计。</span></article>
+      <article class="panel review-question"><b>6. 项目经验是否经过确认后持续复用？</b><span>知识是否有来源、范围、版本和人工审核，并实际进入后续 Context Package。</span></article>
+    </div>
+
+    <div class="mvp-wrap">
+      <article class="panel mvp-core"><h3>第一阶段建议</h3><blockquote>先用一个存量项目的一次中等复杂度需求变更，跑通“云端需求与任务—本地 Agent 研发—Trace 回传—云端预审—人工退回整改—文档增量更新—共同基线—知识候选”的完整闭环。</blockquote><div class="stack"><span>1 个项目</span><span>1 类需求变更</span><span>1 套本地工作流</span><span>3 类文档</span><span>1 条人工审查闭环</span></div></article>
+      <article class="panel mvp-scope"><div class="scope-columns"><div><h4>优先证明</h4><ul><li>云端和本地上下文一致。</li><li>关键过程可回放、结论有证据。</li><li>人工问题可反馈本地整改。</li><li>文档可按章节增量更新。</li><li>软件和文档版本可绑定。</li></ul></div><div><h4>暂不追求</h4><ul><li>复杂跨项目多 Agent 调度。</li><li>全自动阶段批准。</li><li>全量源码和对话集中存储。</li><li>完整 GJB 文档包自动化。</li><li>组织级知识图谱。</li></ul></div></div></article>
+    </div>
+  </section>
+
+  <footer class="footer"><div class="footer-inner"><span>审阅主线：理解场景本质 → 看云边闭环 → 看八个功能模块</span><span>生成与智能编码一致的软件工程文档 · 领导审阅版</span></div></footer>
+</main>
+<button aria-label="返回顶部" class="back-top" id="backTop">↑</button>
+<script>
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const functionCards = document.querySelectorAll('.function-card');
+  filterButtons.forEach(btn => btn.addEventListener('click', () => {
+    filterButtons.forEach(item => item.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    functionCards.forEach(card => card.hidden = filter !== 'all' && card.dataset.category !== filter);
+  }));
+
+  const toggleAll = document.getElementById('toggleAll');
+  let allOpen = false;
+  toggleAll.addEventListener('click', () => {
+    allOpen = !allOpen;
+    functionCards.forEach(card => card.open = allOpen);
+    toggleAll.textContent = allOpen ? '收起全部功能' : '展开全部功能';
+  });
+
+  const backTop = document.getElementById('backTop');
+  backTop.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+  const navLinks = document.querySelectorAll('.topnav a');
+  const sections = [...document.querySelectorAll('main section[id]')];
+  const updateOnScroll = () => {
+    backTop.classList.toggle('show', window.scrollY > 520);
+    const current = sections.reduce((active, section) => window.scrollY >= section.offsetTop - 130 ? section.id : active, 'top');
+    navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
+  };
+  window.addEventListener('scroll', updateOnScroll, {passive:true});
+  updateOnScroll();
+</script>
+</body>
+</html>

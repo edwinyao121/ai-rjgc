@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Harness 智能研发云边协同平台整合方案，涵盖快速生成与云就绪交付、团队规范化智能开发、工程文档一致性、智能化测试与修复。">
+  <title>Harness 智能研发云边协同平台｜整合审阅版</title>
+  <style>
+    :root {
+      --paper: #f6f7f8;
+      --surface: #ffffff;
+      --surface-alt: #edf1f4;
+      --ink: #111c26;
+      --muted: #5d6b78;
+      --line: #d8dfe5;
+      --line-strong: #bcc8d1;
+      --accent: #b4233d;
+      --accent-dark: #79182a;
+      --accent-soft: #f9e9ed;
+      --cloud: #b4233d;
+      --local: #176d8f;
+      --evidence: #34765b;
+      --decision: #9a5d09;
+      --shadow: 0 18px 45px rgba(20, 32, 42, .08);
+      --radius: 18px;
+      --max: 1240px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #111a22;
+        --surface: #17232d;
+        --surface-alt: #1d2b36;
+        --ink: #f0f4f6;
+        --muted: #b5c0c8;
+        --line: #334452;
+        --line-strong: #4b6070;
+        --accent: #ea627a;
+        --accent-dark: #ff9aac;
+        --accent-soft: #3a2029;
+        --cloud: #ef7186;
+        --local: #66b9d7;
+        --evidence: #72bd98;
+        --decision: #e6ae59;
+        --shadow: 0 18px 45px rgba(0, 0, 0, .24);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+      line-height: 1.65;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, summary { font: inherit; }
+    :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 65%, transparent); outline-offset: 3px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: color-mix(in srgb, var(--paper) 92%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+      backdrop-filter: blur(18px);
+    }
+    .topbar-inner {
+      width: min(var(--max), calc(100% - 32px));
+      min-height: 68px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; min-width: 278px; font-weight: 800; letter-spacing: -.02em; }
+    .mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 6px;
+      border-radius: 9px;
+      background: var(--accent);
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .mark span { background: #fff; border-radius: 2px; }
+    .mark span:first-child { grid-row: span 2; }
+    .nav { display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap; }
+    .nav a { padding: 8px 10px; border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .nav a:hover, .nav a.active { background: var(--accent-soft); color: var(--accent); }
+
+    main { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; padding: 34px 0 88px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+      gap: 46px;
+      min-height: 440px;
+      padding: 62px;
+      color: #fff;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #17232d 0%, #263846 64%, #8b1d33 165%);
+      box-shadow: var(--shadow);
+    }
+    .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+    .hero::before { width: 500px; height: 500px; right: -210px; top: -270px; border: 1px solid rgba(255,255,255,.22); box-shadow: 0 0 0 54px rgba(255,255,255,.04), 0 0 0 108px rgba(255,255,255,.025); }
+    .hero::after { width: 290px; height: 290px; left: 35%; bottom: -240px; background: rgba(180,35,61,.42); filter: blur(20px); }
+    .hero-copy, .hero-map { position: relative; z-index: 1; }
+    .kicker { margin: 0 0 18px; color: #f1b8c3; font-size: 13px; font-weight: 800; letter-spacing: .08em; }
+    h1 { max-width: 730px; margin: 0; font-size: clamp(38px, 5.1vw, 66px); line-height: 1.08; letter-spacing: -.055em; }
+    .hero-lead { max-width: 640px; margin: 24px 0 0; color: rgba(255,255,255,.82); font-size: 18px; }
+    .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    .hero-tags span { padding: 6px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.93); font-size: 12px; font-weight: 700; }
+    .hero-map { align-self: center; display: grid; gap: 10px; }
+    .hero-map a { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 14px; border: 1px solid rgba(255,255,255,.17); border-radius: 14px; background: rgba(255,255,255,.08); transition: transform .2s ease, background .2s ease; }
+    .hero-map a:hover { transform: translateX(4px); background: rgba(255,255,255,.14); }
+    .hero-map b { display: block; font-size: 14px; }
+    .hero-map small { display: block; margin-top: 2px; color: rgba(255,255,255,.68); font-size: 12px; }
+    .map-index { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: #fff; color: var(--accent-dark); font-size: 12px; font-weight: 900; }
+
+    .meta { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.05fr; margin: 22px 0 76px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--line); box-shadow: 0 5px 18px rgba(20,32,42,.04); }
+    .meta div { padding: 17px 20px; background: var(--surface); }
+    .meta span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+    .meta b { display: block; margin-top: 3px; font-size: 14px; }
+
+    section { scroll-margin-top: 100px; margin-top: 82px; }
+    .section-head { max-width: 770px; }
+    .eyebrow { margin: 0 0 9px; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+    h2 { margin: 0; font-size: clamp(29px, 3.6vw, 46px); line-height: 1.15; letter-spacing: -.045em; }
+    .section-head > p:last-child { max-width: 720px; margin: 15px 0 0; color: var(--muted); font-size: 16px; }
+    h3 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
+    h4 { margin: 0; font-size: 15px; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 5px 18px rgba(20,32,42,.035); }
+
+    .statement {
+      display: grid;
+      grid-template-columns: 162px 1fr;
+      gap: 28px;
+      align-items: center;
+      margin-top: 30px;
+      padding: 31px 34px;
+      border-left: 5px solid var(--accent);
+    }
+    .statement-label { color: var(--accent); font-weight: 900; text-align: center; }
+    .statement-copy { font-size: 20px; font-weight: 700; line-height: 1.6; }
+
+    .architecture { display: grid; grid-template-columns: .8fr 1.15fr .8fr; gap: 16px; margin-top: 30px; }
+    .plane { position: relative; min-height: 282px; padding: 23px; }
+    .plane h3 { margin-bottom: 6px; }
+    .plane > p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+    .plane.cloud { border-top: 4px solid var(--cloud); }
+    .plane.local { border-top: 4px solid var(--local); }
+    .plane.evidence { border-top: 4px solid var(--evidence); }
+    .unit-list { display: grid; gap: 9px; }
+    .unit-list div { padding: 10px 11px; border-radius: 10px; background: var(--surface-alt); color: var(--ink); font-size: 13px; font-weight: 700; }
+    .middle-flow { display: grid; align-content: center; gap: 10px; padding: 20px; border-radius: var(--radius); background: var(--surface-alt); }
+    .middle-flow > div { position: relative; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; font-weight: 800; }
+    .middle-flow > div:not(:last-child)::after { content: "↓"; position: absolute; left: calc(50% - 7px); bottom: -26px; color: var(--accent); font-size: 19px; font-weight: 900; }
+    .middle-flow small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 500; }
+
+    .boundary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+    .boundary .panel { padding: 25px; }
+    .boundary p { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+    .rule { display: inline-flex; margin-top: 16px; padding: 6px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .rule.cloud { color: var(--cloud); background: color-mix(in srgb, var(--cloud) 11%, transparent); }
+    .rule.local { color: var(--local); background: color-mix(in srgb, var(--local) 11%, transparent); }
+
+    .trace-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 30px; }
+    .trace-node { position: relative; padding: 21px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+    .trace-node:not(:last-child)::after { content: "→"; position: absolute; right: -18px; top: calc(50% - 14px); z-index: 1; color: var(--accent); font-size: 22px; font-weight: 900; }
+    .trace-node b { display: block; font-size: 15px; }
+    .trace-node span { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .trace-node.trace { border-top: 4px solid var(--local); }
+    .trace-node.fact { border-top: 4px solid var(--evidence); }
+    .trace-node.evidence { border-top: 4px solid var(--decision); }
+    .trace-node.decision { border-top: 4px solid var(--accent); }
+    .control-stack { display: grid; gap: 14px; margin-top: 18px; }
+    .control-panel { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    .control-panel h3 { margin: 0; font-size: 18px; }
+    .control-panel > p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .control-table { width: 100%; margin-top: 15px; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+    .control-table th, .control-table td { padding: 11px 12px; border: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .control-table th { color: var(--accent); background: var(--accent-soft); font-size: 11px; letter-spacing: .04em; }
+    .control-table td { color: var(--muted); }
+    .control-table td:first-child { color: var(--ink); font-weight: 800; }
+    .control-note { margin: 12px 0 0; padding: 12px 14px; border-left: 3px solid var(--decision); background: color-mix(in srgb, var(--decision) 8%, transparent); color: var(--ink); font-size: 12px; }
+
+    .flow-diagram { margin-top: 30px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-alt); }
+    .flow-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    .flow-legend span, .flow-owner { display: inline-flex; align-items: center; border-radius: 999px; font-size: 11px; font-weight: 800; }
+    .flow-legend span { padding: 5px 8px; }
+    .flow-legend .cloud, .flow-stage.cloud .flow-owner { color: var(--cloud); background: color-mix(in srgb, var(--cloud) 10%, transparent); }
+    .flow-legend .local, .flow-stage.local .flow-owner { color: var(--local); background: color-mix(in srgb, var(--local) 10%, transparent); }
+    .flow-legend .evidence, .flow-stage.evidence .flow-owner { color: var(--evidence); background: color-mix(in srgb, var(--evidence) 10%, transparent); }
+    .flow-legend .decision, .flow-stage.decision .flow-owner { color: var(--decision); background: color-mix(in srgb, var(--decision) 12%, transparent); }
+    .platform-flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(182px, auto); gap: 30px 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+    .flow-stage { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 4px 14px rgba(20,32,42,.03); }
+    .flow-stage.cloud { border-top: 4px solid var(--cloud); }
+    .flow-stage.local { border-top: 4px solid var(--local); }
+    .flow-stage.evidence { border-top: 4px solid var(--evidence); }
+    .flow-stage.decision { border-top: 4px solid var(--decision); }
+    .stage-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .stage-no { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 8px; color: var(--accent); background: var(--accent-soft); font-size: 11px; font-weight: 900; }
+    .flow-stage.local .stage-no { color: var(--local); background: color-mix(in srgb, var(--local) 11%, transparent); }
+    .flow-stage.evidence .stage-no { color: var(--evidence); background: color-mix(in srgb, var(--evidence) 11%, transparent); }
+    .flow-stage.decision .stage-no { color: var(--decision); background: color-mix(in srgb, var(--decision) 13%, transparent); }
+    .flow-owner { padding: 4px 7px; white-space: nowrap; }
+    .flow-stage h3 { margin: 13px 0 0; font-size: 16px; line-height: 1.34; }
+    .flow-stage p { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .flow-output { margin-top: auto !important; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink) !important; font-weight: 700; }
+    .flow-output strong { color: var(--accent); }
+    .flow-stage.local .flow-output strong { color: var(--local); }
+    .flow-stage.evidence .flow-output strong { color: var(--evidence); }
+    .flow-stage.decision .flow-output strong { color: var(--decision); }
+    .flow-stage::after { content: "→"; position: absolute; right: -18px; top: calc(50% - 14px); z-index: 1; color: var(--accent); font-size: 22px; font-weight: 900; }
+    .flow-stage:nth-child(5)::after { content: "↓"; right: auto; left: calc(50% - 7px); top: auto; bottom: -31px; }
+    .flow-stage:nth-child(6) { grid-column: 5; grid-row: 2; }
+    .flow-stage:nth-child(7) { grid-column: 4; grid-row: 2; }
+    .flow-stage:nth-child(8) { grid-column: 3; grid-row: 2; }
+    .flow-stage:nth-child(9) { grid-column: 1 / span 2; grid-row: 2; }
+    .flow-stage:nth-child(6)::after, .flow-stage:nth-child(7)::after, .flow-stage:nth-child(8)::after { content: "←"; right: auto; left: -18px; }
+    .flow-stage:nth-child(9)::after { display: none; }
+    .flow-returns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+    .flow-return { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .flow-return.replan { border-left: 4px solid var(--cloud); }
+    .flow-return.rework { border-left: 4px solid var(--decision); }
+    .flow-return.knowledge { border-left: 4px solid var(--evidence); }
+    .flow-return b { display: block; font-size: 13px; }
+    .flow-return.replan b { color: var(--cloud); }
+    .flow-return.rework b { color: var(--decision); }
+    .flow-return.knowledge b { color: var(--evidence); }
+    .flow-return p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+
+    .scenario-governance { display: grid; grid-template-columns: minmax(230px, .75fr) minmax(0, 1.25fr); gap: 24px; margin-top: 30px; padding: 25px; border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: var(--radius); background: var(--surface-alt); transition: transform .2s ease, border-color .2s ease; }
+    .scenario-governance:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .governance-kicker { margin: 0; color: var(--accent); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+    .scenario-governance h3 { margin: 10px 0 0; font-size: 24px; }
+    .scenario-governance p { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+    .governance-relationship { color: var(--ink) !important; font-weight: 800; }
+    .governance-structure { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; align-content: center; }
+    .governance-structure span { min-height: 76px; display: grid; align-content: center; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); font-size: 12px; font-weight: 800; }
+    .governance-action { display: inline-flex; align-items: center; gap: 8px; margin-top: 15px; color: var(--accent); font-size: 13px; font-weight: 900; }
+    .governance-action b { font-size: 19px; line-height: 1; }
+    .vertical-scenarios { display: grid; grid-template-columns: 1.15fr .9fr .95fr; gap: 16px; margin-top: 16px; }
+    .scenario-card { position: relative; min-height: 216px; padding: 25px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); transition: transform .2s ease, border-color .2s ease; }
+    .scenario-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .scenario-card small { color: var(--accent); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+    .scenario-card h3 { margin-top: 10px; }
+    .scenario-card p { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+    .scenario-arrow { position: absolute; right: 22px; bottom: 20px; color: var(--accent); font-size: 24px; font-weight: 900; }
+
+    .scenario-details { display: grid; gap: 13px; margin-top: 20px; }
+    details { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    summary { display: grid; grid-template-columns: 56px minmax(0, 1fr) 26px; gap: 17px; align-items: center; padding: 21px 24px; cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    .scenario-no { width: 43px; height: 43px; display: grid; place-items: center; border-radius: 11px; color: var(--accent); background: var(--accent-soft); font-size: 13px; font-weight: 900; }
+    .summary-copy h3 { font-size: 19px; }
+    .summary-copy p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .chevron { color: var(--muted); font-size: 23px; font-weight: 900; transition: transform .2s ease; }
+    details[open] .chevron { transform: rotate(90deg); color: var(--accent); }
+    .scenario-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 0 24px 24px 97px; }
+    .scenario-body > div { padding: 18px; border-radius: 13px; background: var(--surface-alt); }
+    .scenario-body p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .flow-list { margin: 9px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+    .flow-list li { margin: 5px 0; }
+    .function-points { margin: 9px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; }
+    .function-points li { position: relative; padding-left: 13px; margin: 5px 0; }
+    .function-points li::before { content: ""; position: absolute; left: 0; top: .65em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .constraint { color: var(--decision) !important; font-weight: 700; }
+    .scenario-body .process { border-left: 3px solid var(--local); }
+    .scenario-body .functions { border-left: 3px solid var(--evidence); }
+    .scenario-body .governance { border-left: 3px solid var(--decision); }
+    .scenario-body .governance h4 { color: var(--decision); }
+
+    .capability-map { display: grid; gap: 15px; margin-top: 30px; }
+    .capability-layer { display: grid; grid-template-columns: minmax(190px, .28fr) minmax(0, .72fr); gap: 18px; padding: 19px; border: 1px solid var(--line); border-radius: var(--radius); background: color-mix(in srgb, var(--surface-alt) 54%, var(--surface)); }
+    .capability-layer.governance { border-left: 4px solid var(--cloud); }
+    .capability-layer.execution { border-left: 4px solid var(--local); }
+    .capability-layer.scenario { border-left: 4px solid var(--evidence); }
+    .layer-intro { padding: 6px 4px 4px 1px; }
+    .layer-kicker { margin: 0; color: var(--accent); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+    .execution .layer-kicker { color: var(--local); }
+    .scenario .layer-kicker { color: var(--evidence); }
+    .layer-intro h3 { margin: 10px 0 0; font-size: 20px; line-height: 1.3; }
+    .layer-intro > p:last-child { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+    .layer-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+    .module { min-width: 0; padding: 19px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 4px 14px rgba(20,32,42,.03); }
+    .module-governance { grid-column: span 5; border-top: 4px solid var(--cloud); }
+    .module-task { grid-column: span 7; border-top: 4px solid var(--cloud); }
+    .module-context { grid-column: span 7; border-top: 4px solid var(--cloud); }
+    .module-knowledge { grid-column: span 5; border-top: 4px solid var(--cloud); }
+    .module-runtime { grid-column: span 5; border-top: 4px solid var(--local); }
+    .module-evidence { grid-column: span 7; border-top: 4px solid var(--evidence); }
+    .module-review { grid-column: span 12; border-top: 4px solid var(--decision); }
+    .module-document { grid-column: span 4; border-top: 4px solid var(--evidence); }
+    .module-delivery { grid-column: span 5; border-top: 4px solid var(--accent); }
+    .module-test { grid-column: span 3; border-top: 4px solid var(--decision); }
+    .module h4 { margin: 0; font-size: 17px; line-height: 1.35; letter-spacing: -.02em; }
+    .module-scope { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
+    .module-scope strong, .module-objects strong, .module-scenarios strong { color: var(--ink); }
+    .module-capabilities { margin-top: 15px; }
+    .module h5 { margin: 0; color: var(--accent); font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+    .execution .module h5 { color: var(--local); }
+    .scenario .module h5 { color: var(--evidence); }
+    .module-capabilities ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 12px; }
+    .module-capabilities li { position: relative; padding-left: 12px; }
+    .module-capabilities li::before { content: ""; position: absolute; left: 0; top: .65em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+    .execution .module-capabilities li::before { background: var(--local); }
+    .scenario .module-capabilities li::before { background: var(--evidence); }
+    .module-io { display: grid; gap: 5px; margin: 15px 0 0; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .module-io div { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; }
+    .module-io dt { color: var(--muted); font-size: 11px; font-weight: 800; }
+    .module-io dd { margin: 0; color: var(--ink); font-size: 12px; }
+    .module-objects, .module-scenarios { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .module-scenarios { padding-top: 9px; border-top: 1px solid var(--line); }
+
+    .pilot { display: grid; grid-template-columns: .9fr 1.1fr; gap: 20px; margin-top: 30px; padding: 28px; border-radius: var(--radius); color: #fff; background: linear-gradient(120deg, #1a2934, #314b5c); box-shadow: var(--shadow); }
+    .pilot h3 { font-size: 28px; }
+    .pilot p { margin: 12px 0 0; color: rgba(255,255,255,.78); }
+    .pilot-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; align-content: center; }
+    .pilot-flow span { position: relative; min-height: 74px; display: grid; place-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: rgba(255,255,255,.08); text-align: center; font-size: 12px; font-weight: 800; }
+    .pilot-flow span:not(:last-child)::after { content: "→"; position: absolute; right: -13px; z-index: 1; color: #f2a1b0; font-size: 18px; }
+    .acceptance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+    .acceptance div { padding: 17px; border-radius: 13px; border: 1px solid var(--line); background: var(--surface); }
+    .acceptance b { display: block; color: var(--accent); font-size: 14px; }
+    .acceptance span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+
+    footer { margin-top: 84px; padding: 27px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 24px; }
+
+    @media (max-width: 900px) {
+      .topbar-inner { gap: 12px; }
+      .brand { min-width: auto; }
+      .nav a { padding: 8px; }
+      .hero { grid-template-columns: 1fr; padding: 46px; }
+      .hero-map { grid-template-columns: repeat(3, 1fr); }
+      .hero-map a { grid-template-columns: 1fr; }
+      .map-index { display: none; }
+      .architecture, .scenario-body, .pilot { grid-template-columns: 1fr; }
+      .middle-flow { grid-template-columns: repeat(3, 1fr); }
+      .middle-flow > div:not(:last-child)::after { content: "→"; left: auto; right: -16px; top: calc(50% - 14px); bottom: auto; }
+      .trace-flow { grid-template-columns: repeat(2, 1fr); }
+      .scenario-governance { grid-template-columns: 1fr; }
+      .vertical-scenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .platform-flow { grid-template-columns: 1fr; gap: 29px; }
+      .platform-flow .flow-stage:nth-child(n) { grid-column: auto; grid-row: auto; }
+      .platform-flow .flow-stage:not(:last-child)::after { content: "↓"; right: auto; left: calc(50% - 7px); top: auto; bottom: -31px; }
+      .capability-layer { grid-template-columns: 1fr; }
+      .layer-grid > .module { grid-column: span 6; }
+      .layer-grid > .module-review { grid-column: span 12; }
+      .pilot-flow { grid-template-columns: repeat(2, 1fr); }
+      .pilot-flow span:nth-child(2)::after { display: none; }
+    }
+    @media (max-width: 680px) {
+      .topbar-inner { width: min(var(--max), calc(100% - 22px)); min-height: 58px; }
+      .brand { font-size: 13px; }
+      .nav { display: none; }
+      main { width: min(var(--max), calc(100% - 22px)); padding-top: 18px; }
+      .hero { min-height: auto; padding: 34px 25px; border-radius: 20px; }
+      h1 { font-size: 39px; }
+      .hero-lead { font-size: 16px; }
+      .hero-map, .meta, .boundary, .trace-flow, .vertical-scenarios, .acceptance { grid-template-columns: 1fr; }
+      .hero-map a { grid-template-columns: 36px 1fr; }
+      .map-index { display: grid; }
+      .meta { margin-bottom: 54px; }
+      .statement { grid-template-columns: 1fr; gap: 14px; padding: 24px; }
+      .statement-label { text-align: left; }
+      .statement-copy { font-size: 18px; }
+      .middle-flow { grid-template-columns: 1fr; }
+      .middle-flow > div:not(:last-child)::after { content: "↓"; left: calc(50% - 7px); right: auto; top: auto; bottom: -26px; }
+      .trace-node:not(:last-child)::after { content: "↓"; left: calc(50% - 7px); right: auto; top: auto; bottom: -28px; }
+      .governance-structure { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .scenario-card { min-height: 190px; }
+      summary { grid-template-columns: 45px minmax(0, 1fr) 20px; padding: 17px; gap: 12px; }
+      .scenario-body { padding: 0 17px 17px; }
+      .flow-diagram { padding: 18px; }
+      .flow-returns { grid-template-columns: 1fr; }
+      .capability-layer { padding: 17px; }
+      .layer-grid > .module, .layer-grid > .module-review { grid-column: span 12; }
+      .pilot { padding: 24px; }
+      .pilot-flow { grid-template-columns: 1fr; }
+      .pilot-flow span::after { display: none; }
+      .footer-inner { display: grid; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+    @media print {
+      .topbar { position: static; background: var(--paper); }
+      .nav { display: none; }
+      main { width: 100%; padding: 0; }
+      .hero, .pilot, .module, .flow-diagram, .flow-stage, .flow-return { break-inside: avoid; box-shadow: none; }
+      details { break-inside: avoid; }
+      details:not([open]) .scenario-body { display: block; }
+      .scenario-body { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="返回页面顶部"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>Harness 智能研发云边协同平台</a>
+      <nav class="nav" aria-label="页面目录">
+        <a href="#positioning">定位</a>
+        <a href="#architecture">协同机制</a>
+        <a href="#flow">总流程</a>
+        <a href="#scenarios">四个场景</a>
+        <a href="#modules">功能地图</a>
+        <a href="#pilot">首期试点</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="kicker">平台级整合审阅方案</p>
+        <h1 id="hero-title">让智能研发<br>受控发生，可信沉淀。</h1>
+        <p class="hero-lead">云端治理与本地真实执行协同，让每一次 Agent 研发都有上下文、验证、人工责任和可复用的证据。</p>
+        <div class="hero-tags" aria-label="平台关键词"><span>云端治理</span><span>本地执行</span><span>证据审查</span><span>共同基线</span><span>知识演进</span></div>
+      </div>
+      <div class="hero-map" aria-label="审阅路径">
+        <a href="#positioning"><span class="map-index">01</span><span><b>理解平台</b><small>从单点智能编码走向团队级研发治理</small></span></a>
+        <a href="#architecture"><span class="map-index">02</span><span><b>查看公共底座</b><small>云端、本地与事实证据如何协同</small></span></a>
+        <a href="#scenarios"><span class="map-index">03</span><span><b>下钻四个场景</b><small>理解、流程、功能和关键约束</small></span></a>
+        <a href="#pilot"><span class="map-index">04</span><span><b>确认首期闭环</b><small>先证明一条存量项目变更的完整路径</small></span></a>
+      </div>
+    </section>
+
+    <div class="meta" aria-label="方案概览">
+      <div><span>平台定位</span><b>云端治理与本地 Agent 协同</b></div>
+      <div><span>核心事实链</span><b>Trace - Fact - Evidence</b></div>
+      <div><span>人工原则</span><b>Agent 辅助，人员决策</b></div>
+      <div><span>首期试点</span><b>存量项目需求变更</b></div>
+    </div>
+
+    <section id="positioning">
+      <div class="section-head">
+        <p class="eyebrow">平台定位</p>
+        <h2>不是增加一个聊天入口，而是建立可治理的智能研发运行机制。</h2>
+        <p>平台将需求、任务、规则、上下文、执行、审查和知识连接起来，避免智能体以脱离项目现实的方式高速产出。</p>
+      </div>
+      <div class="statement panel">
+        <div class="statement-label">核心变化</div>
+        <div class="statement-copy">从“Agent 说已经完成”，转向“需求、代码、验证、证据和人工结论共同证明完成”。</div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-head">
+        <p class="eyebrow">公共底座</p>
+        <h2>三层分工，各自掌握正确的事实与责任。</h2>
+        <p>云端掌握权威状态与治理规则，本地掌握真实工程环境，事实与证据层让审查结论可回溯、可失效、可复用。</p>
+      </div>
+      <div class="architecture" aria-label="三层协同机制">
+        <article class="plane panel cloud">
+          <h3>云端治理层</h3>
+          <p>规划、约束、审查、沉淀。</p>
+          <div class="unit-list"><div>需求与任务总控</div><div>研发基线、门禁与权限</div><div>预审、人工卡点与整改</div><div>共同基线与知识发布</div></div>
+        </article>
+        <div class="middle-flow" aria-label="云边协同路径">
+          <div>Context Package<small>权威信息与执行约束下发</small></div>
+          <div>Harness Run<small>本地 Agent 在真实工程环境执行</small></div>
+          <div>Trace 与 Artifact<small>过程和产物按策略回传</small></div>
+        </div>
+        <article class="plane panel evidence">
+          <h3>事实与证据层</h3>
+          <p>还原过程，支撑结论。</p>
+          <div class="unit-list"><div>Engineering Fact 提取</div><div>Evidence 索引与有效性</div><div>版本、来源与失效条件</div><div>软件文档交付共同基线</div></div>
+        </article>
+      </div>
+      <div class="boundary">
+        <article class="panel"><h3>云端不替代本地研发</h3><p>云端不直接修改工作区，不替代本地内网验证，也不代替研发人员作出具体实现判断。</p><span class="rule cloud">云端负责目标、边界、规则与阶段决策</span></article>
+        <article class="panel"><h3>本地不绕开团队治理</h3><p>本地不得自行修改确认需求、跳过硬门禁、接受高风险例外或发布未经审核的知识。</p><span class="rule local">本地负责执行、验证、工程判断与升级</span></article>
+      </div>
+      <div class="trace-flow" aria-label="事实与证据转换链">
+        <div class="trace-node trace"><b>Trace</b><span>记录发生过的交互、工具、命令与文件变化。</span></div>
+        <div class="trace-node fact"><b>工程事实</b><span>提取可核对的代码、测试、构建与版本状态。</span></div>
+        <div class="trace-node evidence"><b>Evidence</b><span>将事实绑定到具体结论、版本和有效性。</span></div>
+        <div class="trace-node decision"><b>审查结论</b><span>由规则和责任人决定通过、退回或风险接受。</span></div>
+      </div>
+      <div class="control-stack" aria-label="公共控制规则">
+        <article class="control-panel">
+          <h3>决定权与升级矩阵</h3>
+          <p>Agent 和云端可以整理事实、生成候选与执行已授权工作，但不拥有需求裁决、风险接受或正式放行权。</p>
+          <table class="control-table"><thead><tr><th>事项</th><th>Agent 或平台可做</th><th>必须确认的责任人</th><th>确认后的结果</th></tr></thead><tbody><tr><td>需求、验收与风险接受</td><td>结构化需求、识别冲突、生成验收候选。</td><td>业务负责人；涉及风险接受时同步技术负责人。</td><td>Requirement 与验收基线生效，Task 可进入规划。</td></tr><tr><td>接口、数据、安全、权限与跨模块变更</td><td>定位影响、生成方案和验证建议。</td><td>技术负责人或代码 Owner。</td><td>按高风险处理；原执行包失效并重新规划。</td></tr><tr><td>测试归因与候选补丁</td><td>执行测试、提出归因与最小补丁。</td><td>研发人员；质量负责人审查质量风险。</td><td>进入回归、退回或终止，不以 Agent 自述作为结论。</td></tr><tr><td>交付、回滚与例外放行</td><td>汇总 Evidence、剩余风险和回滚条件。</td><td>交付批准人；业务负责人确认风险接受。</td><td>形成 Baseline、退回整改、暂停或终止记录。</td></tr></tbody></table>
+          <p class="control-note">受控自动修复仅适用于低风险、预授权目录、正确性明确、可回滚并可执行回归的变更。删除测试、降低断言、绕过权限、修改公共契约、数据模型或任务外文件始终禁止自动执行。</p>
+        </article>
+        <article class="control-panel">
+          <h3>数据分级与上报边界</h3>
+          <p>上报策略由项目管理员与安全负责人配置，本地先执行脱敏和策略检查。完整交互、完整仓库或原始敏感数据默认不上报。</p>
+          <table class="control-table"><thead><tr><th>级别</th><th>可上报内容</th><th>使用条件</th><th>留存与访问</th></tr></thead><tbody><tr><td>基础级</td><td>Task 与 Run 状态、工具类型、文件摘要、哈希、门禁结果和 Artifact 元数据。</td><td>默认级别。</td><td>按项目留存策略自动到期；项目审查角色可访问。</td></tr><tr><td>审查级</td><td>必要 Diff、关键命令输出、脱敏片段和关联 Evidence。</td><td>审查需要且策略允许。</td><td>限定审查范围与有效期，访问和删除均留审计记录。</td></tr><tr><td>全量级</td><td>完整交互、详细工具结果或文件变化。</td><td>安全负责人书面授权，明确对象、用途、范围和期限。</td><td>仅授权人员访问，到期删除或重新审批。</td></tr></tbody></table>
+          <p class="control-note">密钥、令牌、个人敏感信息、受监管数据和不允许出域的内容不得因“审查需要”自动突破策略；原始数据与完整制品优先保留在本地或既有制品库，只上报引用与哈希。</p>
+        </article>
+        <article class="control-panel">
+          <h3>外部系统与权威来源</h3>
+          <p>Harness 管理协同状态、Trace、Evidence 和 Review Task，不取代已存在工程系统的权威记录。</p>
+          <table class="control-table"><thead><tr><th>系统类别</th><th>权威来源</th><th>Harness 保存的内容</th><th>首期边界</th></tr></thead><tbody><tr><td>需求与工单</td><td>既有需求或项目管理系统中的业务记录。</td><td>结构化引用、Task、验收、风险和审查状态。</td><td>不复制或重写业务权威记录。</td></tr><tr><td>代码、构建与制品</td><td>Git、CI/CD 与制品库中的 commit、构建结果和制品摘要。</td><td>不可变引用、Diff 摘要、门禁结果和 Evidence 索引。</td><td>不以平台数据库替代源码、制品或构建系统。</td></tr><tr><td>身份、密钥与部署环境</td><td>既有 IAM、密钥管理和部署平台。</td><td>策略引用、授权结果、交付决定和环境验证 Evidence。</td><td>首期不托管密钥，不直接执行生产发布。</td></tr></tbody></table>
+        </article>
+      </div>
+    </section>
+
+    <section id="flow" aria-labelledby="flow-title">
+      <div class="section-head">
+        <p class="eyebrow">统一研发闭环</p>
+        <h2 id="flow-title">从需求确认到知识回供，一条受控路径贯穿所有场景。</h2>
+        <p>平台将业务目标、真实工程执行、Evidence 审查和团队知识沉淀连接为同一生命周期。四个场景在这条路径的不同阶段组合能力，而不重复建设治理机制。</p>
+      </div>
+      <div class="flow-diagram" aria-label="云边协同的端到端研发闭环">
+        <div class="flow-legend" aria-label="流程责任标识"><span class="cloud">云端治理</span><span class="local">本地执行</span><span class="evidence">事实与 Evidence</span><span class="decision">人工决策</span></div>
+        <ol class="platform-flow">
+          <li class="flow-stage decision" data-owner="decision">
+            <div class="stage-top"><span class="stage-no">01</span><span class="flow-owner">业务负责人</span></div>
+            <h3>需求与验收确认</h3>
+            <p>云端整理目标、范围、规则、非目标范围与歧义；业务负责人确认验收，技术负责人确认风险接受边界。</p>
+            <p class="flow-output"><strong>产物：</strong>已确认 Requirement 与验收基线</p>
+          </li>
+          <li class="flow-stage cloud" data-owner="cloud">
+            <div class="stage-top"><span class="stage-no">02</span><span class="flow-owner">云端治理</span></div>
+            <h3>Task 规划与风险分级</h3>
+            <p>云端结合研发基线拆分 Task、识别依赖和授权范围；标准风险以上方案由责任人确认后才可下发。</p>
+            <p class="flow-output"><strong>产物：</strong>已确认 Task、风险策略与 Review 要求</p>
+          </li>
+          <li class="flow-stage cloud" data-owner="cloud">
+            <div class="stage-top"><span class="stage-no">03</span><span class="flow-owner">云端治理</span></div>
+            <h3>执行包下发</h3>
+            <p>将目标、约束、上下文、工具权限和验证命令以可校验版本交给本地执行现场。</p>
+            <p class="flow-output"><strong>产物：</strong>Task Package 与 Context Package</p>
+          </li>
+          <li class="flow-stage local" data-owner="local">
+            <div class="stage-top"><span class="stage-no">04</span><span class="flow-owner">本地执行</span></div>
+            <h3>Harness Run 本地执行</h3>
+            <p>在真实仓库、依赖与环境中运行授权工作流。上下文失效、权限变化、环境不可用、越界或高风险时必须暂停并升级。</p>
+            <p class="flow-output"><strong>产物：</strong>Harness Run、过程 Trace、异常与暂停原因</p>
+          </li>
+          <li class="flow-stage local" data-owner="local">
+            <div class="stage-top"><span class="stage-no">05</span><span class="flow-owner">本地执行</span></div>
+            <h3>Artifact 与本地验证</h3>
+            <p>形成代码、测试、文档、构建或制品等 Artifact，并在真实条件下执行必要验证。</p>
+            <p class="flow-output"><strong>产物：</strong>Artifact、Diff 与验证结果</p>
+          </li>
+          <li class="flow-stage evidence" data-owner="evidence">
+            <div class="stage-top"><span class="stage-no">06</span><span class="flow-owner">事实与 Evidence</span></div>
+            <h3>Trace 到 Evidence 转换</h3>
+            <p>从过程与产物提取可核对的 Engineering Fact，将事实绑定到结论、版本和有效性条件。</p>
+            <p class="flow-output"><strong>产物：</strong>Engineering Fact 与 Evidence</p>
+          </li>
+          <li class="flow-stage cloud" data-owner="cloud">
+            <div class="stage-top"><span class="stage-no">07</span><span class="flow-owner">云端治理</span></div>
+            <h3>云端预审与 Review Task</h3>
+            <p>汇总实际差异、验收覆盖、风险和 Evidence，路由需要人工判断的问题与复审材料。</p>
+            <p class="flow-output"><strong>产物：</strong>Review Task 与问题清单</p>
+          </li>
+          <li class="flow-stage decision" data-owner="decision">
+            <div class="stage-top"><span class="stage-no">08</span><span class="flow-owner">人工决策</span></div>
+            <h3>人工决策、整改与复审</h3>
+            <p>责任人决定通过、退回、有条件放行、风险接受、暂停或终止。需求、契约、数据或授权变化时使原执行包失效并重新规划。</p>
+            <p class="flow-output"><strong>产物：</strong>审查结论、整改要求或终止记录</p>
+          </li>
+          <li class="flow-stage cloud" data-owner="cloud">
+            <div class="stage-top"><span class="stage-no">09</span><span class="flow-owner">云端治理</span></div>
+            <h3>Baseline 发布与知识候选审核</h3>
+            <p>将已确认的软件、文档、制品与 Evidence 固化为共同 Baseline；知识仅生成候选，须单独审核通用性、范围和失效条件后发布。</p>
+            <p class="flow-output"><strong>产物：</strong>Baseline 与待审核 Knowledge Candidate</p>
+          </li>
+        </ol>
+        <div class="flow-returns" aria-label="总流程回流关系">
+          <div class="flow-return replan"><b>重新规划：从变化或阻塞回到需求与任务</b><p>需求、公共契约、数据模型、安全规则、授权或环境发生重大变化时，暂停当前 Run，使 Task Package 与 Context Package 失效后重新确认。</p></div>
+          <div class="flow-return rework"><b>退回整改：从人工审查回到本地执行</b><p>问题与 Evidence 关联到原 Task。研发人员在授权范围内修订后，新建 Harness Run 并重新进入验证和预审。</p></div>
+          <div class="flow-return knowledge"><b>知识回供：从已批准经验回到后续规划</b><p>经过人工审核的 Knowledge Entry 更新研发基线，并在后续 Task Package 与 Context Package 中按适用范围复用。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="scenarios">
+      <div class="section-head">
+        <p class="eyebrow">业务场景</p>
+        <h2>一个横向治理底座，支撑三个可独立审阅的研发价值链。</h2>
+        <p>团队规范化智能开发提供贯穿式约束。快速生成交付、工程文档一致性、智能测试修复在同一对象、证据和审批模型上形成各自闭环。</p>
+      </div>
+      <a class="scenario-governance" href="#scenario-standard" data-scenario-target="#scenario-standard">
+        <div>
+          <p class="governance-kicker">横向治理底座</p>
+          <h3>团队规范化智能开发</h3>
+          <p>将需求、任务、上下文、执行、产物、审查和知识转为团队与 Agent 共同遵守的研发机制。</p>
+          <p class="governance-relationship">横向治理支撑下方三个纵向闭环。</p>
+          <span class="governance-action">查看横向治理详情 <b>→</b></span>
+        </div>
+        <div class="governance-structure" aria-label="横向治理覆盖能力"><span>研发基线与权限</span><span>Task 与 Context Package</span><span>本地受控执行与 Trace</span><span>人工审查与知识演进</span></div>
+      </a>
+      <div class="vertical-scenarios" aria-label="三个纵向业务场景入口">
+        <a class="scenario-card" href="#scenario-delivery" data-scenario-target="#scenario-delivery"><small>纵向场景一</small><h3>快速生成与云就绪交付</h3><p>让应用更快形成，并以可验证、可回滚的单元交付。</p><span class="scenario-arrow">→</span></a>
+        <a class="scenario-card" href="#scenario-docs" data-scenario-target="#scenario-docs"><small>纵向场景二</small><h3>工程文档一致性</h3><p>让文档约束编码、随编码演化并进入正式基线。</p><span class="scenario-arrow">→</span></a>
+        <a class="scenario-card" href="#scenario-test" data-scenario-target="#scenario-test"><small>纵向场景三</small><h3>智能化测试与修复</h3><p>从正确性依据到受控补丁与影响回归的闭环。</p><span class="scenario-arrow">→</span></a>
+      </div>
+
+      <div class="scenario-details">
+        <details id="scenario-delivery">
+          <summary><span class="scenario-no">一</span><span class="summary-copy"><h3>快速生成与云就绪交付</h3><p>从业务需求到可运行、可验证、可回滚的交付单元。</p></span><span class="chevron">›</span></summary>
+          <div class="scenario-body">
+            <div><h4>理解与分级</h4><p>该场景把需求、生成、验证、修复和交付组织为连续闭环。工程等级决定成果深度，风险等级决定门禁强度，交付方式决定最终产物。</p><ul class="function-points"><li>验证原型可使用 Mock，但必须列出非生产项</li><li>轻量可用必须可启动并提供基础恢复说明</li><li>生产级必须绑定需求、测试、配置和交付 Evidence</li></ul></div>
+            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>澄清需求并判定工作类型、成熟度、工程与风险等级</li><li>装配项目规范、组件、基础镜像和交付约束</li><li>确认计划后生成代码、测试、配置和部署资源</li><li>构建、启动、测试，失败后有限修复或人工接管</li><li>形成镜像 digest、资源清单、运行说明和交付 Baseline</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>执行策略、计划与风险强制升级</li><li>Dockerfile、镜像、配置模板和健康检查</li><li>环境预检、部署验证、回滚与离线依赖分析</li><li>代码、镜像、资源和文档的版本绑定</li></ul></div>
+            <div class="governance"><h4>人工卡点与红线</h4><p>生产级、标准风险以上、存量变更、数据库或公共接口变更、对外交付与离线交付必须确认计划。</p><p class="constraint">硬门禁失败不得标记可交付。首期只验证容器化与云就绪交付基线、Evidence 和回滚条件，不执行复杂生产发布或客户现场离线部署。</p></div>
+          </div>
+        </details>
+
+        <details id="scenario-standard" open>
+          <summary><span class="scenario-no">二</span><span class="summary-copy"><h3>团队规范化智能开发</h3><p>将团队隐性经验转化为可执行、可审查、可演进的研发基线。</p></span><span class="chevron">›</span></summary>
+          <div class="scenario-body">
+            <div><h4>理解与目标</h4><p>核心不是给每个人配一个 AI，而是让团队在同一套项目基线、任务边界和人工责任下可靠使用智能体。</p><ul class="function-points"><li>规范可执行</li><li>任务可控制</li><li>过程可审查</li><li>经验可演进</li></ul></div>
+            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>建立包含规则、Agent、门禁和 Owner 的研发基线</li><li>结构化需求，拆分 Task 并确认依赖和风险</li><li>下发 Task Package、Context Package 与验证清单</li><li>本地在隔离工作区受控研发并持续采集 Trace</li><li>云端预审、人工决策、整改复审和知识回流</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>研发基线、Agent、工具和权限配置</li><li>需求、验收、依赖、冲突范围与责任管理</li><li>本地 Run、分支、过程采集和越界检测</li><li>审查单、整改闭环和知识发布</li></ul></div>
+            <div class="governance"><h4>人工卡点与红线</h4><p>需求确认、任务规划、高风险方案、阶段成果、合并交付和知识发布都保留清晰责任人。</p><p class="constraint">低风险任务应保持轻量。公共契约、共享资产、数据、安全和架构变化必须先确认，重大范围变化使原执行包失效。</p></div>
+          </div>
+        </details>
+
+        <details id="scenario-docs">
+          <summary><span class="scenario-no">三</span><span class="summary-copy"><h3>与智能编码一致的软件工程文档</h3><p>让文档成为编码约束、审查载体和软件共同基线的一部分。</p></span><span class="chevron">›</span></summary>
+          <div class="scenario-body">
+            <div><h4>理解与一致性</h4><p>文档既约束编码，也随编码演化，并成为审查和共同 Baseline 的组成部分。关键结论必须优先由工程事实和 Evidence 支撑。</p><ul class="function-points"><li>需求、设计、接口与数据一致性</li><li>测试、状态、过程与版本一致性</li></ul></div>
+            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>确定 Document Package、模板和章节责任</li><li>将已确认文档裁剪进 Context Package</li><li>采集本地代码、测试、构建和人工事实</li><li>定位受影响章节并生成增量建议</li><li>双向校核、人工审核并形成共同 Baseline</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>文档包、章节状态、审核和归档管理</li><li>章节级影响分析、来源标注和差异合并</li><li>追溯矩阵、Evidence 索引和一致性报告</li><li>基线偏离检测和知识候选提取</li></ul></div>
+            <div class="governance"><h4>人工卡点与红线</h4><p>需求方案、文档审核、基线批准和知识发布需要人工决策。系统只生成候选更新，不直接发布正式结论。</p><p class="constraint">代码现状不能自动反向修改已批准的需求或设计。人工已审核、已锁定内容不得静默覆盖。</p></div>
+          </div>
+        </details>
+
+        <details id="scenario-test">
+          <summary><span class="scenario-no">四</span><span class="summary-copy"><h3>智能化软件功能测试与修复</h3><p>以正确性依据、失败归因、受控修复和影响回归形成可信质量闭环。</p></span><span class="chevron">›</span></summary>
+          <div class="scenario-body">
+            <div><h4>理解与正确性依据</h4><p>场景要解决的是“测得准、定位准、修得对”。需求、验收、业务规则、契约、页面行为、Diff、测试资产和环境版本共同构成正确性依据。</p><p>没有明确依据时，测试假设必须被标注，不能被当作正式通过标准。</p></div>
+            <div class="process"><h4>关键流程与产物</h4><ol class="flow-list"><li>确认目标、必测项、范围和代码基线</li><li>检查本地环境、依赖与测试数据</li><li>生成并执行接口、UI、端到端等真实测试</li><li>区分需求、数据、环境、契约和代码失败</li><li>授权修复、原问题验证、影响回归和云端审查</li></ol></div>
+            <div class="functions"><h4>功能分组</h4><ul class="function-points"><li>需求到测试场景和断言来源的覆盖管理</li><li>多方式执行、日志截图和环境健康检查</li><li>候选根因、可信度、补丁与影响分析</li><li>回归集推荐、未覆盖风险和证据包</li></ul></div>
+            <div class="governance"><h4>人工卡点与红线</h4><p>研发人员确认归因和补丁，质量负责人审查质量风险。受控自动修复仅限低风险、预授权目录、正确性明确、可回滚并可执行回归的最小变更。</p><p class="constraint">需求冲突、范围扩大、跳过必测项、公共契约、数据权限、跨模块影响和风险接受必须升级。不得删除测试、降低断言、绕过权限校验；环境、数据和非确定性失败不得直接判为代码缺陷。</p></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="modules">
+      <div class="section-head">
+        <p class="eyebrow">统一功能地图</p>
+        <h2>共性能力只建设一次，场景能力按需组合。</h2>
+        <p>每一个功能模块都有清晰的接口和责任范围，避免四个场景分别建设任务、Trace、审查与知识能力。</p>
+      </div>
+      <div class="capability-map" aria-label="平台三层十模块能力地图">
+        <section class="capability-layer governance" data-layer="governance" aria-labelledby="governance-layer-title">
+          <div class="layer-intro">
+            <p class="layer-kicker">治理与供给</p>
+            <h3 id="governance-layer-title">把正确的约束、上下文和责任交到执行现场。</h3>
+            <p>这一层维护项目的权威规则，并把已确认的目标、边界与可执行上下文有版本地供给给本地研发。</p>
+          </div>
+          <div class="layer-grid">
+            <article class="module module-governance">
+              <h4>项目治理与研发基线</h4>
+              <p class="module-scope"><strong>职责：</strong>将项目规则、角色、工具权限和门禁管理为可发布、可回退的研发基线，不替代本地工程判断。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>编码、测试、安全与交付规则版本化</li><li>角色权限、代码 Owner 与审批路由配置</li><li>Agent、Skill、工具白名单和门禁策略装配</li><li>基线发布、适用范围校验与回退</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>项目目标、技术标准、安全要求和团队责任。</dd></div><div><dt>输出</dt><dd>研发基线、门禁策略、权限矩阵和工作流版本。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Baseline、Context Package、Knowledge Entry。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的控制平面，为后续任务和本地执行提供统一约束。</p>
+            </article>
+            <article class="module module-task">
+              <h4>需求与任务总控</h4>
+              <p class="module-scope"><strong>职责：</strong>把业务目标变为可执行、可审查的任务单元，明确完成标准、依赖关系、风险和需要人工决策的时点。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求结构化、缺失项和冲突项识别</li><li>验收项、范围边界和非目标范围确认</li><li>Task 拆分、依赖图、共享资产冲突与责任分派</li><li>风险分级、门禁配置和阶段状态管理</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>原始需求、已有代码、业务规则和项目基线。</dd></div><div><dt>输出</dt><dd>Requirement、Task、验收清单、风险结论与审查事项。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Requirement、Task、Task Package、Review Task。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的治理入口，决定每次执行的目标、范围和升级条件。</p>
+            </article>
+            <article class="module module-context">
+              <h4>上下文与执行供给</h4>
+              <p class="module-scope"><strong>职责：</strong>将任务所需的规则、事实、工具和验证要求裁剪成可校验的执行包，防止本地 Agent 依据过期或无关信息工作。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求、设计、知识和规则的来源选择与冲突提示</li><li>目标、授权目录、依赖、暂停条件和完成定义下发</li><li>Agent、Skill、工具权限与验证命令按任务装配</li><li>版本、适用范围、失效条件和本地使用记录校验</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Task、研发基线、知识条目和工程约束。</dd></div><div><dt>输出</dt><dd>Task Package、Context Package 与验证清单。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Task Package、Context Package、Baseline。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的云边交接面，连接云端规划与本地真实执行。</p>
+            </article>
+            <article class="module module-knowledge">
+              <h4>知识演进</h4>
+              <p class="module-scope"><strong>职责：</strong>将经验证的审查结论和工程经验沉淀为可复用知识，避免把 Agent 自述或单次结论直接变成团队规则。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>从评审、门禁失败和优秀实践提取候选</li><li>人工审核通用性、适用范围与发布责任</li><li>版本替代、失效、回退和使用效果跟踪</li><li>将已发布知识回供给后续 Context Package</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Evidence、Review Task、复盘记录和使用反馈。</dd></div><div><dt>输出</dt><dd>已审核知识条目、适用规则和基线更新建议。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Knowledge Entry、Evidence、Baseline。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景持续复用，形成从一次交付到团队能力的反馈回路。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="capability-layer execution" data-layer="execution" aria-labelledby="execution-layer-title">
+          <div class="layer-intro">
+            <p class="layer-kicker">云边执行与可信闭环</p>
+            <h3 id="execution-layer-title">本地完成真实工作，云端只依据可追溯事实进行治理。</h3>
+            <p>这一层确保执行不脱离工程环境，过程不脱离证据，审查结论不脱离责任人。</p>
+          </div>
+          <div class="layer-grid">
+            <article class="module module-runtime">
+              <h4>本地智能研发运行时</h4>
+              <p class="module-scope"><strong>职责：</strong>在真实仓库、依赖、网络和权限条件下承载一次受控研发执行，并将工程异常及时升级。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>项目同步、分支或隔离工作区准备</li><li>按授权范围启动 Agent、工具与验证命令</li><li>越界、高风险、用户确认和失败重试的暂停升级</li><li>离线缓存、顺序补传、幂等接收与完整性提示</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Context Package、Task Package、本地工程环境。</dd></div><div><dt>输出</dt><dd>Harness Run、Trace、Artifact、本地验证结果与异常。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Harness Run、Artifact、Trace。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的真实执行面，不由云端直接修改本地工作区。</p>
+            </article>
+            <article class="module module-evidence">
+              <h4>Trace、工程事实与 Evidence</h4>
+              <p class="module-scope"><strong>职责：</strong>将可采集过程转成可核对工程事实，再将事实绑定到结论、版本和有效性条件；该模块不自行作出批准结论。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>交互、工具、命令、文件变化和验证结果采集</li><li>本地脱敏、来源关联、完整性标记和上报策略控制</li><li>从代码、测试、构建和版本中提取 Engineering Fact</li><li>Evidence 索引、失效条件、来源追溯和复用查询</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Trace、Artifact、Git Diff、测试构建和人工操作。</dd></div><div><dt>输出</dt><dd>Engineering Fact、Evidence 集合与可信度状态。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Trace、Engineering Fact、Evidence、Artifact。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的可信结论基础，支撑审查、基线和知识沉淀。</p>
+            </article>
+            <article class="module module-review">
+              <h4>云端预审与人工卡点</h4>
+              <p class="module-scope"><strong>职责：</strong>把任务目标、实际差异、风险和 Evidence 汇总为可决策审查单，并记录退回、豁免、放行与责任归属。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>范围越界、验收缺口、质量风险和证据完整性预审</li><li>任务摘要、关键 Diff、影响范围和剩余风险的审阅视图</li><li>按角色路由人工审查、整改、复审和风险接受</li><li>豁免有效期、放行条件、审查意见和阶段状态回写</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Task、Engineering Fact、Evidence、Artifact 与风险策略。</dd></div><div><dt>输出</dt><dd>Review Task、问题清单、审查结论和阶段推进记录。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Review Task、Evidence、Task、Baseline。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>全部场景的人工责任面。Agent 可以归纳材料，但不能替代人员批准、豁免或接受风险。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="capability-layer scenario" data-layer="scenario" aria-labelledby="scenario-layer-title">
+          <div class="layer-intro">
+            <p class="layer-kicker">场景闭环能力</p>
+            <h3 id="scenario-layer-title">在同一治理与证据底座上，组合三类高价值研发工作流。</h3>
+            <p>三项能力不重复建设任务、运行时或审查机制，而是在公共对象和统一门禁上完成各自的业务闭环。</p>
+          </div>
+          <div class="layer-grid">
+            <article class="module module-document">
+              <h4>工程文档与共同基线</h4>
+              <p class="module-scope"><strong>职责：</strong>让需求、设计、接口、测试与代码相互校核，形成可审查的软件工程文档和共同 Baseline。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>Document Package、章节状态与责任分配</li><li>章节级影响分析、增量候选和来源标注</li><li>追溯矩阵、双向校核与一致性报告</li><li>基线偏离检测、审批归档与锁定保护</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>需求设计、代码测试、工程事实和 Evidence。</dd></div><div><dt>输出</dt><dd>文档增量、校核报告、Document Package 和共同基线。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Artifact、Evidence、Baseline、Context Package。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>以文档一致性为主，并为生成交付和测试结论提供共同依据。</p>
+            </article>
+            <article class="module module-delivery">
+              <h4>生成与交付编排</h4>
+              <p class="module-scope"><strong>职责：</strong>将受控需求转为可运行、可验证、可回滚的交付单元，并使代码、配置、镜像和交付说明保持同一版本关系。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>工程等级、风险等级和交付方式判定</li><li>代码、测试、配置、部署资源和运行说明生成</li><li>构建、镜像、健康检查、环境验证和有限修复</li><li>回滚条件、离线依赖分析和交付基线装配</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>Requirement、执行包、组件规范和目标环境约束。</dd></div><div><dt>输出</dt><dd>代码与配置 Artifact、镜像摘要、交付 Evidence 和 Baseline。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Artifact、Evidence、Baseline、Review Task。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>快速生成与云就绪交付为主，复用文档和测试能力完成可交付验证。</p>
+            </article>
+            <article class="module module-test">
+              <h4>智能测试与修复</h4>
+              <p class="module-scope"><strong>职责：</strong>围绕明确正确性依据执行真实测试、归因失败、生成受控补丁并验证影响回归。</p>
+              <div class="module-capabilities"><h5>关键能力</h5><ul><li>需求到测试场景、断言来源和覆盖缺口管理</li><li>接口、UI、端到端执行与环境健康检查</li><li>失败归因、补丁授权、原问题验证和影响回归</li><li>质量结论、未覆盖风险与证据包生成</li></ul></div>
+              <dl class="module-io"><div><dt>输入</dt><dd>正确性依据、代码 Diff、测试资产和目标环境。</dd></div><div><dt>输出</dt><dd>测试结果、候选补丁、回归结论和质量 Evidence。</dd></div></dl>
+              <p class="module-objects"><strong>关联对象：</strong>Harness Run、Artifact、Evidence、Review Task。</p>
+              <p class="module-scenarios"><strong>服务场景：</strong>智能测试与修复为主，并为交付放行和文档校核提供验证事实。</p>
+            </article>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="pilot">
+      <div class="section-head">
+        <p class="eyebrow">建设重点</p>
+        <h2>第一阶段只证明一件事：一条真实变更能够受控闭环。</h2>
+        <p>先以一个已有代码仓库的中等复杂度需求变更验证平台差异化能力，再逐步扩展至智能测试修复和容器化交付。</p>
+      </div>
+      <div class="pilot">
+        <div><h3>存量项目需求变更</h3><p>第一阶段不追求复杂多 Agent 调度、完整 Kubernetes 管理或无人值守发布。至少选择 3 个同类中等复杂度需求变更，验证云端规划、本地研发、证据审查、文档更新与知识沉淀可以稳定衔接。</p></div>
+        <div class="pilot-flow" aria-label="首期试点路径"><span>云端需求确认</span><span>上下文下发</span><span>本地研发与验证</span><span>Trace 和 Artifact 回传</span><span>预审与人工退回</span><span>整改与复审</span><span>文档增量更新</span><span>共同基线与知识候选</span></div>
+      </div>
+      <div class="acceptance" aria-label="首期验收重点">
+        <div><b>链路完整</b><span>3 个样本中 100% 的 Harness Run 可定位唯一 Task、策略、本地环境与上下文版本。</span></div>
+        <div><b>结论有依据</b><span>100% 通过结论必须关联实现、验证、门禁和人工审查 Evidence；缺失任一项不得放行。</span></div>
+        <div><b>例外可闭环</b><span>全部 Review Task 必须由后续整改 Run 关闭，或明确记录风险接受、暂停或终止；不得存在无依据绕过。</span></div>
+      </div>
+    </section>
+
+    <footer><div class="footer-inner"><span>Harness 智能研发云边协同平台整合方案</span><span>面向产品与技术联合评审</span></div></footer>
+  </main>
+
+  <script>
+    const navLinks = [...document.querySelectorAll('.nav a')];
+    const sections = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+    let pendingNavigationId = null;
+    let navigationReleaseTimer;
+    const setActiveNav = sectionId => {
+      navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${sectionId}`));
+    };
+    const releaseNavigationLock = () => {
+      if (!pendingNavigationId) return;
+      const sectionId = pendingNavigationId;
+      pendingNavigationId = null;
+      window.clearTimeout(navigationReleaseTimer);
+      setActiveNav(sectionId);
+    };
+    const getActiveSection = () => {
+      const marker = window.innerHeight * .35;
+      return sections
+        .map(section => ({ section, top: section.getBoundingClientRect().top }))
+        .filter(({ top }) => top <= marker)
+        .sort((a, b) => b.top - a.top)[0]?.section || sections[0];
+    };
+    const observer = new IntersectionObserver(() => {
+      if (pendingNavigationId) return;
+      const activeSection = getActiveSection();
+      if (activeSection) setActiveNav(activeSection.id);
+    }, { rootMargin: '-28% 0px -62% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        pendingNavigationId = link.getAttribute('href').slice(1);
+        setActiveNav(pendingNavigationId);
+        window.clearTimeout(navigationReleaseTimer);
+        navigationReleaseTimer = window.setTimeout(releaseNavigationLock, 1500);
+      });
+    });
+    document.addEventListener('scrollend', releaseNavigationLock, { passive: true });
+
+    document.querySelectorAll('[data-scenario-target]').forEach(link => {
+      link.addEventListener('click', () => {
+        const target = document.querySelector(link.dataset.scenarioTarget);
+        if (target && target.tagName === 'DETAILS') target.open = true;
+      });
+    });
+  </script>
+</body>
+</html>

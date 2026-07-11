@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="AISF / Harness 快速生成与云原生交付领导审阅版，重点呈现场景理解、总体流程与核心功能。" name="description"/>
+<title>快速生成与云原生交付｜领导审阅版</title>
+<style>
+    :root {
+      --red-900: #7f1020;
+      --red-800: #a31328;
+      --red-700: #c41632;
+      --red-600: #d92743;
+      --red-100: #fde9ed;
+      --red-050: #fff5f7;
+      --ink-950: #16181d;
+      --ink-800: #2b2f38;
+      --ink-700: #434955;
+      --ink-600: #5f6673;
+      --ink-500: #7c8492;
+      --line: #e3e6eb;
+      --line-strong: #d2d6dd;
+      --paper: #ffffff;
+      --canvas: #f5f6f8;
+      --success: #147a54;
+      --success-bg: #eaf8f2;
+      --warning: #a15c00;
+      --warning-bg: #fff6df;
+      --info: #245f9e;
+      --info-bg: #edf5ff;
+      --shadow-sm: 0 2px 10px rgba(25, 28, 35, 0.06);
+      --shadow-md: 0 14px 40px rgba(25, 28, 35, 0.10);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --max-width: 1260px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink-950);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(196, 22, 50, .06), transparent 28%),
+        linear-gradient(180deg, #fff 0, var(--canvas) 680px);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    button, input { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    strong { font-weight: 750; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(210, 214, 221, .86);
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      width: min(var(--max-width), calc(100% - 32px));
+      min-height: 68px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 280px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      position: relative;
+      border-radius: 9px;
+      background: linear-gradient(145deg, var(--red-600), var(--red-900));
+      box-shadow: 0 8px 20px rgba(196, 22, 50, .22);
+    }
+
+    .brand-mark::before,
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      background: #fff;
+      border-radius: 2px;
+    }
+    .brand-mark::before { width: 18px; height: 4px; left: 8px; top: 9px; }
+    .brand-mark::after { width: 12px; height: 4px; left: 8px; top: 20px; }
+
+    .topnav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .topnav a {
+      padding: 9px 13px;
+      border-radius: 9px;
+      color: var(--ink-700);
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .topnav a:hover, .topnav a.active { background: var(--red-050); color: var(--red-700); }
+
+    .toolbar { display: flex; gap: 8px; }
+    .tool-btn {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink-700);
+      padding: 8px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .tool-btn:hover { border-color: var(--red-600); color: var(--red-700); }
+
+    .page {
+      width: min(var(--max-width), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 88px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 460px;
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 54px;
+      align-items: center;
+      padding: 64px 66px;
+      border-radius: var(--radius-lg);
+      color: #fff;
+      background:
+        linear-gradient(120deg, rgba(127,16,32,.96), rgba(196,22,50,.92)),
+        #9b1428;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 50%;
+      right: -150px;
+      top: -165px;
+      box-shadow: 0 0 0 65px rgba(255,255,255,.035), 0 0 0 130px rgba(255,255,255,.025);
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px;
+      background: rgba(255,255,255,.09);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(36px, 5vw, 64px);
+      line-height: 1.12;
+      letter-spacing: -.035em;
+    }
+
+    .hero-lead {
+      max-width: 760px;
+      margin: 24px 0 0;
+      color: rgba(255,255,255,.86);
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .hero-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+    .hero-tag {
+      padding: 8px 12px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.20);
+      border-radius: 9px;
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .hero-map {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      gap: 10px;
+    }
+    .hero-map-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 13px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.17);
+      background: rgba(255,255,255,.09);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .hero-map-num {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--red-800);
+      font-weight: 850;
+      font-size: 20px;
+    }
+    .hero-map-item b { display: block; font-size: 16px; }
+    .hero-map-item span { display: block; color: rgba(255,255,255,.72); font-size: 13px; }
+
+    .meta-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      margin: 22px 0 54px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .meta-item { padding: 17px 20px; background: #fff; }
+    .meta-label { display: block; color: var(--ink-500); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .meta-value { display: block; margin-top: 3px; color: var(--ink-800); font-size: 14px; font-weight: 700; }
+
+    .section { scroll-margin-top: 92px; margin-top: 78px; }
+    .section-head {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 30px;
+    }
+    .section-index {
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      color: var(--red-700);
+      background: var(--red-050);
+      border: 1px solid var(--red-100);
+      font-size: 26px;
+      font-weight: 850;
+    }
+    .section-eyebrow { margin: 1px 0 5px; color: var(--red-700); font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .section h2 { margin: 0; font-size: clamp(28px, 3vw, 42px); line-height: 1.22; letter-spacing: -.02em; }
+    .section-intro { max-width: 900px; margin: 12px 0 0; color: var(--ink-600); font-size: 16px; }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .statement {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 25px;
+      align-items: center;
+      padding: 28px 32px;
+      border-left: 5px solid var(--red-700);
+    }
+    .statement-label { color: var(--red-700); font-weight: 850; text-align: center; }
+    .statement-text { font-size: 21px; line-height: 1.65; font-weight: 720; }
+
+    .responsibility-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+    }
+    .responsibility-card { padding: 24px; }
+    .responsibility-card .role {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      border-radius: 13px;
+      background: var(--red-050);
+      color: var(--red-700);
+      font-weight: 850;
+    }
+    .responsibility-card h3 { margin: 0 0 7px; font-size: 18px; }
+    .responsibility-card p { margin: 0; color: var(--ink-600); font-size: 14px; }
+    .responsibility-card.primary { border-color: rgba(196,22,50,.30); box-shadow: 0 12px 30px rgba(196,22,50,.09); }
+
+    .subhead { margin: 48px 0 20px; }
+    .subhead h3 { margin: 0; font-size: 24px; }
+    .subhead p { margin: 6px 0 0; color: var(--ink-600); }
+
+    .dimension-formula {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 22px;
+      margin-bottom: 18px;
+      background: linear-gradient(180deg, #fff, #fafbfc);
+    }
+    .formula-chip {
+      padding: 10px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: #fff;
+      font-weight: 740;
+      font-size: 14px;
+    }
+    .formula-op { color: var(--red-700); font-weight: 900; font-size: 20px; }
+    .formula-result { border-color: var(--red-600); color: #fff; background: var(--red-700); }
+
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 13px;
+    }
+    .dimension-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 210px;
+      padding: 21px;
+    }
+    .dimension-card::after {
+      content: attr(data-num);
+      position: absolute;
+      right: 9px;
+      bottom: -25px;
+      color: rgba(196,22,50,.055);
+      font-size: 94px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .dimension-card h4 { position: relative; z-index: 1; margin: 0 0 13px; font-size: 17px; }
+    .dimension-card ul { position: relative; z-index: 1; margin: 0; padding-left: 18px; color: var(--ink-600); font-size: 13px; }
+    .dimension-card li { margin: 5px 0; }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .insight-card { padding: 24px; }
+    .insight-card h4 { margin: 0 0 10px; font-size: 17px; }
+    .insight-card ul { margin: 0; padding-left: 20px; color: var(--ink-600); }
+    .insight-card li { margin: 7px 0; }
+    .insight-card.warning { background: var(--warning-bg); border-color: #f2d593; }
+    .insight-card.success { background: var(--success-bg); border-color: #bce8d8; }
+
+    .decision-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f9fafb; color: var(--ink-700); font-size: 13px; font-weight: 800; }
+    td { color: var(--ink-700); font-size: 14px; }
+    tr:last-child td { border-bottom: 0; }
+
+    .review-note {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 16px;
+      align-items: start;
+      margin-top: 20px;
+      padding: 22px;
+      background: var(--info-bg);
+      border: 1px solid #cde2fa;
+      border-radius: 14px;
+    }
+    .review-note-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: var(--info);
+      background: #fff;
+      font-weight: 900;
+    }
+    .review-note h4 { margin: 0 0 4px; color: var(--info); }
+    .review-note p { margin: 0; color: #365a7d; }
+
+    .flow-shell { padding: 28px; }
+    .flow-title-row { display: flex; align-items: start; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .flow-title-row h3 { margin: 0; font-size: 23px; }
+    .flow-title-row p { margin: 5px 0 0; color: var(--ink-600); }
+
+    .flow-track {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(125px, 1fr));
+      gap: 22px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding: 8px 4px 20px;
+    }
+    .flow-step {
+      min-width: 126px;
+      position: relative;
+      padding: 18px 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(27,31,38,.05);
+    }
+    .flow-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      width: 23px;
+      height: 2px;
+      right: -23px;
+      top: 50%;
+      background: linear-gradient(90deg, var(--red-600), #e3a7b1);
+    }
+    .flow-step:not(:last-child)::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      right: -23px;
+      top: calc(50% - 4px);
+      border-left: 7px solid var(--red-600);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+    .flow-step-num { color: var(--red-700); font-size: 12px; font-weight: 850; letter-spacing: .08em; }
+    .flow-step b { display: block; margin: 5px 0; font-size: 15px; }
+    .flow-step span { display: block; color: var(--ink-600); font-size: 12px; line-height: 1.5; }
+    .flow-step.emphasis { border-color: rgba(196,22,50,.42); background: var(--red-050); }
+
+    .flow-loop {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px dashed #e4a2ae;
+      background: var(--red-050);
+    }
+    .loop-item { text-align: center; color: var(--ink-700); font-size: 13px; font-weight: 700; }
+    .loop-arrow { color: var(--red-700); text-align: center; font-weight: 900; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 30px 0 18px; }
+    .tab-btn {
+      padding: 10px 15px;
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink-700);
+      cursor: pointer;
+      font-weight: 750;
+      font-size: 14px;
+    }
+    .tab-btn:hover, .tab-btn.active { border-color: var(--red-700); color: #fff; background: var(--red-700); }
+    .flow-view { display: none; }
+    .flow-view.active { display: block; animation: fadeIn .2s ease-out; }
+    @keyframes fadeIn { from { opacity: .3; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .scenario-layout { display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; }
+    .scenario-summary, .scenario-steps { padding: 24px; }
+    .scenario-summary h4, .scenario-steps h4 { margin: 0 0 14px; font-size: 18px; }
+    .scenario-summary .label { display: block; color: var(--ink-500); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .scenario-summary .big { margin: 5px 0 16px; font-size: 25px; font-weight: 850; color: var(--red-700); }
+    .scenario-summary ul, .scenario-steps ol { margin: 0; padding-left: 21px; color: var(--ink-600); }
+    .scenario-summary li, .scenario-steps li { margin: 8px 0; }
+
+    .control-points {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .control-card { padding: 20px; }
+    .control-card small { color: var(--red-700); font-weight: 850; }
+    .control-card h4 { margin: 5px 0 7px; font-size: 16px; }
+    .control-card p { margin: 0; color: var(--ink-600); font-size: 13px; }
+
+    .function-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .function-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-btn {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink-700);
+      padding: 8px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .filter-btn.active, .filter-btn:hover { color: var(--red-700); border-color: var(--red-600); background: var(--red-050); }
+
+    .function-map {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .layer-card { padding: 22px; }
+    .layer-card h3 { margin: 0 0 6px; font-size: 18px; }
+    .layer-card p { margin: 0; color: var(--ink-600); font-size: 13px; }
+    .layer-card .layer-count { display: inline-flex; margin-top: 15px; padding: 4px 8px; border-radius: 999px; color: var(--red-700); background: var(--red-050); font-size: 12px; font-weight: 800; }
+
+    .function-list { display: grid; gap: 12px; }
+    .function-card {
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .function-card[hidden] { display: none; }
+    .function-card summary {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 58px 1fr 24px;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 22px;
+      cursor: pointer;
+    }
+    .function-card summary::-webkit-details-marker { display: none; }
+    .function-num {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: var(--red-050);
+      color: var(--red-700);
+      font-weight: 900;
+    }
+    .function-title h3 { margin: 0; font-size: 18px; }
+    .function-title p { margin: 3px 0 0; color: var(--ink-600); font-size: 13px; }
+    .chevron { color: var(--ink-500); font-weight: 900; transition: transform .2s; }
+    details[open] .chevron { transform: rotate(90deg); color: var(--red-700); }
+    .function-body {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      padding: 0 22px 22px 96px;
+    }
+    .function-copy { color: var(--ink-700); }
+    .function-copy p { margin: 0 0 14px; }
+    .function-copy ul { margin: 0; padding-left: 20px; color: var(--ink-600); }
+    .function-copy li { margin: 6px 0; }
+    .acceptance {
+      padding: 17px 18px;
+      border-radius: 12px;
+      background: #f8f9fb;
+      border: 1px solid var(--line);
+    }
+    .acceptance h4 { margin: 0 0 10px; color: var(--red-700); font-size: 14px; }
+    .acceptance ul { margin: 0; padding-left: 19px; color: var(--ink-700); font-size: 13px; }
+    .acceptance li { margin: 6px 0; }
+
+    .mvp-wrap {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .mvp-core { padding: 28px; background: linear-gradient(145deg, var(--red-900), var(--red-700)); color: #fff; }
+    .mvp-core h3 { margin: 0 0 14px; font-size: 25px; }
+    .mvp-core blockquote { margin: 0; padding: 0; color: rgba(255,255,255,.86); font-size: 17px; line-height: 1.8; }
+    .mvp-core .stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .mvp-core .stack span { padding: 6px 9px; border-radius: 8px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); font-size: 12px; font-weight: 700; }
+    .mvp-scope { padding: 28px; }
+    .scope-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .scope-columns h4 { margin: 0 0 9px; }
+    .scope-columns ul { margin: 0; padding-left: 19px; color: var(--ink-600); font-size: 13px; }
+    .scope-columns li { margin: 6px 0; }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .metric-card { padding: 18px; text-align: center; }
+    .metric-value { display: block; color: var(--red-700); font-size: 27px; font-weight: 900; }
+    .metric-label { display: block; margin-top: 2px; color: var(--ink-600); font-size: 12px; }
+
+    .footer {
+      margin-top: 80px;
+      padding: 34px 0 10px;
+      border-top: 1px solid var(--line);
+      color: var(--ink-500);
+      font-size: 13px;
+    }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+
+    .back-top {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 40;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 13px;
+      color: #fff;
+      background: var(--red-700);
+      box-shadow: 0 10px 28px rgba(196,22,50,.26);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: .2s;
+    }
+    .back-top.show { opacity: 1; transform: none; pointer-events: auto; }
+
+    @media (max-width: 1080px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-map { grid-template-columns: repeat(3, 1fr); }
+      .dimension-grid { grid-template-columns: repeat(3, 1fr); }
+      .flow-track { grid-template-columns: repeat(7, 150px); }
+      .metric-grid { grid-template-columns: repeat(3, 1fr); }
+      .topnav { display: none; }
+      .brand { flex: 1; }
+    }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 22px, var(--max-width)); padding-top: 16px; }
+      .topbar-inner { width: calc(100% - 22px); min-height: 58px; }
+      .brand { min-width: auto; font-size: 14px; }
+      .toolbar .tool-btn:first-child { display: none; }
+      .hero { min-height: auto; padding: 36px 24px; border-radius: 18px; }
+      .hero h1 { font-size: 37px; }
+      .hero-lead { font-size: 15px; }
+      .hero-map { grid-template-columns: 1fr; }
+      .meta-strip { grid-template-columns: 1fr 1fr; }
+      .section { margin-top: 60px; }
+      .section-head { grid-template-columns: 58px 1fr; gap: 14px; }
+      .section-index { width: 54px; height: 54px; border-radius: 15px; font-size: 20px; }
+      .statement { grid-template-columns: 1fr; gap: 8px; padding: 22px; }
+      .statement-label { text-align: left; }
+      .statement-text { font-size: 18px; }
+      .responsibility-grid, .insight-grid, .scenario-layout, .control-points, .function-map, .mvp-wrap, .scope-columns { grid-template-columns: 1fr; }
+      .dimension-grid { grid-template-columns: 1fr; }
+      .flow-loop { grid-template-columns: 1fr; }
+      .loop-arrow { transform: rotate(90deg); }
+      .function-body { grid-template-columns: 1fr; padding: 0 18px 18px; }
+      .function-card summary { grid-template-columns: 46px 1fr 20px; padding: 16px; gap: 11px; }
+      .function-num { width: 42px; height: 42px; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .footer-inner { flex-direction: column; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .topbar, .back-top, .toolbar, .function-toolbar { display: none !important; }
+      .page { width: 100%; padding: 0; }
+      .hero { box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .panel, .function-card { break-inside: avoid; box-shadow: none; }
+      .section { break-before: page; }
+      .section:first-of-type { break-before: auto; }
+      .flow-track { overflow: visible; grid-template-columns: repeat(4, 1fr); }
+      .flow-step::after, .flow-step::before { display: none; }
+      details { display: block; }
+      details .function-body { display: grid !important; }
+    }
+
+    .strategy-map { margin-top: 24px; display: grid; gap: 18px; }
+    .strategy-legend { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .legend-pill { border:1px solid var(--line); background:#fff; border-radius:999px; padding:7px 12px; font-size:12px; color:var(--ink-700); }
+    .legend-pill strong { color:var(--red-800); }
+    .engineering-lanes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .engineering-lane { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 10px 25px rgba(31,39,52,.05); }
+    .lane-head { padding:16px 18px; background:linear-gradient(135deg,var(--red-050),#fff); border-bottom:1px solid var(--line); }
+    .lane-head span { display:block; font-size:11px; font-weight:800; letter-spacing:.09em; color:var(--red-700); text-transform:uppercase; }
+    .lane-head h4 { margin:5px 0 4px; font-size:18px; }
+    .lane-head p { margin:0; font-size:12px; color:var(--ink-600); }
+    .lane-body { padding:14px; display:grid; gap:9px; }
+    .lane-step { position:relative; padding:11px 12px 11px 34px; border-radius:12px; background:var(--ink-050); font-size:12px; line-height:1.55; color:var(--ink-700); }
+    .lane-step::before { content:attr(data-no); position:absolute; left:10px; top:11px; width:17px; height:17px; border-radius:50%; display:grid; place-items:center; background:var(--red-700); color:#fff; font-size:9px; font-weight:800; }
+    .lane-output { margin-top:2px; padding:11px 12px; border-radius:12px; border:1px dashed var(--red-300,#ef9aaa); background:var(--red-050); font-size:12px; color:var(--red-900); font-weight:700; }
+    .risk-overlay { display:grid; grid-template-columns:170px repeat(3,minmax(0,1fr)); border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; }
+    .risk-overlay > div { padding:14px 15px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); font-size:12px; line-height:1.55; }
+    .risk-overlay > div:nth-child(4n) { border-right:0; }
+    .risk-overlay > div:nth-last-child(-n+4) { border-bottom:0; }
+    .risk-corner { background:var(--ink-950); color:#fff; font-weight:800; }
+    .risk-col-head { background:var(--ink-050); font-weight:800; color:var(--ink-800); }
+    .risk-row-head { font-weight:800; color:var(--red-800); background:var(--red-050); }
+    .risk-cell strong { display:block; color:var(--ink-900); margin-bottom:4px; }
+    .decision-examples { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .decision-card { border-left:4px solid var(--red-700); border-radius:12px; background:#fff; border-top:1px solid var(--line); border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:14px 15px; }
+    .decision-card b { display:block; margin-bottom:5px; font-size:13px; }
+    .decision-card p { margin:0; font-size:12px; line-height:1.6; color:var(--ink-600); }
+    .branch-note { margin-top:18px; padding:14px 16px; border-radius:14px; background:var(--ink-950); color:#fff; font-size:13px; line-height:1.7; }
+    .branch-note strong { color:#ffd8df; }
+    @media (max-width: 900px) {
+      .engineering-lanes,.decision-examples { grid-template-columns:1fr; }
+      .risk-overlay { grid-template-columns:125px repeat(3,minmax(180px,1fr)); overflow-x:auto; }
+    }
+  
+.topic-triad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px}.topic-card{position:relative;overflow:hidden;padding:25px}.topic-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--red-700)}.topic-card.cloud:before{background:var(--info)}.topic-card.harness:before{background:var(--ink-950)}.topic-no{display:inline-grid;place-items:center;min-width:38px;height:30px;padding:0 9px;border-radius:999px;background:var(--red-050);color:var(--red-700);font-size:12px;font-weight:850}.topic-card.cloud .topic-no{background:var(--info-bg);color:var(--info)}.topic-card.harness .topic-no{background:#eef0f3;color:var(--ink-800)}.topic-card h3{margin:14px 0 7px}.topic-card p{color:var(--ink-600);font-size:14px}.topic-card ul{margin:15px 0 0;padding-left:19px;color:var(--ink-700);font-size:13px}.two-axis{display:grid;grid-template-columns:1fr 55px 1fr;align-items:center;padding:22px}.axis-arrow{font-size:28px;font-weight:900;color:var(--red-700);text-align:center}.axis-title{font-weight:800;margin-bottom:12px}.axis-items{display:grid;gap:9px}.axis-items div{display:grid;grid-template-columns:92px 1fr;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--canvas)}.axis-items span{color:var(--ink-600);font-size:13px}.topic-mainline{display:grid;grid-template-columns:1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr 32px 1fr;align-items:stretch;gap:0;margin-top:20px}.mainline-stage{min-height:145px;padding:16px 13px;border:1px solid var(--line);border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:7px}.mainline-stage span{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--red-050);color:var(--red-700);font-weight:850;font-size:12px}.mainline-stage b{font-size:14px;line-height:1.4}.mainline-stage small{color:var(--ink-600);font-size:12px;line-height:1.55}.mainline-stage.generate,.mainline-stage.cloud{border-color:#efb6c1;background:linear-gradient(180deg,#fff,var(--red-050))}.mainline-stage.verify,.mainline-stage.gate{background:linear-gradient(180deg,#fff,var(--info-bg))}.mainline-arrow{display:grid;place-items:center;color:var(--red-600);font-weight:900;font-size:20px}.concise-lanes .lane-body{min-height:245px}.mainline-shell{overflow:visible}@media(max-width:1100px){.topic-mainline{grid-template-columns:1fr}.mainline-arrow{transform:rotate(90deg);height:28px}.topic-triad{grid-template-columns:1fr}.two-axis{grid-template-columns:1fr}.axis-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="topbar-inner">
+<a aria-label="返回顶部" class="brand" href="#top">
+<span aria-hidden="true" class="brand-mark"></span>
+<span>AISF / Harness 专题审阅</span>
+</a>
+<nav aria-label="页面目录" class="topnav"><a href="#understanding">01 理解</a><a href="#process">02 流程</a><a href="#functions">03 功能</a><a href="#mvp">建设重点</a></nav>
+<div class="toolbar">
+<button class="tool-btn" id="toggleAll">展开全部功能</button>
+<button class="tool-btn" onclick="window.print()">打印 / 导出PDF</button>
+</div>
+</div>
+</header>
+<main class="page" id="top">
+<section aria-labelledby="hero-title" class="hero">
+<div>
+<span class="hero-kicker">领导专题 · 需求审阅可视化版</span>
+<h1 id="hero-title">快速生成<br/>与云原生交付</h1>
+<p class="hero-lead">
+      面向不同需求成熟度、工程等级和风险等级，形成从<strong>业务需求到可运行应用</strong>、
+      从<strong>应用生成到云原生交付</strong>的智能化闭环。
+    </p>
+<div class="hero-tags">
+<span class="hero-tag">需求驱动快速生成</span>
+<span class="hero-tag">代码测试配置协同生成</span>
+<span class="hero-tag">自动验证与反馈修复</span>
+<span class="hero-tag">镜像与部署资源同步形成</span>
+<span class="hero-tag">在线与离线分级交付</span>
+<span class="hero-tag">全过程可信可追溯</span>
+</div>
+</div>
+<div aria-label="审阅重点" class="hero-map">
+<a class="hero-map-item" href="#understanding"><span class="hero-map-num">1</span><span><b>理解</b><span>快速生成和云原生交付分别解决什么</span></span></a>
+<a class="hero-map-item" href="#process"><span class="hero-map-num">2</span><span><b>流程</b><span>从需求输入到在线或离线交付</span></span></a>
+<a class="hero-map-item" href="#functions"><span class="hero-map-num">3</span><span><b>功能</b><span>快速生成、云原生交付与可信控制</span></span></a>
+</div>
+</section>
+<section aria-label="专题信息" class="meta-strip">
+<div class="meta-item"><span class="meta-label">专题题目</span><span class="meta-value">快速生成和云原生交付</span></div>
+<div class="meta-item"><span class="meta-label">核心主线</span><span class="meta-value">需求 → 应用 → 交付</span></div>
+<div class="meta-item"><span class="meta-label">控制底座</span><span class="meta-value">AISF / Harness</span></div>
+<div class="meta-item"><span class="meta-label">第一阶段</span><span class="meta-value">单技术栈闭环验证</span></div>
+</section>
+<section class="section" id="understanding">
+<div class="section-head">
+<div class="section-index">01</div>
+<div><p class="section-eyebrow">Understanding</p><h2>先看理解：快速生成和云原生交付解决什么</h2>
+<p class="section-intro">本专题不是单纯讨论代码生成，也不是单纯讨论容器部署，而是打通“应用如何更快形成”与“应用如何稳定交出去”两个连续问题。</p></div>
+</div>
+<div class="panel statement">
+<div class="statement-label">一句话理解</div>
+<div class="statement-text">快速生成解决“应用如何更快形成”，云原生交付解决“应用如何稳定交出去”，Harness 解决“生成和交付过程如何可信、可控、可追溯”。</div>
+</div>
+<div class="topic-triad">
+<article class="panel topic-card fast"><span class="topic-no">01</span><h3>快速生成</h3><p>承接自然语言需求和项目规范，快速形成可验证、可运行、可继续演进的应用成果。</p><ul><li>生成页面、业务逻辑、接口和数据结构。</li><li>同步生成测试、配置和工程资源。</li><li>通过真实构建、启动和冒烟验证发现问题。</li><li>将失败证据反馈给智能体，形成有限修复闭环。</li></ul></article>
+<article class="panel topic-card cloud"><span class="topic-no">02</span><h3>云原生交付</h3><p>把生成结果转化为可构建、可部署、可验证、可回滚、可追溯的交付单元。</p><ul><li>形成镜像构建配置、镜像版本和摘要。</li><li>生成 Kubernetes 资源、配置模板和健康检查。</li><li>执行环境预检、部署验证、冒烟和回滚验证。</li><li>支持在线发布和高约束离线交付。</li></ul></article>
+<article class="panel topic-card harness"><span class="topic-no">H</span><h3>Harness 控制底座</h3><p>连接需求、智能体、工具链和交付环境，以计划、门禁、审批和证据保障全过程可信。</p><ul><li>先形成执行计划，再组织智能体执行。</li><li>控制上下文、工作区、工具权限和资源预算。</li><li>按风险等级匹配门禁、审批和证据强度。</li><li>支持暂停、修复、人工接管、回退和追溯。</li></ul></article>
+</div>
+<div class="subhead"><h3>快速生成不是一种固定深度</h3><p>工程等级决定“生成到什么程度”，风险等级决定“验证和控制到什么程度”。两者共同形成执行策略，但不改变专题主线。</p></div>
+<div class="panel two-axis">
+<div class="axis-block"><div class="axis-title">工程等级：决定前半段生成深度</div>
+<div class="axis-items"><div><b>验证原型</b><span>快速验证流程、页面和需求方向</span></div><div><b>轻量可用</b><span>快速形成真实可用的小型应用</span></div><div><b>生产级</b><span>形成符合规范、测试和运维要求的正式应用</span></div></div>
+</div>
+<div class="axis-arrow">×</div>
+<div class="axis-block"><div class="axis-title">风险等级：决定后半段控制强度</div>
+<div class="axis-items"><div><b>低风险</b><span>启动、冒烟、敏感配置与恢复检查</span></div><div><b>标准风险</b><span>测试、静态检查、安全检查与部署验证</span></div><div><b>高风险</b><span>严格审批、扫描、回滚验证与完整证据链</span></div></div>
+</div>
+</div>
+<div class="insight-grid">
+<article class="panel insight-card success"><h4>建设后的变化</h4><ul><li>从“人工搭工程、人工补测试、人工补部署资源”转为协同生成。</li><li>从“代码生成完成”转为“应用构建、运行和验证完成”。</li><li>从“把程序包交给运维”转为“交付可被平台接管的应用单元”。</li><li>从失败靠人排查转为失败可定位、可反馈、可修复。</li></ul></article>
+<article class="panel insight-card warning"><h4>必须守住的边界</h4><ul><li>原型不能直接包装成生产系统。</li><li>AI 不能自行声明测试、部署和验收成功。</li><li>高风险条件不得通过降低等级绕过硬门禁。</li><li>离线包必须来自已验证版本基线，而不是开发目录。</li></ul></article>
+</div>
+<div class="review-note"><div class="review-note-icon">审</div><div><h4>领导审阅时重点看什么</h4><p>是否真正缩短从需求到可运行应用的路径；是否同步形成镜像、部署资源和验证结果；是否能根据工程等级和风险等级控制快与稳之间的平衡。</p></div></div>
+</section>
+<section class="section" id="process">
+<div class="section-head"><div class="section-index">02</div><div><p class="section-eyebrow">Process</p><h2>再看流程：从业务需求到云原生交付</h2><p class="section-intro">总体流程先沿一条主线推进，再由工程等级控制生成深度、由风险等级控制门禁和审批强度，最终形成在线或离线交付结果。</p></div></div>
+<div class="panel flow-shell mainline-shell">
+<div class="flow-title-row"><div><h3>总体业务闭环</h3><p>快速生成负责前半段“把需求变成应用”，云原生交付负责后半段“把应用变成可稳定运行和交付的应用单元”。</p></div></div>
+<div class="topic-mainline">
+<div class="mainline-stage input"><span>01</span><b>业务需求输入</b><small>自然语言需求、项目规范、代码上下文、部署约束</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage understand"><span>02</span><b>需求理解与目标判断</b><small>识别需求成熟度、工程等级、风险等级与交付目标</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage generate"><span>03</span><b>快速生成</b><small>代码、测试、配置、数据结构和部署资源协同生成</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage verify"><span>04</span><b>自动验证与反馈修复</b><small>构建、启动、测试、扫描、失败诊断和有限修复</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage gate"><span>05</span><b>分级门禁与人工评审</b><small>按风险执行轻量、标准或严格门禁</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage cloud"><span>06</span><b>云原生交付物形成</b><small>镜像、Kubernetes 资源、配置、脚本、回滚和证据</small></div>
+<div class="mainline-arrow">→</div>
+<div class="mainline-stage deliver"><span>07</span><b>在线发布或离线交付</b><small>目标环境验证、版本锁定、交付归档</small></div>
+</div>
+</div>
+<div class="subhead"><h3>工程等级改变“快速生成”的前半段</h3><p>不同等级共享需求理解和计划形成，但生成内容、验证深度和输出结果不同。</p></div>
+<div class="engineering-lanes concise-lanes">
+<article class="engineering-lane"><div class="lane-head"><span>工程等级 01</span><h4>验证原型</h4><p>低成本验证需求方向</p></div><div class="lane-body"><div class="lane-step" data-no="1">生成页面、交互、Mock 数据和临时接口。</div><div class="lane-step" data-no="2">验证关键流程与交互，记录反馈和待澄清项。</div><div class="lane-output">输出：可演示原型、非生产项清单、生产化输入。</div></div></article>
+<article class="engineering-lane"><div class="lane-head"><span>工程等级 02</span><h4>轻量可用</h4><p>快速得到真实可用小应用</p></div><div class="lane-body"><div class="lane-step" data-no="1">生成完整核心流程、基础配置和错误处理。</div><div class="lane-step" data-no="2">执行构建、启动、冒烟及数据恢复检查。</div><div class="lane-output">输出：本地、单机或容器可运行应用及基础证据。</div></div></article>
+<article class="engineering-lane"><div class="lane-head"><span>工程等级 03</span><h4>生产级</h4><p>形成正式业务应用能力</p></div><div class="lane-body"><div class="lane-step" data-no="1">生成代码、测试、配置、迁移和部署资源。</div><div class="lane-step" data-no="2">执行完整测试、安全校核、部署和回滚验证。</div><div class="lane-output">输出：受控版本基线、可部署产物和完整交付证据。</div></div></article>
+</div>
+<div class="subhead"><h3>风险等级改变“云原生交付”的后半段</h3><p>风险越高，审批、门禁、失败处理和证据要求越严格；风险等级不能用于替代工程等级。</p></div>
+<div class="panel decision-table-wrap">
+<table><thead><tr><th>风险等级</th><th>计划与审批</th><th>验证与门禁</th><th>交付与证据</th></tr></thead><tbody>
+<tr><td><b>低风险</b></td><td>用户确认范围和生成目标</td><td>启动、核心冒烟、敏感配置、备份恢复</td><td>本地/单机/简单容器，保留基础生成和验证记录</td></tr>
+<tr><td><b>标准风险</b></td><td>技术负责人确认计划、影响和测试策略</td><td>需求覆盖、测试、静态检查、安全检查、镜像与部署验证</td><td>锁定代码和镜像版本，形成结构化证据索引</td></tr>
+<tr><td><b>高风险</b></td><td>需求、技术、质量或交付角色分权审批</td><td>安全扫描、资源校核、环境预检、回滚和完整性验证</td><td>严格版本锁定、完整证据链，支持高约束在线或离线交付</td></tr>
+</tbody></table>
+</div>
+<div class="decision-examples">
+<div class="decision-card"><b>验证原型 × 低风险</b><p>快速生成并验证页面与流程，输出非生产项和待澄清问题，不进入正式云原生交付。</p></div>
+<div class="decision-card"><b>轻量可用 × 标准风险</b><p>生成真实应用并执行标准测试、安全检查和容器部署验证，形成可追溯版本。</p></div>
+<div class="decision-card"><b>生产级 × 高风险 × 离线</b><p>计划审批、严格门禁、等价环境部署与回滚验证、锁定 commit/digest，再生成离线交付包。</p></div>
+</div>
+<div class="branch-note"><strong>关键规则：</strong>快速不等于降低必要约束。工程等级决定生成到什么程度，风险等级决定控制到什么程度，交付方式决定最终如何验证和交出去。高风险条件具有强制升级权。</div>
+<div aria-label="场景流程切换" class="tabs" role="tablist">
+<button class="tab-btn active" data-flow="new">新建应用</button>
+<button class="tab-btn" data-flow="change">存量变更</button>
+<button class="tab-btn" data-flow="defect">缺陷修复</button>
+<button class="tab-btn" data-flow="prototype">原型转生产</button>
+</div><div class="flow-view active" id="flow-new">
+<div class="scenario-layout">
+<article class="panel scenario-summary">
+<span class="label">场景目标</span>
+<div class="big">从明确需求到可运行应用</div>
+<h4>关键控制</h4>
+<ul><li>先锁定项目规范和技术栈。</li><li>生产级或标准以上风险必须确认计划。</li><li>生成完成不等于成功，必须真实构建、启动和验证。</li></ul>
+</article>
+<article class="panel scenario-steps">
+<h4>主流程</h4>
+<ol>
+<li>提交业务目标、角色、核心流程、数据对象和验收线索。</li>
+<li>判断需求成熟度、工程等级、风险与交付方式。</li>
+<li>形成应用范围、阶段任务、验证策略和交付计划。</li>
+<li>创建隔离工作区，生成工程骨架、代码、测试和配置。</li>
+<li>执行构建、启动和核心流程验证。</li>
+<li>失败则按策略有限修复；超限后人工接管。</li>
+<li>门禁通过后形成产物版本和交付结果。</li>
+</ol>
+</article>
+</div>
+</div><div class="flow-view" id="flow-change">
+<div class="scenario-layout">
+<article class="panel scenario-summary">
+<span class="label">场景目标</span>
+<div class="big">在真实代码上下文中受控变更</div>
+<h4>关键控制</h4>
+<ul><li>必须绑定代码基线并使用独立分支或工作区。</li><li>计划必须说明接口、数据、配置和回归影响。</li><li>不得默认直接修改受保护分支。</li></ul>
+</article>
+<article class="panel scenario-steps">
+<h4>主流程</h4>
+<ol>
+<li>提交变更需求、验收标准和目标仓库。</li>
+<li>拉取代码基线并建立隔离工作区。</li>
+<li>智能体读取项目规范与必要上下文，生成影响分析。</li>
+<li>人工确认影响模块、数据、接口、配置和回滚策略。</li>
+<li>智能体执行修改，系统记录完整文件差异。</li>
+<li>执行受影响模块测试、回归测试和门禁。</li>
+<li>形成变更集、提交记录或合并请求材料。</li>
+</ol>
+</article>
+</div>
+</div><div class="flow-view" id="flow-defect">
+<div class="scenario-layout">
+<article class="panel scenario-summary">
+<span class="label">场景目标</span>
+<div class="big">以可复现证据证明问题已修复</div>
+<h4>关键控制</h4>
+<ul><li>无法复现时不得猜测“已修复”。</li><li>优先最小范围修改并补充回归用例。</li><li>修复完成必须同时满足原问题消失和相关门禁通过。</li></ul>
+</article>
+<article class="panel scenario-steps">
+<h4>主流程</h4>
+<ol>
+<li>提交现象、复现步骤、日志、错误和期望结果。</li>
+<li>确认问题可复现并保留修复前失败证据。</li>
+<li>分析根因并生成最小修复计划。</li>
+<li>执行修改并补充回归测试。</li>
+<li>重复原复现步骤和相关测试。</li>
+<li>输出根因、差异、验证证据及潜在影响。</li>
+</ol>
+</article>
+</div>
+</div><div class="flow-view" id="flow-prototype">
+<div class="scenario-layout">
+<article class="panel scenario-summary">
+<span class="label">场景目标</span>
+<div class="big">把原型认知转成生产级输入</div>
+<h4>关键控制</h4>
+<ul><li>原型用于验证，不用于直接上线。</li><li>必须输出非生产项和未验证约束。</li><li>转生产应创建新的生产级 Run，而非原地升级代码。</li></ul>
+</article>
+<article class="panel scenario-steps">
+<h4>主流程</h4>
+<ol>
+<li>探索中需求进入验证原型。</li>
+<li>记录用户反馈、待澄清项和未验证约束。</li>
+<li>形成需求项、验收标准和非生产项清单。</li>
+<li>将 Mock、临时接口、简化权限等转换为生产化任务。</li>
+<li>人工确认需求版本。</li>
+<li>基于确认后的输入创建新的生产级 Harness Run。</li>
+</ol>
+</article>
+</div>
+</div><div class="subhead"><h3>流程中的四个关键控制点</h3><p>这些控制点保证快速生成不是无约束生成，云原生交付不是简单打包。</p></div><div class="control-points">
+<article class="panel control-card"><small>CONTROL 01</small><h4>计划确认</h4><p>需求、规范、代码基线和影响范围明确后才允许正式执行。</p></article>
+<article class="panel control-card"><small>CONTROL 02</small><h4>隔离执行</h4><p>智能体只能在授权工作区、工具和资源预算内执行。</p></article>
+<article class="panel control-card"><small>CONTROL 03</small><h4>真实验证</h4><p>以命令、测试、扫描或部署结果判断，不采信模型自述。</p></article>
+<article class="panel control-card"><small>CONTROL 04</small><h4>证据驱动推进</h4><p>必需任务、产物、硬门禁、人工确认和证据齐备后才能推进阶段。</p></article>
+</div>
+</section>
+<section class="section" id="functions">
+<div class="section-head">
+<div class="section-index">03</div>
+<div>
+<p class="section-eyebrow">Functions</p>
+<h2>最后看功能：围绕快速生成和云原生交付组织能力</h2>
+<p class="section-intro">功能分为三组：快速生成能力解决“应用如何形成”，云原生交付能力解决“应用如何交付”，可信控制能力保障全过程可控、可验收、可追溯。</p>
+</div>
+</div>
+<div class="function-map">
+<article class="panel layer-card"><h3>快速生成能力</h3><p>完成需求理解、执行计划、智能体生成、测试配置协同生成和反馈修复。</p><span class="layer-count">主线前半段</span></article>
+<article class="panel layer-card"><h3>云原生交付能力</h3><p>完成镜像、部署资源、环境验证、回滚及在线或离线交付。</p><span class="layer-count">主线后半段</span></article>
+<article class="panel layer-card"><h3>可信控制能力</h3><p>通过项目规范、门禁、审批、风险接受和证据归档控制全过程。</p><span class="layer-count">贯穿全流程</span></article>
+</div>
+<div class="function-toolbar">
+<div aria-label="功能筛选" class="function-filters">
+<button class="filter-btn active" data-filter="all">全部功能</button>
+<button class="filter-btn" data-filter="planning">快速生成</button>
+<button class="filter-btn" data-filter="execution">智能执行</button>
+<button class="filter-btn" data-filter="delivery">云原生与可信交付</button>
+</div>
+</div>
+<div class="function-list">
+<details class="function-card" data-category="planning" open="">
+<summary><span class="function-num">01</span><span class="function-title"><h3>项目规范与生成上下文</h3><p>为快速生成提供受控技术栈、工程规范和最小上下文。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>承接技术栈、代码仓库、工程规范和交付要求，形成版本化项目规范与最小上下文包。</p><ul><li>维护工程结构、API、配置、日志、测试、安全、构建和交付规范。</li><li>支持规范审核、发布、版本化和回滚。</li><li>识别规范变更影响的未完成 Run、产物和交付基线。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>每个 Run 绑定唯一规范版本。</li><li>历史规范不可被覆盖。</li><li>智能体只获得任务所需最小上下文和权限。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="planning" open="">
+<summary><span class="function-num">02</span><span class="function-title"><h3>需求理解与生成目标判断</h3><p>判断生成目标、工程等级、风险等级和交付目标。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>接收新建、变更和缺陷诉求，判断需求成熟度、工程等级、风险等级和交付方式。</p><ul><li>识别信息缺口和待澄清问题。</li><li>按强制升级规则判断风险。</li><li>支持接受或申请调整策略，并记录原因和审批。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>不得仅以人数判断风险。</li><li>触发强制升级时不得推荐低风险策略。</li><li>每项推荐能够解释主要依据。</li><li>不得自动编造业务规则和验收结论。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="planning">
+<summary><span class="function-num">03</span><span class="function-title"><h3>快速生成计划与人工确认</h3><p>明确生成内容、验证策略、部署影响和风险后再执行。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>根据需求项、执行策略、项目规范和代码基线生成阶段化计划，并设置确认点、回退点和资源约束。</p><ul><li>支持计划编辑、版本对比、确认、驳回和重生成。</li><li>单独标注接口、数据库、权限、配置和部署影响。</li><li>关键输入变化时使旧确认自动失效。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>生产级和标准以上风险未确认不得执行。</li><li>存量变更包含代码基线、影响范围和回归策略。</li><li>低置信假设必须显式展示。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="execution" open="">
+<summary><span class="function-num">04</span><span class="function-title"><h3>智能体生成与任务执行</h3><p>组织智能体在隔离工作区生成代码、测试、配置和部署资源。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>承接已确认计划，创建隔离工作区，分配智能体任务，采集过程并支持暂停、重试、接管和终止。</p><ul><li>任务绑定 Agent、Skill、模型、上下文和工具权限。</li><li>采集会话、命令、文件差异、资源消耗和异常。</li><li>设置超时、最大重试、token和资源预算。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>不得写入授权工作区之外或直接改保护分支。</li><li>失败、取消和超时形成明确状态及原因。</li><li>修复超限后必须人工处理。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="execution">
+<summary><span class="function-num">05</span><span class="function-title"><h3>生成产物与版本管理</h3><p>归集代码、测试、配置、镜像和部署资源并建立版本关系。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>记录智能体和人工产生的文件变化、生成说明、非生产项、风险标注及替代关系。</p><ul><li>产物关联需求、验收标准、Run、任务和代码版本。</li><li>支持版本对比、废弃、撤回和替代。</li><li>人工修改后重新评估受影响测试、门禁和确认。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>生产级产物关联需求与验收标准。</li><li>每次执行保留完整文件差异。</li><li>原型必须包含非生产项清单。</li><li>敏感信息不得写入产物。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="delivery" open="">
+<summary><span class="function-num">06</span><span class="function-title"><h3>自动验证与反馈修复</h3><p>以真实构建、启动、测试和扫描结果驱动有限修复。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>执行构建、启动、测试、扫描和部署验证，形成硬/软门禁结果，分类失败并把证据反馈给智能体。</p><ul><li>门禁包含执行器、通过条件、超时、严重级别和证据类型。</li><li>支持自动修复、人工修改后重验和阶段回退。</li><li>风险接受绑定对象版本、责任人和有效期。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>硬门禁失败不得交付。</li><li>能区分环境、依赖、配置、代码、测试和权限问题。</li><li>修复前后保留差异与验证证据。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="delivery">
+<summary><span class="function-num">07</span><span class="function-title"><h3>镜像、部署资源与环境验证</h3><p>形成云原生交付物并完成目标或等价环境验证。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>承接已通过门禁的产物，生成交付资源，调用工具链，执行环境预检、健康检查、冒烟测试和回滚，并锁定基线。</p><ul><li>记录镜像名称、标签、摘要、构建来源和日志。</li><li>记录目标环境、部署状态、健康和访问验证。</li><li>生产发布必须经过交付批准。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>交付结果绑定需求、代码、规范和门禁。</li><li>容器/K8s引用明确镜像版本或摘要。</li><li>冒烟失败不得标记部署通过。</li><li>基线不可原地覆盖。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="delivery">
+<summary><span class="function-num">08</span><span class="function-title"><h3>离线交付分析、打包与验证</h3><p>从已验证基线形成完整、可校验、可部署的离线交付单元。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>识别镜像、配置、端口、存储、证书和外部服务依赖，后续聚合镜像、资源、脚本、文档与校验和，并在隔离环境验证。</p><ul><li>阶段一只输出目录、清单、预检项和缺失项。</li><li>真实包必须来自已验证交付基线。</li><li>所有部署资源引用镜像必须包含在包内。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>MVP不得把“分析完成”宣称为“离线包可交付”。</li><li>镜像、资源和配置版本一致。</li><li>部署、验证和回滚资料完整。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="delivery">
+<summary><span class="function-num">09</span><span class="function-title"><h3>分级门禁、评审与风险接受</h3><p>根据风险控制审批、质量判定和交付授权。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>支持需求确认、计划确认、代码评审、质量评审、交付批准和风险接受，管理角色权限、意见及失效规则。</p><ul><li>支持驳回后重新执行。</li><li>严格门禁可配置执行人与批准人分离。</li><li>风险接受包含影响、补偿措施、责任人和有效期。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>每项决策记录对象、版本、人员、角色、时间和意见。</li><li>产物变化后相关决策按规则失效。</li><li>无权限人员不得批准降级或正式交付。</li></ul></div>
+</div>
+</details>
+<details class="function-card" data-category="delivery">
+<summary><span class="function-num">10</span><span class="function-title"><h3>交付证据归档与追溯</h3><p>打通需求、代码、测试、镜像、部署与交付结果。</p></span><span class="chevron">›</span></summary>
+<div class="function-body">
+<div class="function-copy"><p><strong>职责：</strong>归档需求版本、执行策略、规范、Agent、文件差异、构建测试、镜像部署和人工决策，并记录来源与完整性摘要。</p><ul><li>区分系统采集证据和人工上传证据。</li><li>新证据不覆盖旧证据，通过替代关系表达。</li><li>支持从需求追溯到代码、测试、镜像和交付。</li></ul></div>
+<div class="acceptance"><h4>验收重点</h4><ul><li>每个可交付版本具备证据索引。</li><li>关键证据记录来源、时间、环境和摘要。</li><li>关键证据只追加、不覆盖。</li></ul></div>
+</div>
+</details>
+</div>
+</section>
+<section class="section" id="mvp">
+<div class="section-head">
+<div class="section-index">M</div>
+<div>
+<p class="section-eyebrow">MVP &amp; Acceptance</p>
+<h2>第一阶段建设重点：先跑通一条快速生成到容器交付的闭环</h2>
+<p class="section-intro">第一阶段不追求覆盖所有技术栈和交付环境，而是在锁定技术栈上证明“需求输入—应用生成—真实验证—有限修复—容器交付—证据归档”能够稳定运行。</p>
+</div>
+</div>
+<div class="mvp-wrap">
+<article class="panel mvp-core">
+<h3>核心假设</h3>
+<blockquote>Harness 能否将一个明确的低风险轻量需求，稳定转化为经过真实构建、启动和核心流程验证的可运行应用；失败时能否有限修复或正确请求人工接管。</blockquote>
+<div class="stack"><span>Vue 3</span><span>Spring Boot</span><span>单一关系型数据库</span><span>Git</span><span>OpenCode</span><span>本地 / Docker Compose</span></div>
+</article>
+<article class="panel mvp-scope">
+<div class="scope-columns">
+<div><h4>第一阶段纳入</h4><ul><li>单一项目规范与轻量需求入口。</li><li>执行策略、计划确认和隔离工作区。</li><li>OpenCode执行与过程采集。</li><li>构建、启动和核心流程冒烟测试。</li><li>最多两轮自动修复与人工接管。</li><li>轻量门禁、产物版本和基础证据。</li></ul></div>
+<div><h4>第一阶段不纳入</h4><ul><li>多技术栈和大型存量项目自动变更。</li><li>完整生产门禁和复杂审批流。</li><li>Kubernetes真实自动部署。</li><li>真实离线包、SBOM和供应链证明。</li><li>复杂多智能体编排和自动生产发布。</li></ul></div>
+</div>
+</article>
+</div>
+<div class="subhead"><h3>建议量化验收指标</h3><p>至少使用20个标准样例，覆盖首次成功、可自动修复和必须人工接管三类场景。</p></div>
+<div class="metric-grid">
+<article class="panel metric-card"><span class="metric-value">≥85%</span><span class="metric-label">风险判断一致率</span></article>
+<article class="panel metric-card"><span class="metric-value">≥70%</span><span class="metric-label">首轮可构建率</span></article>
+<article class="panel metric-card"><span class="metric-value">≥85%</span><span class="metric-label">两轮修复后可构建率</span></article>
+<article class="panel metric-card"><span class="metric-value">≥80%</span><span class="metric-label">核心流程最终通过率</span></article>
+<article class="panel metric-card"><span class="metric-value">0</span><span class="metric-label">硬门禁误放行</span></article>
+<article class="panel metric-card"><span class="metric-value">≥99%</span><span class="metric-label">文件变更采集完整率</span></article>
+<article class="panel metric-card"><span class="metric-value">100%</span><span class="metric-label">关键证据关联完整率</span></article>
+<article class="panel metric-card"><span class="metric-value">≤5s</span><span class="metric-label">95%状态展示延迟</span></article>
+<article class="panel metric-card"><span class="metric-value">0</span><span class="metric-label">无限修复循环</span></article>
+<article class="panel metric-card"><span class="metric-value">20+</span><span class="metric-label">基准验收样例</span></article>
+</div>
+</section>
+<footer class="footer">
+<div class="footer-inner">
+<span>审阅主线：理解快速生成与云原生交付 → 看总体闭环 → 看核心功能 → 看第一阶段建设重点</span>
+<span>审阅主线：理解 → 流程 → 功能 → MVP验收</span>
+</div>
+</footer>
+</main>
+<button aria-label="返回顶部" class="back-top" id="backTop">↑</button>
+<script>
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const flowViews = document.querySelectorAll('.flow-view');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(item => item.classList.remove('active'));
+        flowViews.forEach(item => item.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('flow-' + btn.dataset.flow).classList.add('active');
+      });
+    });
+
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const functionCards = document.querySelectorAll('.function-card');
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(item => item.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        functionCards.forEach(card => {
+          card.hidden = filter !== 'all' && card.dataset.category !== filter;
+        });
+      });
+    });
+
+    const toggleAll = document.getElementById('toggleAll');
+    let allOpen = false;
+    toggleAll.addEventListener('click', () => {
+      allOpen = !allOpen;
+      functionCards.forEach(card => card.open = allOpen);
+      toggleAll.textContent = allOpen ? '收起全部功能' : '展开全部功能';
+    });
+
+    const backTop = document.getElementById('backTop');
+    backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    const navLinks = document.querySelectorAll('.topnav a');
+    const sections = [...document.querySelectorAll('main section[id]')];
+    const updateOnScroll = () => {
+      backTop.classList.toggle('show', window.scrollY > 520);
+      const current = sections.reduce((active, section) => {
+        return window.scrollY >= section.offsetTop - 130 ? section.id : active;
+      }, 'top');
+      navLinks.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
+    };
+    window.addEventListener('scroll', updateOnScroll, { passive: true });
+    updateOnScroll();
+  </script>
+</body>
+</html>
