@@ -8,12 +8,12 @@
 
 ## 1. 场景说明
 
-本场景聚焦“生成与智能编码一致的软件工程文档”：云端总控 Agent 负责提供受控研发上下文、汇总工程事实并生成文档变更建议；本地 Agent 负责在真实代码环境中执行智能编码并回传可验证事实。
+本场景聚焦“生成与智能编码一致的软件工程文档”：云端总控 Agent 负责辅助项目负责人和质量人员进行云端决策；本地 Agent 负责在真实代码环境中执行智能编码；本地客户端负责采集并上报研发事实。
 
-- 云端总控 Agent 辅助项目负责人完成需求分析、任务划分、项目状态汇总、阶段预审和整改组织。
+- 云端总控 Agent 辅助项目负责人和质量人员完成需求分析、任务划分、阶段预审、文档校核和整改决策。
 - 开发人员基于云端下发的项目上下文，通过本地 Agent 工作流在真实代码与工具环境中完成研发。
-- 开发人员与本地 Agent 的交互，以及工具调用、文件变化、测试、构建和产物信息形成 Trace 并回传云端。
-- 云端从 Trace 和 Artifact 中提取 Engineering Fact，并将能够支撑具体结论的事实组织为 Evidence。
+- 本地客户端采集开发人员、本地 Agent、工具和外部系统产生的交互、文件变化、测试、构建及产物信息，形成 Trace 并回传云端。
+- 云端服务从 Trace 和 Artifact 中提取 Engineering Fact；云端总控 Agent 基于这些事实辅助项目负责人和质量人员形成判断。
 - 项目负责人通过人工卡点完成需求确认、任务确认、阶段审查、风险接受和基线批准；质量人员负责质量结论和放行检查。
 - 软件工程文档根据已确认的需求、实现、测试和审查事实增量生成，并与软件版本共同形成正式基线。
 - 项目知识仅作为可选上下文输入，不作为本文主流程。
@@ -30,8 +30,8 @@
 |---|---|
 | 项目负责人 | 维护项目目标和约束，确认需求、任务、阶段结论、风险及软件与文档基线 |
 | 开发人员 | 在本地工作区启动、监督和确认 Agent 执行，处理技术异常并审阅变更 |
-| 云端总控 Agent | 分析需求、拆分任务、生成受控上下文、汇总事实、发起预审和组织整改 |
-| 本地 Agent | 读取受控研发上下文，组织本地研发工作流，执行分析、设计、编码、测试、审查、文档生成及 Trace 采集 |
+| 云端总控 Agent | 在云端分析需求、拆分任务、生成受控上下文、汇总事实并辅助项目负责人和质量人员决策 |
+| 本地 Agent | 读取受控研发上下文，组织本地研发工作流，执行分析、设计、编码、测试、审查和文档候选生成 |
 | 质量人员 | 审查测试覆盖、Evidence、质量问题、一致性结果和放行条件 |
 | 外部系统（如 Git、制品仓库、流水线等） | 提供代码、需求/缺陷、测试、构建、制品和档案等研发事实 |
 
@@ -48,8 +48,8 @@
 | UC-04 | 生成受控研发上下文 | 云端总控 Agent、项目负责人 | 受控研发上下文（Context Package）版本 |
 | UC-05 | 同步任务与本地环境校验 | 开发人员、本地 Agent、外部系统 | 任务执行实例、执行计划 |
 | UC-06 | 执行智能编码工作流 | 开发人员、本地 Agent、外部系统 | 代码、测试、文档候选 |
-| UC-07 | 采集研发 Trace 与 Artifact | 本地 Agent、外部系统 | Trace、Artifact 元数据 |
-| UC-08 | 提取工程事实与 Evidence | 云端总控 Agent、本地 Agent、外部系统 | Engineering Fact、Evidence |
+| UC-07 | 客户端采集研发 Trace 与 Artifact | 开发人员、外部系统 | Trace、Artifact 元数据 |
+| UC-08 | 提取工程事实与 Evidence | 云端总控 Agent、外部系统 | Engineering Fact、Evidence |
 | UC-09 | 云端总控 Agent 预审 | 云端总控 Agent、质量人员 | 预审报告、问题和风险 |
 | UC-10 | 人工审查与阶段决策 | 项目负责人、质量人员 | 审查结论、整改决定 |
 | UC-11 | 整改反馈与重新执行 | 云端总控 Agent、开发人员、本地 Agent | 整改任务、新任务执行实例 |
@@ -237,14 +237,14 @@
 
 ---
 
-### UC-07 采集研发 Trace 与 Artifact
+### UC-07 客户端采集研发 Trace 与 Artifact
 
 **目标：** 可靠记录智能编码过程及其产物，为事实提取和文档生成提供来源。
 
 **采集范围：**
 
-- 开发人员与本地 Agent 交互。
-- 云端总控 Agent 与本地 Agent 交互。
+- 开发人员与本地 Agent 的交互。
+- 本地 Agent 与工具、工作区和验证命令的交互。
 - Agent、模型、工作流和上下文版本。
 - 工具调用、MCP 调用和命令执行。
 - 文件读取、文件修改、Git Diff 和 Commit。
@@ -254,11 +254,11 @@
 
 **主流程：**
 
-1. 本地 Agent 采集执行事件。
+1. 本地客户端监听本地 Agent、工具和外部系统产生的执行事件。
 2. 关联 Project、Task、任务执行实例、Agent 和受控研发上下文版本。
 3. 按安全策略进行脱敏、摘要和引用化。
-4. Trace 写入本地可靠缓存。
-5. 本地 Agent 批量上报云端。
+4. Trace 和 Artifact 写入本地可靠缓存。
+5. 本地客户端批量上报云端。
 6. 云端执行幂等校验和重复事件去重。
 7. 云端返回接收状态。
 8. 本地清理已确认缓存。
@@ -272,7 +272,7 @@
 **验收要求：**
 
 - 上报失败不得静默丢失。
-- Trace 可按 Task 和任务执行实例检索。
+- Trace 可按 Task 和任务执行实例检索，并能区分事件来源。
 - 数据上报符合项目安全策略。
 
 ---
@@ -375,8 +375,8 @@
 2. 关联问题描述、Evidence 位置、影响范围和通过条件。
 3. 更新原 Task 或生成整改子任务。
 4. 必要时生成受控研发上下文新版本。
-5. 本地同步整改任务。
-6. 创建新的任务执行实例，并关联原执行实例和 Review Task。
+5. 开发人员通过本地客户端同步整改任务。
+6. 本地客户端创建新的任务执行实例，并关联原执行实例和 Review Task。
 7. 本地 Agent 修改代码、测试、文档或补充证据。
 8. 执行重新验证。
 9. 上报新增 Trace 和 Artifact。
@@ -491,7 +491,7 @@
 
 ## 5. 关键业务规则
 
-1. 云端总控 Agent 只辅助项目负责人和质量人员决策，不替代正式批准。
+1. 云端总控 Agent 只在云端辅助项目负责人和质量人员决策，不直接调用或指挥本地 Agent。
 2. 每个任务执行实例必须关联唯一 Task 和受控研发上下文版本。
 3. Agent 的自然语言“已完成”声明不能直接成为正式完成事实。
 4. Trace 只有经过事实提取、任务关联和有效性确认后，才能成为 Evidence。
@@ -503,7 +503,7 @@
 10. AI 推断内容必须显式标记。
 11. 人工、已审核和已归档内容不得被静默覆盖。
 12. 正式文档必须绑定软件版本和构建产物。
-13. Trace 和源码上报必须遵循项目安全策略。
+13. Trace 和源码上报必须由本地客户端遵循项目安全策略执行。
 14. 已归档共同基线只能形成新版本，不能直接修改。
 
 
@@ -534,7 +534,7 @@ rectangle "云端治理与本地智能研发协同平台" {
   usecase "UC-04\n生成受控研发上下文" as UC04
   usecase "UC-05\n同步任务与环境校验" as UC05
   usecase "UC-06\n执行智能编码工作流" as UC06
-  usecase "UC-07\n采集研发 Trace 与 Artifact" as UC07
+  usecase "UC-07\n客户端采集研发 Trace 与 Artifact" as UC07
   usecase "UC-08\n提取工程事实与 Evidence" as UC08
   usecase "UC-09\n云端总控 Agent 预审" as UC09
   usecase "UC-10\n人工审查与阶段决策" as UC10
@@ -555,10 +555,9 @@ External --> UC05
 Dev --> UC06
 LocalAgent --> UC06
 External --> UC06
-LocalAgent --> UC07
-CloudAgent --> UC07
+Dev --> UC07
+External --> UC07
 CloudAgent --> UC08
-LocalAgent --> UC08
 External --> UC08
 CloudAgent --> UC09
 QA --> UC09
@@ -618,11 +617,11 @@ partition 本地执行 {
   :执行构建、测试和本地审查;
 }
 
-partition Trace与证据 {
-  :采集交互、工具、文件和执行事件;
-  :脱敏、缓存并上报 Trace;
-  :提取 Engineering Fact;
-  :生成并确认 Evidence;
+partition 客户端采集与云端证据 {
+  :本地客户端采集交互、工具、文件和执行事件;
+  :本地客户端脱敏、缓存并上报 Trace 与 Artifact;
+  :云端服务提取 Engineering Fact;
+  :云端总控 Agent 辅助形成 Evidence;
 }
 
 partition 云端审查 {
@@ -650,9 +649,9 @@ partition 本地执行 {
   :修改、补证和重新验证;
 }
 
-partition Trace与证据 {
-  :上报新增 Trace 和 Artifact;
-  :更新 Fact 和 Evidence;
+partition 客户端采集与云端证据 {
+  :本地客户端上报新增 Trace 和 Artifact;
+  :云端服务更新 Fact 和 Evidence;
 }
 
 partition 云端审查 {
@@ -707,9 +706,9 @@ Workflow --> LocalAgent : 代码、测试和文档候选
 LocalAgent --> Dev : 展示 Diff 与阶段成果
 Dev -> LocalAgent : 确认提交
 
-LocalAgent -> TraceService : 交互、工具、文件和测试事件
-LocalAgent -> LocalAgent : 脱敏、缓存并关联任务执行实例
-LocalAgent -> TraceService : Trace + Artifact
+LocalAgent -> Client : 交互、工具、文件和测试事件
+Client -> Client : 脱敏、缓存并关联任务执行实例
+Client -> TraceService : Trace + Artifact
 TraceService -> TraceService : 提取 Fact 与 Evidence 候选
 
 TraceService -> CloudAgent : 触发云端预审
@@ -796,9 +795,9 @@ Validator --> CI
 Workspace --> SCM
 
 Runtime --> Plugin
-Plugin --> LocalAgent
-LocalAgent --> Cache
-LocalAgent --> Trace : Trace/Artifact
+Plugin --> Client : 执行事件/Artifact
+Client --> Cache
+Client --> Trace : Trace/Artifact
 
 Trace --> Evidence
 Task --> CloudAgent
@@ -1074,7 +1073,7 @@ DocumentBaseline "1" --> "1" DocumentPackage
 3. UC-04 生成受控研发上下文。
 4. UC-05 同步任务与本地环境校验。
 5. UC-06 执行智能编码工作流。
-6. UC-07 采集研发 Trace 与 Artifact。
+6. UC-07 客户端采集研发 Trace 与 Artifact。
 7. UC-08 提取 Engineering Fact 与 Evidence。
 8. UC-09 云端总控 Agent 预审。
 9. UC-10 人工审查与阶段决策。
@@ -1103,7 +1102,8 @@ DocumentBaseline "1" --> "1" DocumentPackage
   -> 云端总控 Agent 拆分 Task
   -> 生成受控研发上下文
   -> 本地同步并执行智能编码工作流
-  -> 产生代码、测试、文档候选和 Trace
+  -> 产生代码、测试和文档候选
+  -> 本地客户端采集并上报 Trace 与 Artifact
   -> 云端提取 Engineering Fact 和 Evidence
   -> 云端总控 Agent 预审
   -> 人工通过或退回
