@@ -1,0 +1,1296 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" modified="2026-07-13T00:00:00+08:00" agent="Codex UML exporter" version="24.7.17" type="device">
+  <diagram id="activity" name="端到端活动图">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" math="0" shadow="0" pageWidth="1320" pageHeight="2780">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="activity-shape-1" value="开始" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D9EAD3;strokeColor=#6AA84F;fontColor=#274E13;" vertex="1" parent="1">
+          <mxGeometry x="655" y="20" width="74" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-2" value="项目负责人提交需求" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="100" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-3" value="云端总控智能体理解需求" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="188" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-4" value="确定工程等级、风险等级和交付方式" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="276" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-5" value="策略是否确认?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#5B4500;" vertex="1" parent="1">
+          <mxGeometry x="582" y="372" width="220" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-6" value="补充或调整需求与策略" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="120" y="490" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-7" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D9EAD3;strokeColor=#6AA84F;fontColor=#274E13;" vertex="1" parent="1">
+          <mxGeometry x="234" y="584" width="74" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-8" value="云端总控智能体生成执行计划" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="490" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-9" value="项目负责人和开发人员确认计划" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="578" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-10" value="本地智能体获取代码与项目上下文" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="666" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-11" value="生成代码、测试和配置" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="754" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-12" value="执行本地验证" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="842" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-13" value="验证是否通过?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#5B4500;" vertex="1" parent="1">
+          <mxGeometry x="582" y="938" width="220" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-14" value="分析失败并生成修复方案" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1060" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-15" value="是否需要云原生交付?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#5B4500;" vertex="1" parent="1">
+          <mxGeometry x="160" y="1156" width="220" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-16" value="开发人员人工接管" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="18" y="1280" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-17" value="本地智能体自动修复" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1280" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-18" value="重新执行验证" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1394" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-19" value="质量人员审查验证结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1490" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-20" value="项目负责人确认可运行成果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1578" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-21" value="门禁是否通过?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#5B4500;" vertex="1" parent="1">
+          <mxGeometry x="582" y="1674" width="220" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-22" value="形成快速生成结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1798" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-23" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D9EAD3;strokeColor=#6AA84F;fontColor=#274E13;" vertex="1" parent="1">
+          <mxGeometry x="234" y="1896" width="74" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-24" value="生成容器化构建配置" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1798" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-25" value="外部流水线构建镜像" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1886" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-26" value="生成云原生部署资源" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="1974" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-27" value="部署到目标或模拟环境" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="2062" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-28" value="执行健康检查、冒烟和必要的回滚验证" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="2150" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-29" value="执行分级质量门禁" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="2238" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-30" value="是否离线交付?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontColor=#5B4500;" vertex="1" parent="1">
+          <mxGeometry x="582" y="2334" width="220" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-31" value="返回对应阶段修复" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="120" y="2458" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-32" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D9EAD3;strokeColor=#6AA84F;fontColor=#274E13;" vertex="1" parent="1">
+          <mxGeometry x="234" y="2556" width="74" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-33" value="形成离线交付包和校验清单" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="330" y="2458" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-34" value="形成在线部署结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="820" y="2458" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-35" value="项目负责人确认交付" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FF;strokeColor=#5B8FF9;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="542" y="2570" width="300" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-shape-36" value="结束" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D9EAD3;strokeColor=#6AA84F;fontColor=#274E13;" vertex="1" parent="1">
+          <mxGeometry x="655" y="2670" width="74" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="activity-edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-1" target="activity-shape-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="70" />
+              <mxPoint x="692.0" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-2" target="activity-shape-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="158" />
+              <mxPoint x="692.0" y="188" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-3" target="activity-shape-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="246" />
+              <mxPoint x="692.0" y="276" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-4" target="activity-shape-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="334" />
+              <mxPoint x="692.0" y="372" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-5" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-5" target="activity-shape-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="454" />
+              <mxPoint x="270.0" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-6" target="activity-shape-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="548" />
+              <mxPoint x="271.0" y="584" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-7" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-5" target="activity-shape-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="454" />
+              <mxPoint x="692.0" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-8" target="activity-shape-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="548" />
+              <mxPoint x="692.0" y="578" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-9" target="activity-shape-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="636" />
+              <mxPoint x="692.0" y="666" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-10" target="activity-shape-11">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="724" />
+              <mxPoint x="692.0" y="754" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-11" target="activity-shape-12">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="812" />
+              <mxPoint x="692.0" y="842" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-12" target="activity-shape-13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="900" />
+              <mxPoint x="692.0" y="938" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-13" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-13" target="activity-shape-14">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1020" />
+              <mxPoint x="270.0" y="1060" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-14" target="activity-shape-15">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="1118" />
+              <mxPoint x="270.0" y="1156" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-15" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-15" target="activity-shape-16">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="1238" />
+              <mxPoint x="168.0" y="1280" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-16" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-15" target="activity-shape-17">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="1238" />
+              <mxPoint x="510.0" y="1280" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-16" target="activity-shape-18">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.0" y="1338" />
+              <mxPoint x="692.0" y="1394" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-17" target="activity-shape-18">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="510.0" y="1338" />
+              <mxPoint x="692.0" y="1394" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-19" value="重新验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-18" target="activity-shape-13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1452" />
+              <mxPoint x="692.0" y="938" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-20" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-13" target="activity-shape-19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1020" />
+              <mxPoint x="692.0" y="1490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-19" target="activity-shape-20">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1548" />
+              <mxPoint x="692.0" y="1578" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-20" target="activity-shape-21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1636" />
+              <mxPoint x="692.0" y="1674" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-23" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-21" target="activity-shape-22">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1756" />
+              <mxPoint x="270.0" y="1798" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-22" target="activity-shape-23">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="1856" />
+              <mxPoint x="271.0" y="1896" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-25" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-21" target="activity-shape-24">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1756" />
+              <mxPoint x="692.0" y="1798" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-24" target="activity-shape-25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1856" />
+              <mxPoint x="692.0" y="1886" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-25" target="activity-shape-26">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="1944" />
+              <mxPoint x="692.0" y="1974" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-26" target="activity-shape-27">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2032" />
+              <mxPoint x="692.0" y="2062" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-27" target="activity-shape-28">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2120" />
+              <mxPoint x="692.0" y="2150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-28" target="activity-shape-29">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2208" />
+              <mxPoint x="692.0" y="2238" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-29" target="activity-shape-30">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2296" />
+              <mxPoint x="692.0" y="2334" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-32" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-30" target="activity-shape-31">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2416" />
+              <mxPoint x="270.0" y="2458" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-33" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-31" target="activity-shape-32">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270.0" y="2516" />
+              <mxPoint x="271.0" y="2556" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-34" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-30" target="activity-shape-33">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2416" />
+              <mxPoint x="480.0" y="2458" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-35" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-30" target="activity-shape-34">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2416" />
+              <mxPoint x="970.0" y="2458" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-33" target="activity-shape-35">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480.0" y="2516" />
+              <mxPoint x="692.0" y="2570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-34" target="activity-shape-35">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970.0" y="2516" />
+              <mxPoint x="692.0" y="2570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activity-edge-38" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="activity-shape-35" target="activity-shape-36">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="692.0" y="2628" />
+              <mxPoint x="692.0" y="2670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="sequence" name="核心时序图">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" math="0" shadow="0" pageWidth="1450" pageHeight="2672">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sequence-participant-1" value="项目负责人" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="70" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-2" value="开发人员" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="242" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-3" value="质量人员" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="414" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-4" value="云端总控智能体" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="586" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-5" value="云端治理服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="758" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-6" value="本地客户端" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="930" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-7" value="本地智能体" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="1102" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-participant-8" value="外部系统" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#3C78D8;fontColor=#17365D;" vertex="1" parent="1">
+          <mxGeometry x="1274" y="30" width="96" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-frame-9" value="条件分支：超过自动修复上限" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8F9FA;fillOpacity=25;strokeColor=#7F8C8D;dashed=1;verticalAlign=top;align=left;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="32" y="1152" width="1360" height="178" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-frame-10" value="条件分支：验证失败" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8F9FA;fillOpacity=25;strokeColor=#7F8C8D;dashed=1;verticalAlign=top;align=left;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="32" y="886" width="1360" height="444" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-frame-11" value="条件分支：门禁失败" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8F9FA;fillOpacity=25;strokeColor=#7F8C8D;dashed=1;verticalAlign=top;align=left;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="32" y="2330" width="1360" height="254" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-frame-12" value="条件分支：仅形成快速生成结果" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8F9FA;fillOpacity=25;strokeColor=#7F8C8D;dashed=1;verticalAlign=top;align=left;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="32" y="1532" width="1360" height="1052" as="geometry" />
+        </mxCell>
+        <mxCell id="sequence-lifeline-1" value="生命线：项目负责人" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="82" />
+              <mxPoint x="118" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-2" value="生命线：开发人员" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-2" target="sequence-participant-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="82" />
+              <mxPoint x="290" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-3" value="生命线：质量人员" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-3" target="sequence-participant-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="462" y="82" />
+              <mxPoint x="462" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-4" value="生命线：云端总控智能体" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="82" />
+              <mxPoint x="634" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-5" value="生命线：云端治理服务" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="82" />
+              <mxPoint x="806" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-6" value="生命线：本地客户端" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="82" />
+              <mxPoint x="978" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-7" value="生命线：本地智能体" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="82" />
+              <mxPoint x="1150" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-lifeline-8" value="生命线：外部系统" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#9E9E9E;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="82" />
+              <mxPoint x="1322" y="2592" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-9" value="提交业务需求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="126" />
+              <mxPoint x="634" y="126" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-10" value="查询项目规范和已有资料" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="164" />
+              <mxPoint x="806" y="164" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-11" value="获取代码、依赖和项目资料" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="202" />
+              <mxPoint x="1322" y="202" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-12" value="返回项目上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="240" />
+              <mxPoint x="806" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-13" value="返回可用上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="278" />
+              <mxPoint x="634" y="278" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-14" value="形成需求理解和策略建议" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="316" />
+              <mxPoint x="634" y="316" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-15" value="展示工程等级、风险等级和待确认项" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="354" />
+              <mxPoint x="118" y="354" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-16" value="确认策略" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="392" />
+              <mxPoint x="806" y="392" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-17" value="生成并保存执行计划" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="430" />
+              <mxPoint x="806" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-18" value="提交计划确认" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="468" />
+              <mxPoint x="118" y="468" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-19" value="提交技术计划确认" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="506" />
+              <mxPoint x="290" y="506" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-20" value="确认范围" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="544" />
+              <mxPoint x="806" y="544" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-21" value="确认技术条件" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-2" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="582" />
+              <mxPoint x="806" y="582" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-22" value="获取已确认任务和受控上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="620" />
+              <mxPoint x="806" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-23" value="返回任务、规范和验证要求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="658" />
+              <mxPoint x="978" y="658" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-24" value="下发任务和本地执行要求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="696" />
+              <mxPoint x="1150" y="696" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-25" value="获取代码版本和依赖" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="734" />
+              <mxPoint x="1322" y="734" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-26" value="返回代码与依赖" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="772" />
+              <mxPoint x="1150" y="772" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-27" value="生成代码、测试和配置" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="810" />
+              <mxPoint x="1150" y="810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-28" value="编译并执行测试" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="848" />
+              <mxPoint x="1150" y="848" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-29" value="上报失败、日志和差异" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="886" />
+              <mxPoint x="978" y="886" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-30" value="上报失败事实" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="924" />
+              <mxPoint x="806" y="924" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-31" value="汇总失败类型和影响范围" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="962" />
+              <mxPoint x="634" y="962" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-32" value="提供修复建议" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="1000" />
+              <mxPoint x="806" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-33" value="下发修复要求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="1038" />
+              <mxPoint x="978" y="1038" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-34" value="转交修复要求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1076" />
+              <mxPoint x="1150" y="1076" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-35" value="修复并重新验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1114" />
+              <mxPoint x="1150" y="1114" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-36" value="请求人工接管" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1152" />
+              <mxPoint x="290" y="1152" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-37" value="提交人工修正" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-2" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="1190" />
+              <mxPoint x="978" y="1190" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-38" value="执行人工修正" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1228" />
+              <mxPoint x="1150" y="1228" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-39" value="重新验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1266" />
+              <mxPoint x="1150" y="1266" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-40" value="提交测试和运行结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1304" />
+              <mxPoint x="978" y="1304" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-41" value="上报研发过程记录和研发产物" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1342" />
+              <mxPoint x="806" y="1342" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-42" value="汇总验证事实和剩余风险" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="1380" />
+              <mxPoint x="634" y="1380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-43" value="展示可运行成果和剩余风险" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-4" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="634" y="1418" />
+              <mxPoint x="118" y="1418" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-44" value="审查测试和质量结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-3" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="462" y="1456" />
+              <mxPoint x="806" y="1456" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-45" value="确认快速生成成果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="1494" />
+              <mxPoint x="806" y="1494" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-46" value="返回快速生成结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="1532" />
+              <mxPoint x="118" y="1532" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-branch-47" value="分支：进入云原生交付" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#7F8C8D;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="32" y="1570" />
+              <mxPoint x="1392" y="1570" />
+            </Array>
+            <mxPoint x="32" y="1570" as="sourcePoint" />
+            <mxPoint x="1392" y="1570" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-48" value="下发容器化与部署任务" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1608" />
+              <mxPoint x="1150" y="1608" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-49" value="生成容器构建配置" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1646" />
+              <mxPoint x="1150" y="1646" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-50" value="展示构建与部署资源差异" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="1684" />
+              <mxPoint x="290" y="1684" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-51" value="确认或修正" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-2" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="290" y="1722" />
+              <mxPoint x="978" y="1722" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-52" value="提交代码和构建配置" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1760" />
+              <mxPoint x="806" y="1760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-53" value="触发构建流水线" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="1798" />
+              <mxPoint x="1322" y="1798" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-54" value="构建应用与容器镜像" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="1836" />
+              <mxPoint x="1322" y="1836" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-55" value="推送镜像并记录摘要" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="1874" />
+              <mxPoint x="1322" y="1874" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-56" value="返回镜像与构建结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="1912" />
+              <mxPoint x="806" y="1912" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-57" value="下发镜像信息和环境约束" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="1950" />
+              <mxPoint x="978" y="1950" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-58" value="生成云原生部署资源" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="1988" />
+              <mxPoint x="1150" y="1988" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-59" value="生成并校验部署资源" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="2026" />
+              <mxPoint x="1150" y="2026" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-60" value="返回部署资源" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-7" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="2064" />
+              <mxPoint x="978" y="2064" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-61" value="提交部署资源" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="2102" />
+              <mxPoint x="1322" y="2102" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-62" value="部署到目标或模拟环境" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="2140" />
+              <mxPoint x="1322" y="2140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-63" value="执行健康检查、冒烟和回滚验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="2178" />
+              <mxPoint x="1322" y="2178" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-64" value="返回部署与验证结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-8" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1322" y="2216" />
+              <mxPoint x="978" y="2216" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-65" value="上报部署验证证据" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="2254" />
+              <mxPoint x="806" y="2254" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-66" value="返回门禁和质量结论" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-3" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="462" y="2292" />
+              <mxPoint x="806" y="2292" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-67" value="返回问题并要求修复" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="2330" />
+              <mxPoint x="978" y="2330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-68" value="转交整改任务" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-6" target="sequence-participant-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="978" y="2368" />
+              <mxPoint x="1150" y="2368" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-branch-69" value="分支：门禁通过" style="edgeStyle=none;dashed=1;endArrow=none;html=1;strokeColor=#7F8C8D;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="32" y="2406" />
+              <mxPoint x="1392" y="2406" />
+            </Array>
+            <mxPoint x="32" y="2406" as="sourcePoint" />
+            <mxPoint x="1392" y="2406" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-70" value="提交在线或离线交付确认" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="2444" />
+              <mxPoint x="118" y="2444" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-71" value="批准交付方式" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-1" target="sequence-participant-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="118" y="2482" />
+              <mxPoint x="806" y="2482" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sequence-message-72" value="保存交付物和版本记录" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="sequence-participant-5" target="sequence-participant-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="806" y="2520" />
+              <mxPoint x="1322" y="2520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="component" name="组件图">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" math="0" shadow="0" pageWidth="1700" pageHeight="827">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="component-package-1-1" value="云端控制面" style="swimlane;html=1;horizontal=0;startSize=28;fillColor=#F3F6FA;swimlaneFillColor=#D9EAF7;strokeColor=#5B9BD5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="500" height="610" as="geometry" />
+        </mxCell>
+        <mxCell id="component-package-2-8" value="本地执行面" style="swimlane;html=1;horizontal=0;startSize=28;fillColor=#F3F6FA;swimlaneFillColor=#D9EAF7;strokeColor=#5B9BD5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="40" width="500" height="610" as="geometry" />
+        </mxCell>
+        <mxCell id="component-package-3-13" value="外部系统" style="swimlane;html=1;horizontal=0;startSize=28;fillColor=#F3F6FA;swimlaneFillColor=#D9EAF7;strokeColor=#5B9BD5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="40" width="500" height="610" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-2" value="需求与策略服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="26" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-3" value="执行计划与任务服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="258" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-4" value="云端总控智能体" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="26" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-5" value="质量门禁服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="258" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-6" value="交付编排服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="26" y="332" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-7" value="事实与审查服务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-1-1">
+          <mxGeometry x="258" y="332" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-9" value="本地客户端" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-2-8">
+          <mxGeometry x="26" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-10" value="本地智能体" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-2-8">
+          <mxGeometry x="258" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-11" value="工具与验证执行器" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-2-8">
+          <mxGeometry x="26" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-12" value="本地代码工作区" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-2-8">
+          <mxGeometry x="258" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-14" value="代码仓库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="26" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-15" value="组件仓库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="258" y="68" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-16" value="流水线" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="26" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-17" value="镜像仓库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="258" y="200" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-18" value="制品仓库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="26" y="332" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-shape-19" value="容器或集群环境" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4D6;strokeColor=#C55A11;fontColor=#7F2704;" vertex="1" parent="component-package-3-13">
+          <mxGeometry x="258" y="332" width="205" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="component-edge-1" value="分析与策略建议" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-4" target="component-shape-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="281.0" />
+              <mxPoint x="168.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-2" value="生成与汇总计划" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-4" target="component-shape-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="281.0" />
+              <mxPoint x="400.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-3" value="辅助门禁判断" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-4" target="component-shape-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="281.0" />
+              <mxPoint x="400.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-4" value="辅助交付决策" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-4" target="component-shape-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="281.0" />
+              <mxPoint x="168.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-5" value="发布已确认任务" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-3" target="component-shape-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400.5" y="149.0" />
+              <mxPoint x="728.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-6" value="工程等级与风险等级" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-2" target="component-shape-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="149.0" />
+              <mxPoint x="400.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-7" value="读取验证事实" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-5" target="component-shape-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400.5" y="281.0" />
+              <mxPoint x="400.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-8" value="触发构建与交付" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-6" target="component-shape-16">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="413.0" />
+              <mxPoint x="1288.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-9" value="获取任务与上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-9" target="component-shape-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728.5" y="149.0" />
+              <mxPoint x="400.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-10" value="转交本地执行要求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-9" target="component-shape-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728.5" y="149.0" />
+              <mxPoint x="960.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-11" value="生成、测试与验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-10" target="component-shape-11">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960.5" y="149.0" />
+              <mxPoint x="728.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-12" value="修改代码与配置" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-11" target="component-shape-12">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728.5" y="281.0" />
+              <mxPoint x="960.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-13" value="获取与提交代码" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-12" target="component-shape-14">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960.5" y="281.0" />
+              <mxPoint x="1288.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-14" value="获取依赖" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-11" target="component-shape-15">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728.5" y="281.0" />
+              <mxPoint x="1520.5" y="149.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-15" value="上报过程记录与研发产物" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-9" target="component-shape-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="728.5" y="149.0" />
+              <mxPoint x="400.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-16" value="保存应用镜像" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-16" target="component-shape-17">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1288.5" y="281.0" />
+              <mxPoint x="1520.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-17" value="提供部署镜像" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-17" target="component-shape-19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1520.5" y="281.0" />
+              <mxPoint x="1520.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-18" value="部署与交付" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-6" target="component-shape-19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="168.5" y="413.0" />
+              <mxPoint x="1520.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-19" value="返回部署验证事实" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-19" target="component-shape-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1520.5" y="413.0" />
+              <mxPoint x="400.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-20" value="返回构建事实" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-16" target="component-shape-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1288.5" y="281.0" />
+              <mxPoint x="400.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-21" value="提供门禁依据" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-7" target="component-shape-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400.5" y="413.0" />
+              <mxPoint x="400.5" y="281.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-22" value="放行或阻断交付" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-5" target="component-shape-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400.5" y="281.0" />
+              <mxPoint x="168.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="component-edge-23" value="提供离线交付制品" style="edgeStyle=orthogonalEdgeStyle;rounded=0;endArrow=block;html=1;" edge="1" parent="1" source="component-shape-18" target="component-shape-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1288.5" y="413.0" />
+              <mxPoint x="168.5" y="413.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
