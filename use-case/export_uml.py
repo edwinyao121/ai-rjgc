@@ -69,11 +69,11 @@ class Diagram:
 def classify_plantuml(text: str) -> str:
     """Return the known diagram kind represented by one PlantUML block."""
 
-    if "start\n" in text and "while (验证是否通过?)" in text:
+    if "start\n" in text and re.search(r"^\s*:.*;\s*$", text, re.M):
         return "activity"
-    if "actor 项目负责人 as Owner" in text and "participant \"外部系统\" as External" in text:
+    if re.search(r"^\s*actor\s+", text, re.M) and re.search(r"^\s*participant\s+", text, re.M):
         return "sequence"
-    if "skinparam componentStyle rectangle" in text and 'package "云端控制面"' in text:
+    if "skinparam componentStyle rectangle" in text and re.search(r"^\s*package\s+\"[^\"]+\"\s*\{", text, re.M):
         return "component"
     raise ValueError("无法识别 PlantUML 图块类型")
 
@@ -148,12 +148,15 @@ def _activity_labels(block: PlantUmlBlock) -> tuple[list[str], list[str]]:
 
 
 def build_activity(block: PlantUmlBlock) -> Diagram:
-    actions, decisions = _activity_labels(block)
+    actions = re.findall(r"^\s*:([^;]+);\s*$", block.text, re.M)
+    decisions = re.findall(r"^(?:if|while) \(([^)]+)\)", block.text, re.M)
+    if len(actions) != 33 or len(decisions) != 3:
+        raise ValueError(f"活动图结构校验失败：动作 {len(actions)} 个、判断 {len(decisions)} 个")
     shapes: list[Shape] = []
     edges: list[Edge] = []
 
-    def a(text: str, x: float, y: float) -> Shape:
-        return _new_shape(shapes, "activity-shape", text, x, y, 300, 58, "action")
+    def a(text: str, x: float, y: float, width: float = 330) -> Shape:
+        return _new_shape(shapes, "activity-shape", text, x, y, width, 58, "action")
 
     def d(text: str, x: float, y: float) -> Shape:
         return _new_shape(shapes, "activity-shape", text, x, y, 220, 82, "decision")
@@ -166,58 +169,64 @@ def build_activity(block: PlantUmlBlock) -> Diagram:
                   ((left.x + left.width / 2, left.y + left.height),
                    (right.x + right.width / 2, right.y)))
 
-    start = t("开始", 655, 20)
-    submit = a(actions[0], 542, 100)
-    understand = a(actions[1], 542, 188)
-    strategy = a(actions[2], 542, 276)
-    strategy_ok = d(decisions[0], 582, 372)
-    adjust = a(actions[3], 120, 490)
-    stop_strategy = t("结束", 234, 584)
-    plan = a(actions[4], 542, 490)
-    confirm_plan = a(actions[5], 542, 578)
-    context = a(actions[6], 542, 666)
-    generate = a(actions[7], 542, 754)
-    validate = a(actions[8], 542, 842)
-    validation_ok = d(decisions[1], 582, 938)
-    analyse = a(actions[9], 120, 1060)
-    repair_limit = d(decisions[2], 160, 1156)
-    manual = a(actions[10], 18, 1280)
-    auto_repair = a(actions[11], 360, 1280)
-    retry = a(actions[12], 542, 1394)
-    quality = a(actions[13], 542, 1490)
-    result = a(actions[14], 542, 1578)
-    cloud_delivery = d(decisions[3], 582, 1674)
-    quick = a(actions[15], 120, 1798)
-    stop_quick = t("结束", 234, 1896)
-    container = a(actions[16], 542, 1798)
-    image = a(actions[17], 542, 1886)
-    resources = a(actions[18], 542, 1974)
-    deploy = a(actions[19], 542, 2062)
-    verify = a(actions[20], 542, 2150)
-    gate = a(actions[21], 542, 2238)
-    gate_ok = d(decisions[4], 582, 2334)
-    fix = a(actions[22], 120, 2458)
-    stop_gate = t("结束", 234, 2556)
-    offline = a(actions[23], 330, 2458)
-    online = a(actions[24], 820, 2458)
-    delivery = a(actions[25], 542, 2570)
-    stop_delivery = t("结束", 655, 2670)
+    # 保持主流程纵向展开，分支放在左侧，便于在 Visio 中继续调整。
+    x = 500
+    start = t("开始", 628, 20)
+    first = [a(label, x, 100 + index * 86) for index, label in enumerate(actions[:7])]
+    plan_ok = d(decisions[0], 555, 710)
+    confirm_task = a(actions[7], x, 828)
+    adjust_plan = a(actions[8], 90, 828, 300)
+    stop_plan = t("结束", 200, 924)
+    generate = a(actions[9], x, 928)
+    context = a(actions[10], x, 1014)
+    receive = a(actions[11], x, 1100)
+    sync = a(actions[12], x, 1186)
+    local_plan = a(actions[13], x, 1272)
+    risk_ok = d(decisions[1], 555, 1358)
+    confirm_risk = a(actions[14], 90, 1480, 300)
+    confirm = a(actions[15], x, 1480)
+    code = a(actions[16], x, 1566)
+    facts = a(actions[17], x, 1652)
+    report = a(actions[18], x, 1738)
+    ai_review = a(actions[19], x, 1824)
+    qa_review = a(actions[20], x, 1910)
+    gate_ok = d(decisions[2], 555, 1996)
+    repair = [
+        a(actions[index], 90, 2118 + (index - 21) * 86, 300)
+        for index in range(21, 26)
+    ]
+    submit = a(actions[26], x, 2118)
+    pipeline = a(actions[27], x, 2204)
+    approve = a(actions[28], x, 2290)
+    archive = a(actions[29], x, 2376)
+    knowledge = a(actions[30], x, 2462)
+    knowledge_review = a(actions[31], x, 2548)
+    publish = a(actions[32], x, 2634)
+    finish = t("结束", 628, 2750)
 
-    link(start, submit); link(submit, understand); link(understand, strategy); link(strategy, strategy_ok)
-    link(strategy_ok, adjust, "否"); link(adjust, stop_strategy)
-    link(strategy_ok, plan, "是"); link(plan, confirm_plan); link(confirm_plan, context)
-    link(context, generate); link(generate, validate); link(validate, validation_ok)
-    link(validation_ok, analyse, "否"); link(analyse, repair_limit)
-    link(repair_limit, manual, "是"); link(repair_limit, auto_repair, "否")
-    link(manual, retry); link(auto_repair, retry); link(retry, validation_ok, "重新验证")
-    link(validation_ok, quality, "是"); link(quality, result); link(result, cloud_delivery)
-    link(cloud_delivery, quick, "否"); link(quick, stop_quick)
-    link(cloud_delivery, container, "是"); link(container, image); link(image, resources)
-    link(resources, deploy); link(deploy, verify); link(verify, gate); link(gate, gate_ok)
-    link(gate_ok, fix, "否"); link(fix, stop_gate)
-    link(gate_ok, offline, "是"); link(gate_ok, online, "否")
-    link(offline, delivery); link(online, delivery); link(delivery, stop_delivery)
-    return Diagram("activity", TYPE_NAMES["activity"], 1320, 2780, shapes, edges)
+    link(start, first[0])
+    for left, right in zip(first, first[1:]):
+        link(left, right)
+    link(first[-1], plan_ok)
+    link(plan_ok, confirm_task, "是")
+    link(confirm_task, generate)
+    link(plan_ok, adjust_plan, "否")
+    link(adjust_plan, stop_plan)
+    link(generate, context); link(context, receive); link(receive, sync); link(sync, local_plan)
+    link(local_plan, risk_ok)
+    link(risk_ok, confirm_risk, "是")
+    link(confirm_risk, confirm)
+    link(risk_ok, confirm, "否")
+    link(confirm, code); link(code, facts); link(facts, report); link(report, ai_review); link(ai_review, qa_review)
+    link(qa_review, gate_ok)
+    link(gate_ok, submit, "通过")
+    link(gate_ok, repair[0], "整改")
+    for left, right in zip(repair, repair[1:]):
+        link(left, right)
+    link(repair[-1], gate_ok, "返回复审")
+    link(submit, pipeline); link(pipeline, approve); link(approve, archive); link(archive, knowledge)
+    link(knowledge, knowledge_review); link(knowledge_review, publish); link(publish, finish)
+    return Diagram("activity", TYPE_NAMES["activity"], 1200, 2860, shapes, edges)
 
 
 def _sequence_participants(block: PlantUmlBlock) -> list[tuple[str, str]]:
@@ -253,7 +262,7 @@ def _sequence_events(block: PlantUmlBlock) -> tuple[list[tuple[str, str, str]], 
                 messages.append((match.group(1), match.group(3), match.group(4)))
     if stack:
         raise ValueError("时序图结构校验失败：存在未闭合的 alt 分支")
-    if len(messages) < 30 or len(frames) != 4:
+    if len(messages) < 30 or len(frames) < 2:
         raise ValueError(f"时序图结构校验失败：消息 {len(messages)} 个、交互框 {len(frames)} 个")
     return messages, frames
 
@@ -328,7 +337,7 @@ def _component_parts(block: PlantUmlBlock) -> tuple[list[tuple[str, str, list[tu
         connection_match = CONNECTION_RE.match(line)
         if connection_match:
             connections.append((connection_match.group(1), connection_match.group(3), connection_match.group(4), connection_match.group(2)))
-    if len(packages) != 3 or sum(len(package[2]) for package in packages) != 16 or len(connections) != 23:
+    if len(packages) != 3 or sum(len(package[2]) for package in packages) != 17 or len(connections) != 23:
         counts = ", ".join(f"{name}:{len(items)}" for name, _, items in packages)
         raise ValueError(f"组件图结构校验失败：分组 {len(packages)} 个（{counts}），连接 {len(connections)} 条")
     return packages, connections
@@ -586,7 +595,7 @@ def write_vsdx(diagrams: Iterable[Diagram], output: Path) -> None:
         "xmlns:dcmitype": "http://purl.org/dc/dcmitype/",
         "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
     })
-    ET.SubElement(core, "dc:title").text = "快速生成及云原生交付 UML"
+    ET.SubElement(core, "dc:title").text = "实现团队规范化智能开发 UML"
     ET.SubElement(core, "dc:creator").text = "Codex"
     ET.SubElement(core, "dcterms:created", {"xsi:type": "dcterms:W3CDTF"}).text = timestamp
     app = ET.Element("Properties", {"xmlns": "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"})
@@ -620,7 +629,7 @@ def _zip_entry(name: str, content: bytes) -> tuple[zipfile.ZipInfo, bytes]:
 
 def parse_args() -> argparse.Namespace:
     here = Path(__file__).resolve().parent
-    default_source = here / "快速生成及云原生交付_用例与UML设计_v2.0.md"
+    default_source = here / "实现团队规范化智能开发_用例与UML.md"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=default_source)
     parser.add_argument("--drawio", type=Path, help="draw.io 输出路径")
